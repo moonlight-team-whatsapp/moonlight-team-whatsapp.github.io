@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moonlight Team · Roleplay de Genshin Impact en WhatsApp</title>
+<meta name="description" content="Moonlight Team: roleplay de Genshin Impact por WhatsApp. Mira qué personajes están libres, reservados o buscados y cómo unirte al lobby.">
+<link rel="canonical" href="https://moonlight-team-whatsapp.github.io/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Moonlight Team">
+<meta property="og:locale" content="es_ES">
+<meta property="og:title" content="Moonlight Team · Roleplay de Genshin Impact en WhatsApp">
+<meta property="og:description" content="Moonlight Team: roleplay de Genshin Impact por WhatsApp. Mira qué personajes están libres, reservados o buscados y cómo unirte al lobby.">
+<meta property="og:url" content="https://moonlight-team-whatsapp.github.io/">
+<meta property="og:image" content="https://moonlight-team-whatsapp.github.io/luna.jpg">
+<meta property="og:image:width" content="500">
+<meta property="og:image:height" content="500">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Moonlight Team · Roleplay de Genshin Impact en WhatsApp">
+<meta name="twitter:description" content="Moonlight Team: roleplay de Genshin Impact por WhatsApp. Mira qué personajes están libres, reservados o buscados y cómo unirte al lobby.">
+<meta name="twitter:image" content="https://moonlight-team-whatsapp.github.io/luna.jpg">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Moonlight Team","alternateName":["Moonlight","Moonlight Team Genshin"],"url":"https://moonlight-team-whatsapp.github.io/","inLanguage":"es"}</script>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-index">
+
+<div class="stars" id="starsLayer" aria-hidden="true"></div>
+<div class="embers" id="embersLayer" aria-hidden="true"></div>
+<div class="mist m1" aria-hidden="true"></div>
+<div class="mist m2" aria-hidden="true"></div>
+<div class="shooting-star" style="--top:8%; --left:80%; --dur:16s; --delay:2s" aria-hidden="true"></div>
+<div class="shooting-star" style="--top:22%; --left:55%; --dur:22s; --delay:9s" aria-hidden="true"></div>
+<div class="shooting-star" style="--top:4%; --left:35%; --dur:19s; --delay:14s" aria-hidden="true"></div>
+<div class="welcome-comet" aria-hidden="true"></div>
+
+<div class="hero" aria-hidden="true">
+  <div class="parallax-layer" id="parallaxLayer">
+    <div class="moon-rays"></div>
+    <div class="flash"></div>
+    <div class="burst" id="burstLayer"></div>
+    <div class="moon"></div>
+  </div>
+  <div class="cloud-layer" id="cloudLayer"></div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="title-wrap">
+        <h1 id="heroTitle">Moonlight Team</h1>
+      </div>
+      <p class="subtitle">Elige a dónde quieres ir.</p>
+    </div>
+    <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
+  </header>
+
+  <div class="nav-grid" id="navGrid"></div>
+
+  <section class="about" style="max-width:640px;margin:34px auto 10px;text-align:center;color:var(--ink-soft);font-size:1rem;line-height:1.55">
+    <p style="margin:0 0 10px">Moonlight Team es un roleplay de Genshin Impact por WhatsApp. Aquí puedes ver qué personajes están ocupados, reservados o buscados, la actividad del grupo y el árbol de familias de los personajes, y crear tu propia tarjeta de presentación.</p>
+    <p style="margin:0">
+      <a href="lista.html" style="color:var(--gold)">Lista de personajes</a> ·
+      <a href="arbol.html" style="color:var(--gold)">Árbol genealógico</a> ·
+      <a href="registros.html" style="color:var(--gold)">Registros de actividad</a> ·
+      <a href="mooncard.html" style="color:var(--gold)">MoonCard</a>
+    </p>
+  </section>
+</div>
+
+<dialog id="loginDialog">
+  <div class="dialog-inner">
+    <h3>Acceso admin</h3>
+    <div class="dialog-field">
+      <label for="loginEmail">Email</label>
+      <input id="loginEmail" type="email" autocomplete="username">
+    </div>
+    <div class="dialog-field">
+      <label for="loginPass">Contraseña</label>
+      <input id="loginPass" type="password" autocomplete="current-password">
+    </div>
+    <p class="dialog-error" id="loginError"></p>
+    <div class="dialog-actions">
+      <button class="btn-primary" id="loginSubmit" type="button">Entrar</button>
+      <button class="btn-ghost" id="loginCancel" type="button">Cancelar</button>
+    </div>
+  </div>
+</dialog>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getFirestore, collection, doc, setDoc, onSnapshot
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import {
+    getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCJw3MuQQrYZ7xaabbKhK5Q4fAAB5xzZsk",
+    authDomain: "moonlight-teamm-947ee.firebaseapp.com",
+    projectId: "moonlight-teamm-947ee",
+    storageBucket: "moonlight-teamm-947ee.firebasestorage.app",
+    messagingSenderId: "664050217208",
+    appId: "1:664050217208:web:194120b9ab73b43a984b0d"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  const $ = (id) => document.getElementById(id);
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- Motas de luz flotando por toda la página ----------
+  if (!prefersReducedMotion){
+    const embers = $('embersLayer');
+    const emberCount = window.innerWidth < 480 ? 10 : 18;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < emberCount; i++){
+      const e = document.createElement('span');
+      e.className = 'ember';
+      e.style.left = (Math.random() * 100).toFixed(2) + '%';
+      e.style.setProperty('--dur', (Math.random() * 10 + 10).toFixed(1) + 's');
+      e.style.setProperty('--delay', (Math.random() * 12).toFixed(1) + 's');
+      e.style.setProperty('--sway', (Math.random() * 60 - 30).toFixed(0) + 'px');
+      const size = (Math.random() * 2 + 1.5).toFixed(1);
+      e.style.width = size + 'px';
+      e.style.height = size + 'px';
+      frag.appendChild(e);
+    }
+    embers.appendChild(frag);
+  }
+
+  // ---------- Estrellas pequeñas alrededor de la luna ----------
+  {
+    const heroEl = document.querySelector('.hero');
+    if (heroEl){
+      const near = document.createElement('div');
+      near.className = 'stars near-moon';
+      const count = 22;
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < count; i++){
+        const s = document.createElement('span');
+        s.className = 'star';
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 60 + Math.random() * 150; // px desde el centro de la luna
+        s.style.left = `calc(50% + ${(Math.cos(angle) * dist).toFixed(1)}px)`;
+        s.style.top = `calc(50% + ${(Math.sin(angle) * dist).toFixed(1)}px)`;
+        const size = (Math.random() * 1.4 + 0.7).toFixed(2);
+        s.style.width = size + 'px';
+        s.style.height = size + 'px';
+        s.style.setProperty('--dur', (Math.random() * 3 + 2).toFixed(2) + 's');
+        s.style.setProperty('--delay', (Math.random() * 5).toFixed(2) + 's');
+        s.style.setProperty('--o-min', (Math.random() * 0.2 + 0.15).toFixed(2));
+        s.style.setProperty('--o-max', (Math.random() * 0.3 + 0.65).toFixed(2));
+        frag.appendChild(s);
+      }
+      near.appendChild(frag);
+      heroEl.appendChild(near);
+    }
+  }
+
+  // ---------- Nublado flotando delante de la luna ----------
+  {
+    const cloudLayer = $('cloudLayer');
+    const cloudDefs = [
+      { left: -8,  bottom: -25, scale: 1.15, dur: 130, tint: 0.95 },
+      { left: 12,  bottom: -42, scale: 0.9,  dur: 150, tint: 0.8 },
+      { left: 30,  bottom: -8,  scale: 1.05, dur: 120, tint: 0.9 },
+      { left: 50,  bottom: -33, scale: 1.0,  dur: 160, tint: 0.8 },
+      { left: 70,  bottom: -5,  scale: 1.1,  dur: 135, tint: 0.9 },
+      { left: 88,  bottom: -28, scale: 0.85, dur: 145, tint: 0.8 },
+      { left: 20,  bottom: 50,  scale: 0.5,  dur: 100, tint: 0.6 },
+      { left: 62,  bottom: 62,  scale: 0.55, dur: 115, tint: 0.55 },
+    ];
+    cloudDefs.forEach((c, i) => {
+      const group = document.createElement('div');
+      group.className = 'cloud-group';
+      group.style.setProperty('--cloud-left', c.left + '%');
+      group.style.setProperty('--cloud-bottom', c.bottom + 'px');
+      group.style.setProperty('--cloud-dur', prefersReducedMotion ? '0s' : c.dur + 's');
+      group.style.setProperty('--cloud-delay', (-i * 9) + 's');
+      group.style.opacity = c.tint;
+
+      const puffCount = 3 + Math.round(Math.random());
+      for (let p = 0; p < puffCount; p++){
+        const puff = document.createElement('span');
+        puff.className = 'cloud-puff';
+        const w = (95 + Math.random() * 90) * c.scale;
+        const h = w * (0.42 + Math.random() * 0.14);
+        puff.style.width = w.toFixed(0) + 'px';
+        puff.style.height = h.toFixed(0) + 'px';
+        puff.style.left = ((p - (puffCount - 1) / 2) * 60 + (Math.random() * 24 - 12)).toFixed(0) + 'px';
+        puff.style.bottom = (Math.random() * 20).toFixed(0) + 'px';
+        group.appendChild(puff);
+      }
+      cloudLayer.appendChild(group);
+    });
+  }
+
+  // ---------- Estallido de rayos al nacer la luna ----------
+  if (!prefersReducedMotion){
+    const burst = $('burstLayer');
+    const rayCount = 14;
+    for (let i = 0; i < rayCount; i++){
+      const ray = document.createElement('span');
+      ray.className = 'ray';
+      const angle = (360 / rayCount) * i + (Math.random() * 10 - 5);
+      ray.style.setProperty('--angle', angle + 'deg');
+      ray.style.setProperty('--ray-delay', (Math.random() * 0.12).toFixed(2) + 's');
+      burst.appendChild(ray);
+    }
+  }
+
+  // ---------- Título letra a letra ----------
+  (function splitTitle(){
+    const el = $('heroTitle');
+    const text = el.textContent;
+    el.textContent = '';
+    [...text].forEach((ch, i) => {
+      const span = document.createElement('span');
+      span.className = 'letter';
+      span.style.setProperty('--i', i);
+      span.textContent = ch === ' ' ? '\u00A0' : ch;
+      el.appendChild(span);
+    });
+  })();
+
+  // ---------- Paralaje sutil de la luna con el ratón ----------
+  if (!prefersReducedMotion && !('ontouchstart' in window)){
+    const parallaxLayer = $('parallaxLayer');
+    document.addEventListener('mousemove', (e) => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 16;
+      const y = (e.clientY / window.innerHeight - 0.5) * 16;
+      parallaxLayer.style.transform = `translate(${x}px, ${y}px)`;
+    });
+  }
+
+  // ---------- Campo de estrellas ----------
+  (function paintStars(){
+    const layer = $('starsLayer');
+    const count = window.innerWidth < 480 ? 36 : 65;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < count; i++){
+      const s = document.createElement('span');
+      s.className = 'star';
+      const size = (Math.random() * 1.6 + 0.8).toFixed(2);
+      s.style.top = (Math.random() * 100).toFixed(2) + '%';
+      s.style.left = (Math.random() * 100).toFixed(2) + '%';
+      s.style.width = size + 'px';
+      s.style.height = size + 'px';
+      s.style.setProperty('--dur', (Math.random() * 3 + 2).toFixed(2) + 's');
+      s.style.setProperty('--delay', (Math.random() * 5).toFixed(2) + 's');
+      s.style.setProperty('--o-min', (Math.random() * 0.2 + 0.15).toFixed(2));
+      s.style.setProperty('--o-max', (Math.random() * 0.3 + 0.7).toFixed(2));
+      frag.appendChild(s);
+    }
+    layer.appendChild(frag);
+  })();
+
+  function escapeHtml(str){
+    return String(str ?? '').replace(/[&<>"']/g, (m) => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    }[m]));
+  }
+
+  const EYE_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+  const EYE_OFF_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.8 21.8 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+
+  function guessTitle(filename){
+    const base = filename.replace(/\.html?$/i, '').replace(/[-_]+/g, ' ');
+    return base.replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  // ---------- Detectar owner/repo de GitHub Pages a partir de la URL ----------
+  function detectRepo(){
+    const host = location.hostname;
+    if (!host.endsWith('.github.io')) return null;
+    const owner = host.split('.')[0];
+    const parts = location.pathname.split('/').filter(Boolean);
+    let repo = host; // páginas de usuario: el repo se llama igual que el dominio
+    if (parts.length && !parts[0].includes('.')) repo = parts[0]; // páginas de proyecto
+    return { owner, repo };
+  }
+
+  async function discoverHtmlFiles(){
+    const info = detectRepo();
+    if (!info) throw new Error('No se pudo detectar el repositorio');
+    const res = await fetch(`https://api.github.com/repos/${info.owner}/${info.repo}/contents/`);
+    if (!res.ok) throw new Error('La API de GitHub respondió con error ' + res.status);
+    const data = await res.json();
+    return data
+      .filter(item => item.type === 'file' && /\.html?$/i.test(item.name) && item.name.toLowerCase() !== 'index.html' && !/^(google[0-9a-f]+|404)\.html$/i.test(item.name))
+      .map(item => item.name)
+      .sort();
+  }
+
+  // ---------- Estado y render del índice ----------
+  const navGrid = $('navGrid');
+  let discoveredFiles = null; // null = aún cargando
+  let overrides = {};         // { 'archivo.html': { private: true/false } }
+  let isAdmin = false;
+
+  let hasRevealed = false;
+
+  function renderNav(){
+    if (discoveredFiles === null){
+      navGrid.innerHTML = '<p class="nav-empty-admin">Buscando páginas…</p>';
+      return;
+    }
+    if (discoveredFiles.length === 0){
+      navGrid.innerHTML = '<p class="nav-empty-admin">No se encontró ninguna página.</p>';
+      return;
+    }
+
+    const pages = discoveredFiles.map(filename => ({
+      filename,
+      title: guessTitle(filename),
+      private: overrides[filename]?.private === true
+    }));
+    const visible = pages.filter(p => !p.private || isAdmin);
+
+    navGrid.innerHTML = '';
+    visible.forEach((p, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'nav-card-wrap';
+      if (!hasRevealed && !prefersReducedMotion){
+        wrap.classList.add('reveal');
+        wrap.style.setProperty('--card-delay', (1.6 + i * 0.12) + 's');
+      }
+
+      const a = document.createElement('a');
+      a.className = 'nav-card' + (p.private ? ' is-private' : '');
+      a.href = p.filename;
+      a.innerHTML = `<div class="nav-title">${escapeHtml(p.title)}</div><p class="nav-desc">${escapeHtml(p.filename)}</p>`;
+      wrap.appendChild(a);
+
+      if (isAdmin){
+        const eyeBtn = document.createElement('button');
+        eyeBtn.className = 'eye-toggle';
+        eyeBtn.title = p.private ? 'Oculta para el resto — pulsa para hacerla visible' : 'Visible para todos — pulsa para ocultarla';
+        eyeBtn.innerHTML = p.private ? EYE_OFF_SVG : EYE_SVG;
+        eyeBtn.addEventListener('click', async () => {
+          eyeBtn.disabled = true;
+          try {
+            await setDoc(doc(db, 'paginas', p.filename), { private: !p.private }, { merge: true });
+          } finally {
+            eyeBtn.disabled = false;
+          }
+        });
+        wrap.appendChild(eyeBtn);
+      }
+
+      navGrid.appendChild(wrap);
+    });
+    hasRevealed = true;
+  }
+
+  discoverHtmlFiles()
+    .then(files => { discoveredFiles = files; renderNav(); })
+    .catch(() => { discoveredFiles = ['lista.html']; renderNav(); });
+
+  onSnapshot(collection(db, 'paginas'), (snap) => {
+    overrides = {};
+    snap.docs.forEach(d => { overrides[d.id] = d.data(); });
+    renderNav();
+  });
+
+  // ---------- Admin login (misma cuenta que en el resto de páginas) ----------
+  const adminToggleBtn = $('adminToggleBtn');
+  const loginDialog = $('loginDialog');
+  const loginEmail = $('loginEmail');
+  const loginPass = $('loginPass');
+  const loginError = $('loginError');
+
+  adminToggleBtn.addEventListener('click', () => {
+    if (isAdmin) {
+      signOut(auth);
+    } else {
+      loginError.textContent = '';
+      loginEmail.value = '';
+      loginPass.value = '';
+      loginDialog.showModal();
+    }
+  });
+
+  $('loginCancel').addEventListener('click', () => loginDialog.close());
+
+  $('loginSubmit').addEventListener('click', async () => {
+    loginError.textContent = '';
+    try {
+      await signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPass.value);
+      loginDialog.close();
+    } catch (e) {
+      loginError.textContent = 'Email o contraseña incorrectos.';
+    }
+  });
+
+  onAuthStateChanged(auth, (user) => {
+    isAdmin = !!user;
+    adminToggleBtn.textContent = isAdmin ? 'Salir del modo admin' : 'Acceso admin';
+    adminToggleBtn.classList.toggle('is-admin', isAdmin);
+    renderNav();
+  });
+</script>
+
+</body>
+</html>

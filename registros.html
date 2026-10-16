@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registros de Moonlight Team · top 10 de mensajes por mes</title>
+<meta name="description" content="Ranking mensual de Moonlight Team: quién ha hablado más cada mes en nuestro roleplay de Genshin Impact, con el top 10 de participantes.">
+<link rel="canonical" href="https://moonlight-team-whatsapp.github.io/registros.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Moonlight Team">
+<meta property="og:locale" content="es_ES">
+<meta property="og:title" content="Registros de Moonlight Team · top 10 de mensajes por mes">
+<meta property="og:description" content="Ranking mensual de Moonlight Team: quién ha hablado más cada mes en nuestro roleplay de Genshin Impact, con el top 10 de participantes.">
+<meta property="og:url" content="https://moonlight-team-whatsapp.github.io/registros.html">
+<meta property="og:image" content="https://moonlight-team-whatsapp.github.io/luna.jpg">
+<meta property="og:image:width" content="500">
+<meta property="og:image:height" content="500">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Registros de Moonlight Team · top 10 de mensajes por mes">
+<meta name="twitter:description" content="Ranking mensual de Moonlight Team: quién ha hablado más cada mes en nuestro roleplay de Genshin Impact, con el top 10 de participantes.">
+<meta name="twitter:image" content="https://moonlight-team-whatsapp.github.io/luna.jpg">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  select{background:rgba(255,255,255,.06);color:var(--ink);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font:inherit;max-width:100%}
+  select option{background:#151b34}
+  .month-nav{display:flex;gap:8px;align-items:center;margin:6px 0 14px}
+  .month-nav select{flex:1;min-width:0;text-transform:capitalize}
+  .summary{color:var(--ink-soft);margin:0 0 12px}
+  .ch-a{color:#7fae72}.ch-aba{color:#d9c383}
+  .rank{width:28px;flex:none;text-align:center;color:var(--gold);font-family:'Cormorant',serif;font-size:1.3rem}
+  .bar{height:5px;border-radius:4px;background:rgba(255,255,255,.07);margin-top:6px;overflow:hidden}
+  .bar i{display:block;height:100%;min-width:3px;background:linear-gradient(90deg,var(--gold-dim),var(--gold))}
+  .imp-month{margin:16px 0 6px;color:var(--gold);font-family:'Cormorant',serif;font-size:1.3rem;text-transform:capitalize}
+  .imp-row{display:grid;grid-template-columns:1fr 64px 1.4fr;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+  .imp-row.warn select{border-color:var(--danger)}
+  .imp-row b{text-align:right}
+  @media(max-width:560px){.imp-row{grid-template-columns:1fr 64px}.imp-row select{grid-column:1/-1}}
+  .dropzone{ position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:26px 16px; text-align:center;
+    border:1.5px dashed var(--gold-dim); border-radius:8px; background:rgba(255,255,255,0.03); cursor:pointer; transition:background .2s, border-color .2s, box-shadow .2s; }
+  .dropzone:hover, .dropzone.over, .dropzone:focus-within{ border-color:var(--gold); background:rgba(217,195,131,.08); }
+  .dropzone.over{ box-shadow:0 0 22px rgba(217,195,131,.25); }
+  .dropzone input{ position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+  .dz-icon{ font-size:1.7rem; line-height:1; }
+  .dz-title{ font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.3rem; color:var(--gold); }
+  .dz-sub{ font-size:.92rem; color:var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<div class="stars" id="starsLayer" aria-hidden="true"></div>
+<div class="mist m1" aria-hidden="true"></div>
+<div class="mist m2" aria-hidden="true"></div>
+<div class="moon" aria-hidden="true"></div>
+
+<div class="wrap">
+  <a class="back-link" href="index.html">← Volver al índice</a>
+  <header class="top">
+    <div>
+      <div class="title-wrap"><h1>Registros</h1></div>
+      <p class="subtitle">Quién ha hablado más cada mes bajo la luna. Elige un mes para ver su top 10.</p>
+    </div>
+    <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
+  </header>
+
+  <section class="panel">
+    <h2>Top 10 del mes</h2>
+    <div class="month-nav">
+      <button class="icon-btn" id="olderBtn" type="button" title="Mes anterior">←</button>
+      <select id="mesSel" aria-label="Mes"></select>
+      <button class="icon-btn" id="newerBtn" type="button" title="Mes siguiente">→</button>
+    </div>
+    <p class="summary" id="summary"></p>
+    <ul class="simple-list" id="topList"></ul>
+    <p class="empty-note" id="emptyNote" hidden>Todavía no hay registros guardados.</p>
+    <div class="li-actions" style="margin-top:12px"><button class="icon-btn icon-btn-confirm" id="pngBtn" type="button" hidden>Descargar top 10 como imagen</button></div>
+  </section>
+
+  <section class="panel" id="fullPanel" hidden>
+    <h2>Lista completa</h2>
+    <p class="panel-desc">Solo admin: todas las personas del mes, con su contacto real. <span class="ch-a">a.</span> = ocupa · <span class="ch-aba">aba.</span> = ocupaba.</p>
+    <ul class="simple-list" id="fullList"></ul>
+    <div class="li-actions" style="margin-top:12px"><button class="icon-btn icon-btn-confirm" id="pngFullBtn" type="button">Descargar lista completa como imagen</button> <button class="icon-btn" id="delMonthBtn" type="button">Borrar este mes</button></div>
+  </section>
+
+  <section class="panel" id="importPanel" hidden>
+    <h2>Importar registro</h2>
+    <p class="panel-desc">Sube el chat exportado de WhatsApp (.txt) o el Excel con columnas <i>Mes · Nombre en el chat · Mensajes · Multimedia</i>. El archivo se lee en tu navegador; no se sube a ningún sitio. Cada nombre se asigna a un miembro de Contactos y la próxima vez se recordará solo.</p>
+    <label class="dropzone" id="drop" for="fileIn">
+      <input type="file" id="fileIn" accept=".txt,.xlsx,.xls,.csv">
+      <span class="dz-icon" aria-hidden="true">🌙</span>
+      <span class="dz-title" id="dzTitle">Arrastra aquí el archivo</span>
+      <span class="dz-sub" id="dzSub">o toca para elegirlo · .txt, .xlsx, .xls o .csv</span>
+    </label>
+    <div id="importOut"></div>
+  </section>
+
+  <footer class="status" id="statusLine"></footer>
+</div>
+
+<dialog id="loginDialog">
+  <div class="dialog-inner">
+    <h3>Acceso admin</h3>
+    <div class="dialog-field"><label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username"></div>
+    <div class="dialog-field"><label for="loginPass">Contraseña</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+    <p class="dialog-error" id="loginError"></p>
+    <div class="dialog-actions">
+      <button class="btn-primary" id="loginSubmit" type="button">Entrar</button>
+      <button class="btn-ghost" id="loginCancel" type="button">Cancelar</button>
+    </div>
+  </div>
+</dialog>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, doc, setDoc, deleteDoc, updateDoc, arrayUnion, onSnapshot, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+  const app = initializeApp({
+    apiKey: "AIzaSyCJw3MuQQrYZ7xaabbKhK5Q4fAAB5xzZsk",
+    authDomain: "moonlight-teamm-947ee.firebaseapp.com",
+    projectId: "moonlight-teamm-947ee",
+    storageBucket: "moonlight-teamm-947ee.firebasestorage.app",
+    messagingSenderId: "664050217208",
+    appId: "1:664050217208:web:194120b9ab73b43a984b0d"
+  });
+  const db = getFirestore(app), auth = getAuth(app);
+  const $ = (id) => document.getElementById(id);
+  const status = (t) => { $('statusLine').textContent = t; };
+
+  (function paintStars(){
+    const layer = $('starsLayer'), frag = document.createDocumentFragment();
+    for (let i = 0; i < (innerWidth < 480 ? 26 : 42); i++){
+      const s = document.createElement('span'); s.className = 'star';
+      const z = (Math.random() * 1.6 + 0.8).toFixed(2);
+      s.style.cssText = `top:${(Math.random()*100).toFixed(2)}%;left:${(Math.random()*100).toFixed(2)}%;width:${z}px;height:${z}px`;
+      s.style.setProperty('--dur', (Math.random()*3+2).toFixed(2)+'s');
+      s.style.setProperty('--delay', (Math.random()*5).toFixed(2)+'s');
+      s.style.setProperty('--o-min', (Math.random()*0.2+0.15).toFixed(2));
+      s.style.setProperty('--o-max', (Math.random()*0.3+0.7).toFixed(2));
+      frag.appendChild(s);
+    }
+    layer.appendChild(frag);
+  })();
+
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const mesLabel = (id) => { const [y, m] = id.split('-'); return MESES[+m - 1] + ' ' + y; };
+  const fmt = (n) => n.toLocaleString('es-ES');
+  const pct = (n, t) => (t ? n / t * 100 : 0).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' %';
+  const maskContacto = (v) => String(v || '').split('').map(c => /[0-9]/.test(c) ? '•' : /[a-zA-ZÀ-ÿ]/.test(c) ? 'x' : c).join('');
+  const lbl = (m) => m.apodoInterno || m.contacto || m.id;
+  // Personajes que ocupa un miembro: el principal (el que lleva más tiempo) primero, los nuevos después
+  const tms = (o) => o.createdAt && o.createdAt.toMillis ? o.createdAt.toMillis() : Number.MAX_SAFE_INTEGER;
+  const ocupadosDe = (miembroId) => ocupados.filter(o => o.miembroId === miembroId)
+    .sort((a, b) => tms(a) - tms(b) || (a.orden ?? 1e9) - (b.orden ?? 1e9));
+  // Personajes de un miembro: a. = ocupa ahora, aba. = ocupaba
+  function charParts(m){
+    const cur = ocupadosDe(m.id).map(o => o.nombre);
+    const past = [...new Set((m.historialPersonajes || []).map(x => x.nombre))];
+    return [...cur.map(n => ['a.' + n, 'a']), ...past.map(n => ['aba.' + n, 'aba'])];
+  }
+  const lblFull = (m) => { const p = charParts(m).map(x => x[0]).join(' / '); return lbl(m) + (p ? ' - ' + p : ''); };
+  const charsHtml = (m) => charParts(m).map(([t, k]) => `<span class="ch-${k}">${esc(t)}</span>`).join(' / ');
+
+  // <PARSE>
+  const CORR = [['kazus','Kazuha|Shogun'],['mary','Wriothesley'],['lynn','Xiao'],['erisboreasgreyratt','Qiqi'],['miyako','Yae Miko']];
+  const simp = (s) => String(s ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  function chatKey(raw){
+    const k = simp(raw).replace(/\s*\/\s*moo?nlight\s*$/, '').replace(/[^\p{L}\p{N}|]+/gu, ' ').trim();
+    const c = CORR.find(([s]) => k === s || (s.length > 5 && k.includes(s)));
+    return c ? simp(c[1]) : k;
+  }
+  const disp = (k) => k.replace(/(^|[\s|])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+  function parseChat(text){
+    const re = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4}),? \d{1,2}:\d{2}(?:\s?[ap]\.?\s?m\.?)? - (.*)$/i;
+    const L = []; let first13 = false, second13 = false;
+    for (const raw of text.replace(/\u202f/g, ' ').replace(/[\u200e\u200f]/g, '').split('\n')){
+      const m = re.exec(raw.replace(/\r$/, '')); if (!m) continue;
+      if (+m[1] > 12) first13 = true; if (+m[2] > 12) second13 = true;
+      L.push([+m[1], +m[2], +m[3], m[4]]);
+    }
+    const monthFirst = second13 && !first13;
+    const out = {};
+    for (const [a, b, y, rest] of L){
+      const i = rest.indexOf(': '); if (i < 1) continue;
+      const id = (y < 100 ? 2000 + y : y) + '-' + String(monthFirst ? a : b).padStart(2, '0');
+      const r = ((out[id] ??= {})[chatKey(rest.slice(0, i))] ??= { n: 0, media: 0 });
+      r.n++;
+      if (/^<(media omitted|multimedia omitido)>$/i.test(rest.slice(i + 2).trim())) r.media++;
+    }
+    return out;
+  }
+  function parseSheet(buf){
+    const wb = XLSX.read(buf, { type: 'array' });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+    const out = {};
+    rows.forEach(r => {
+      const g = (n) => { const k = Object.keys(r).find(x => simp(x).trim().startsWith(n)); return k ? r[k] : ''; };
+      const mes = String(g('mes')).trim().slice(0, 7), nom = g('nombre'), n = +g('mensajes') || 0;
+      if (!/^\d{4}-\d{2}$/.test(mes) || !nom || !n) return;
+      const e = ((out[mes] ??= {})[chatKey(nom)] ??= { n: 0, media: 0 });
+      e.n += n; e.media += +g('multimedia') || 0;
+    });
+    return out;
+  }
+  // </PARSE>
+
+  // ---------- Datos ----------
+  let isAdmin = false, registros = [], miembros = [], ocupados = [], current = null, pending = {};
+  let unsubM = null, unsubO = null;
+
+  // Los ocupados son públicos: se leen siempre para ordenar los personajes (el principal primero) también a los visitantes
+  onSnapshot(collection(db, 'ocupados'), (s) => { ocupados = s.docs.map(d => ({ id: d.id, ...d.data() })); render(); });
+  onSnapshot(collection(db, 'registros'), (snap) => {
+    registros = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.id.localeCompare(a.id));
+    if (!registros.some(r => r.id === current)) current = registros[0]?.id || null;
+    render();
+  }, () => status('No se pudo conectar con la base de datos.'));
+
+  // Personajes guardados en un mes ya importado: se reordenan con la antigüedad actual (el que lleva más tiempo, primero)
+  function ordenarPers(arr){
+    const pos = new Map();
+    [...ocupados].sort((a, b) => tms(a) - tms(b) || (a.orden ?? 1e9) - (b.orden ?? 1e9)).forEach((o, i) => { if (!pos.has(o.nombre)) pos.set(o.nombre, i); });
+    return [...arr].sort((a, b) => (pos.has(a) ? pos.get(a) : 1e9) - (pos.has(b) ? pos.get(b) : 1e9));
+  }
+  const pubLabel = (e) => e.miembroId ? (e.personajes?.length ? ordenarPers(e.personajes).join(' · ') : e.mask || 'Miembro') : 'Antiguo miembro';
+
+  function rowLi(e, rank, total, max){
+    const m = isAdmin && e.miembroId ? miembros.find(x => x.id === e.miembroId) : null;
+    const li = document.createElement('li');
+    li.style.cssText = 'display:flex;gap:10px;align-items:flex-start';
+    li.innerHTML = `<span class="rank">${rank}</span><div style="flex:1;min-width:0">
+      <div class="li-name">${m ? esc(lbl(m)) + (charParts(m).length ? ' - ' + charsHtml(m) : ` <span class="li-admin-only">· ${esc(pubLabel(e))}</span>`) : esc(pubLabel(e))}</div>
+      <div class="li-meta">tiene un <b>${pct(e.mensajes, total)}</b> de los mensajes totales de este mes · ${fmt(e.mensajes)} mensajes (${fmt(e.multimedia || 0)} multimedia)</div>
+      <div class="bar" title="${pct(e.mensajes, total)} del total del mes"><i style="width:${total ? e.mensajes / total * 100 : 0}%${e.mensajes ? '' : ';min-width:0'}"></i></div></div>`;
+    return li;
+  }
+
+  function render(){
+    const sel = $('mesSel');
+    sel.innerHTML = registros.map(r => `<option value="${r.id}">${mesLabel(r.id)}</option>`).join('');
+    if (current) sel.value = current;
+    const idx = registros.findIndex(r => r.id === current), r = registros[idx];
+    $('olderBtn').disabled = idx < 0 || idx >= registros.length - 1;
+    $('newerBtn').disabled = idx <= 0;
+    $('emptyNote').hidden = !!r;
+    $('pngBtn').hidden = !r;
+    $('topList').innerHTML = ''; $('fullList').innerHTML = '';
+    $('summary').textContent = '';
+    if (!r) return;
+    const sorted = [...r.entradas].sort((a, b) => b.mensajes - a.mensajes), max = sorted[0]?.mensajes || 0;
+    $('summary').textContent = `${fmt(r.total)} mensajes en ${mesLabel(r.id)} · ${sorted.length} participantes · ${fmt(r.totalMedia || 0)} multimedia`;
+    sorted.slice(0, 10).forEach((e, i) => $('topList').appendChild(rowLi(e, i + 1, r.total, max)));
+    if (isAdmin){
+      sorted.forEach((e, i) => $('fullList').appendChild(rowLi(e, i + 1, r.total, max)));
+      miembros.filter(m => !r.entradas.some(e => e.miembroId === m.id))
+        .forEach(m => $('fullList').appendChild(rowLi({ miembroId: m.id, mensajes: 0, mask: maskContacto(m.contacto || m.id) }, '–', r.total, max)));
+    }
+  }
+
+  $('mesSel').addEventListener('change', (e) => { current = e.target.value; render(); });
+  $('olderBtn').addEventListener('click', () => { const i = registros.findIndex(r => r.id === current); if (registros[i + 1]) { current = registros[i + 1].id; render(); } });
+  $('newerBtn').addEventListener('click', () => { const i = registros.findIndex(r => r.id === current); if (registros[i - 1]) { current = registros[i - 1].id; render(); } });
+  $('delMonthBtn').addEventListener('click', async () => {
+    if (!current || !confirm('¿Borrar el registro de ' + mesLabel(current) + '?')) return;
+    try { await deleteDoc(doc(db, 'registros', current)); } catch (e) { status('No se pudo borrar.'); }
+  });
+
+  // ---------- Exportar top 10 como imagen (siempre con nombres públicos) ----------
+  async function exportPng(full){
+    const r = registros.find(x => x.id === current); if (!r) return;
+    try { await document.fonts.ready; } catch (e) {}
+    const rows = [...r.entradas].sort((a, b) => b.mensajes - a.mensajes).slice(0, full ? 999 : 10);
+    const W = 1080, H = 230 + rows.length * 92 + 60, S = 2;
+    const cv = document.createElement('canvas'); cv.width = W * S; cv.height = H * S;
+    const x = cv.getContext('2d'); x.scale(S, S);
+    const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#151b34'); g.addColorStop(1, '#090c1a');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    const SERIF = "'Crimson Pro', Georgia, serif", DISP = "'Cormorant', Georgia, serif";
+    x.textBaseline = 'alphabetic';
+    x.fillStyle = '#d9c383'; x.font = `600 62px ${DISP}`; x.fillText('Moonlight Team', 70, 100);
+    x.fillStyle = '#eef0fb'; x.font = `500 38px ${DISP}`;
+    x.fillText((full ? 'Lista completa · ' : 'Top 10 · ') + mesLabel(r.id), 70, 152);
+    x.fillStyle = '#a3adce'; x.font = `400 26px ${SERIF}`;
+    x.fillText(`${fmt(r.total)} mensajes en total · ${r.entradas.length} participantes · ${fmt(r.totalMedia || 0)} multimedia`, 70, 194);
+    rows.forEach((e, i) => {
+      const y = 250 + i * 92;
+      x.fillStyle = '#d9c383'; x.font = `600 40px ${DISP}`; x.textAlign = 'center'; x.fillText(String(i + 1), 90, y + 34);
+      x.textAlign = 'left'; x.fillStyle = '#eef0fb'; x.font = `600 32px ${SERIF}`;
+      const mm = full && isAdmin && e.miembroId ? miembros.find(z => z.id === e.miembroId) : null;
+      const W0 = '#eef0fb', G0 = '#a3adce', parts = [];
+      if (mm){
+        parts.push([lbl(mm), W0]);
+        const cp = charParts(mm);
+        if (cp.length){ parts.push([' - ', G0]); cp.forEach(([t, k], n) => { if (n) parts.push([' / ', G0]); parts.push([t, k === 'a' ? '#7fae72' : '#d9c383']); }); }
+        else parts.push([' · ' + pubLabel(e), G0]);
+      } else parts.push([pubLabel(e), W0]);
+      let px = 140; const maxW = 600;
+      for (const [t, col] of parts){
+        let s = t; x.fillStyle = col;
+        if (px - 140 + x.measureText(s).width > maxW){
+          while (s.length > 1 && px - 140 + x.measureText(s + '…').width > maxW) s = s.slice(0, -1);
+          x.fillText(s + '…', px, y + 30); break;
+        }
+        x.fillText(s, px, y + 30); px += x.measureText(s).width;
+      }
+      x.textAlign = 'right'; x.fillStyle = '#d9c383'; x.font = `600 32px ${SERIF}`;
+      x.fillText(pct(e.mensajes, r.total), W - 70, y + 30);
+      x.fillStyle = '#a3adce'; x.font = `400 22px ${SERIF}`;
+      x.fillText(fmt(e.mensajes) + ' mensajes · ' + fmt(e.multimedia || 0) + ' multimedia', W - 70, y + 58);
+      x.textAlign = 'left';
+      const bw = 600; x.fillStyle = 'rgba(255,255,255,0.08)'; x.fillRect(140, y + 46, bw, 8);
+      const gr = x.createLinearGradient(140, 0, 140 + bw, 0); gr.addColorStop(0, '#8f8256'); gr.addColorStop(1, '#d9c383');
+      x.fillStyle = gr; x.fillRect(140, y + 46, Math.max(3, bw * e.mensajes / r.total), 8);
+    });
+    cv.toBlob((blob) => {
+      if (!blob) { status('No se pudo crear la imagen.'); return; }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = (full ? 'completo-' : 'top10-') + r.id + '.png'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }, 'image/png');
+  }
+  $('pngBtn').addEventListener('click', () => exportPng(false));
+  $('pngFullBtn').addEventListener('click', () => exportPng(true));
+
+  // ---------- Importar ----------
+  function autoMatch(k){
+    const al = miembros.find(m => (m.aliasesChat || []).includes(k)); if (al) return al.id;
+    const t = k.split('|').map(s => s.trim());
+    const o = ocupados.find(o => o.miembroId && t.includes(chatKey(o.nombre)));
+    if (o) return o.miembroId;
+    const h = miembros.find(m => (m.historialPersonajes || []).some(x => t.includes(chatKey(x.nombre))));
+    return h ? h.id : null;
+  }
+
+  const drop = $('drop');
+  ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'dragend'].forEach(t => drop.addEventListener(t, () => drop.classList.remove('over')));
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault(); drop.classList.remove('over');
+    const f = e.dataTransfer.files[0];
+    if (f) leerArchivo(f);
+  });
+  $('fileIn').addEventListener('change', (ev) => { const f = ev.target.files[0]; if (f) leerArchivo(f); });
+  async function leerArchivo(f){
+    if (!/\.(txt|xlsx|xls|csv)$/i.test(f.name)){ status('Ese tipo de archivo no vale: usa .txt, .xlsx, .xls o .csv.'); return; }
+    $('dzTitle').textContent = f.name; $('dzSub').textContent = 'Toca o arrastra otro para cambiarlo';
+    try {
+      pending = /\.txt$/i.test(f.name) ? parseChat(await f.text()) : parseSheet(await f.arrayBuffer());
+      renderImport();
+    } catch (e) { status('No se pudo leer el archivo.'); }
+    $('fileIn').value = '';
+  }
+
+  function renderImport(){
+    const box = $('importOut'); box.innerHTML = '';
+    const ids = Object.keys(pending).sort();
+    if (!ids.length){ box.innerHTML = '<p class="empty-note">No encontré mensajes en ese archivo.</p>'; return; }
+    const opts = [...miembros].sort((a, b) => lbl(a).localeCompare(lbl(b))).map(m => `<option value="${esc(m.id)}">${esc(lblFull(m))}</option>`).join('');
+    ids.forEach(id => {
+      const rows = Object.entries(pending[id]).sort((a, b) => b[1].n - a[1].n);
+      const sec = document.createElement('div');
+      sec.innerHTML = `<div class="imp-month">${mesLabel(id)} · ${fmt(rows.reduce((s, [, v]) => s + v.n, 0))} mensajes</div>` +
+        rows.map(([k, v]) => `<div class="imp-row" data-k="${esc(k)}"><span>${esc(disp(k))}</span><b>${fmt(v.n)}</b>
+          <select><option value="">— Elegir miembro —</option><option value="-">Antiguo miembro</option>${opts}</select></div>`).join('') +
+        `<button class="submit-btn" type="button" style="margin-top:12px">Guardar ${mesLabel(id)}</button>`;
+      sec.querySelectorAll('.imp-row').forEach(r => {
+        const s = r.querySelector('select'), a = autoMatch(r.dataset.k);
+        if (a) s.value = a;
+        r.classList.toggle('warn', !s.value);
+        s.addEventListener('change', () => r.classList.toggle('warn', !s.value));
+      });
+      sec.querySelector('.submit-btn').addEventListener('click', () => saveMonth(id, sec));
+      box.appendChild(sec);
+    });
+  }
+
+  async function saveMonth(id, sec){
+    const rows = [...sec.querySelectorAll('.imp-row')];
+    if (rows.some(r => !r.querySelector('select').value)){ status('Faltan personas por asignar (marcadas en rojo).'); return; }
+    if (registros.some(r => r.id === id) && !confirm('Ya existe ' + mesLabel(id) + '. ¿Sustituirlo?')) return;
+    const agg = {}, ex = [];
+    rows.forEach(r => {
+      const v = pending[id][r.dataset.k], mid = r.querySelector('select').value;
+      if (mid === '-'){ ex.push({ miembroId: null, mensajes: v.n, multimedia: v.media }); return; }
+      const e = (agg[mid] ??= { miembroId: mid, mensajes: 0, multimedia: 0 });
+      e.mensajes += v.n; e.multimedia += v.media;
+    });
+    const entradas = [...Object.values(agg).map(e => {
+      const m = miembros.find(x => x.id === e.miembroId);
+      e.mask = maskContacto(m?.contacto || e.miembroId);
+      e.personajes = ocupadosDe(e.miembroId).map(o => o.nombre);
+      return e;
+    }), ...ex];
+    const [y, mo] = id.split('-');
+    try {
+      await setDoc(doc(db, 'registros', id), {
+        anio: +y, mes: +mo, entradas,
+        total: entradas.reduce((s, e) => s + e.mensajes, 0),
+        totalMedia: entradas.reduce((s, e) => s + e.multimedia, 0),
+        importadoEn: serverTimestamp()
+      });
+      await Promise.all(rows.filter(r => !['', '-'].includes(r.querySelector('select').value))
+        .map(r => updateDoc(doc(db, 'miembros', r.querySelector('select').value), { aliasesChat: arrayUnion(r.dataset.k) })));
+      current = id; sec.remove(); status(mesLabel(id) + ' guardado.'); render();
+    } catch (e) { status('No se pudo guardar (' + (e.code || 'error') + '). ¿Has publicado las reglas de Firestore?'); }
+  }
+
+  // ---------- Admin ----------
+  $('adminToggleBtn').addEventListener('click', () => {
+    if (isAdmin) signOut(auth);
+    else { $('loginError').textContent = ''; $('loginEmail').value = ''; $('loginPass').value = ''; $('loginDialog').showModal(); }
+  });
+  $('loginCancel').addEventListener('click', () => $('loginDialog').close());
+  $('loginSubmit').addEventListener('click', async () => {
+    try { await signInWithEmailAndPassword(auth, $('loginEmail').value.trim(), $('loginPass').value); $('loginDialog').close(); }
+    catch (e) { $('loginError').textContent = 'Email o contraseña incorrectos.'; }
+  });
+
+  onAuthStateChanged(auth, (user) => {
+    isAdmin = !!user;
+    $('adminToggleBtn').textContent = isAdmin ? 'Salir del modo admin' : 'Acceso admin';
+    $('adminToggleBtn').classList.toggle('is-admin', isAdmin);
+    $('fullPanel').hidden = $('importPanel').hidden = !isAdmin;
+    if (isAdmin && !unsubM){
+      unsubM = onSnapshot(collection(db, 'miembros'), (s) => { miembros = s.docs.map(d => ({ id: d.id, ...d.data() })); render(); });
+    } else if (!isAdmin && unsubM){
+      unsubM(); unsubM = null; miembros = []; $('importOut').innerHTML = '';
+    }
+    render();
+  });
+</script>
+
+</body>
+</html>

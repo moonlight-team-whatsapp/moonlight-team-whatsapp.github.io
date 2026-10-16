@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoonCard · crea tu tarjeta de presentación · Moonlight Team</title>
+<meta name="description" content="MoonCard: diseña tu propia tarjeta de presentación con el ambiente de Moonlight. Elige tipografía, colores, foto de tu personaje y adornos, y descárgala como imagen.">
+<link rel="canonical" href="https://moonlight-team-whatsapp.github.io/mooncard.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Moonlight Team">
+<meta property="og:locale" content="es_ES">
+<meta property="og:title" content="MoonCard · crea tu tarjeta de presentación · Moonlight Team">
+<meta property="og:description" content="MoonCard: diseña tu propia tarjeta de presentación con el ambiente de Moonlight. Elige tipografía, colores, foto de tu personaje y adornos, y descárgala como imagen.">
+<meta property="og:url" content="https://moonlight-team-whatsapp.github.io/mooncard.html">
+<meta property="og:image" content="https://moonlight-team-whatsapp.github.io/luna.jpg">
+<meta name="twitter:card" content="summary">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500;1,600&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Cinzel:wght@600&family=Playfair+Display:ital,wght@1,600&family=Dancing+Script:wght@700&family=Great+Vibes&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  html, body{ height:100%; overflow:hidden; }
+  .app{ position:relative; z-index:2; height:100dvh; max-width:1180px; margin:0 auto; padding:10px 14px; display:flex; flex-direction:column; gap:8px; }
+  .bar{ display:flex; align-items:center; gap:14px; flex:0 0 auto; }
+  .bar h1{ margin:0; font-size:1.7rem; line-height:1.1; }
+  .bar .back-link{ margin:0; white-space:nowrap; flex:0 0 auto; overflow:visible; }
+  .bar .sub{ margin:0; font-size:.92rem; color:var(--ink-soft); }
+  .main{ flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr); gap:14px; }
+  .main > section.panel{ margin:0; min-height:0; }
+  #cardPanel{ padding:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  #card{ display:block; width:min(100%, calc((100dvh - 135px) * 1.6129)); height:auto; border-radius:10px; box-shadow:0 10px 34px rgba(0,0,0,.45); }
+  #ctrl{ padding:10px 12px; display:flex; flex-direction:column; overflow:hidden; }
+  .tabs{ display:flex; gap:6px; flex:0 0 auto; margin-bottom:10px; }
+  .tabs button{ flex:1; font-family:'Crimson Pro',serif; font-size:1rem; padding:7px 4px; border:1px solid var(--border); border-radius:3px; background:rgba(255,255,255,0.04); color:var(--ink-soft); cursor:pointer; }
+  .tabs button.on{ border-color:var(--gold); color:var(--gold); background:rgba(217,195,131,.12); }
+  .tabbody{ flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; padding:0 8px 0 2px; }
+  .tabpane[hidden]{ display:none; }
+  .foot{ flex:0 0 auto; border-top:1px solid var(--border); margin-top:8px; padding-top:8px; }
+  .foot .acts{ margin-top:0; }
+  .foot .cc-note{ margin:6px 0 0; min-height:1.2em; }
+  .cc-note{ margin:10px 4px 0; font-size:.92rem; color:var(--ink-soft); }
+  .f{ margin-bottom:12px; }
+  .f > label{ display:block; margin-bottom:5px; color:var(--ink-soft); font-size:.95rem; }
+  .f input[type=text], .f textarea, .f select{ width:100%; }
+  .f textarea{ min-height:76px; resize:vertical; font-family:'Crimson Pro',serif; font-size:1rem; padding:8px 10px; border:1px solid var(--border); border-radius:3px; background:rgba(255,255,255,0.04); color:var(--ink); }
+  .f select{ font-family:'Crimson Pro',serif; font-size:1rem; padding:8px 10px; border:1px solid var(--border); border-radius:3px; background:#1a2146; color:var(--ink); }
+  .f input[type=range]{ width:100%; padding:0; }
+  .f input[type=color]{ width:100%; height:40px; padding:2px; cursor:pointer; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .seg{ display:flex; gap:8px; }
+  .seg button, .mini{ flex:1; font-family:'Crimson Pro',serif; font-size:.98rem; padding:7px 8px; border:1px solid var(--border); border-radius:3px; background:rgba(255,255,255,0.04); color:var(--ink-soft); cursor:pointer; transition:all .15s; }
+  .seg button:hover, .mini:hover{ border-color:var(--gold-dim); }
+  .seg button.on{ border-color:var(--gold); color:var(--gold); background:rgba(217,195,131,.12); }
+  .mini{ flex:0 0 auto; }
+  .sw{ display:flex; gap:10px; flex-wrap:wrap; }
+  .sw button{ width:40px; height:40px; border-radius:50%; border:2px solid var(--border); cursor:pointer; padding:0; }
+  .sw button.on{ border-color:var(--gold); box-shadow:0 0 12px rgba(217,195,131,.5); }
+  .stk{ display:flex; gap:6px; flex-wrap:wrap; }
+  .stk button{ font-size:1.4rem; width:44px; height:44px; border:1px solid var(--border); border-radius:6px; background:rgba(255,255,255,0.04); cursor:pointer; }
+  .stk button:hover{ border-color:var(--gold); }
+  .acts{ display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+  .chk{ display:flex; align-items:center; gap:8px; }
+  .chk input{ width:auto; margin:0; }
+  @media (max-width:820px){
+    .app{ padding:8px 10px; gap:6px; }
+    .bar .sub{ display:none; }
+    .bar h1{ font-size:1.4rem; }
+    .main{ grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); gap:8px; }
+    #cardPanel{ padding:8px; }
+    #card{ width:min(100%, calc(34dvh * 1.6129)); }
+    #cardPanel .cc-note{ display:none; }
+    .f{ margin-bottom:10px; }
+  }
+
+  /* ---- Inmersivo: sin cajas, todo sobre el cielo ---- */
+  .moon{ display:none; }
+  #cardPanel, #ctrl{ background:none; border:none; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; border-radius:0; }
+  #cardPanel{ padding:0; gap:10px; }
+  #card{ width:min(100%, calc((100dvh - 120px) * 1.6129)); border-radius:14px; box-shadow:0 0 0 1px rgba(217,195,131,.22), 0 24px 70px rgba(0,0,0,.6), 0 0 90px rgba(217,195,131,.07); }
+  #cardPanel .cc-note{ margin:0; text-align:center; font-style:italic; opacity:.75; }
+  #ctrl{ padding:4px 0 0 22px; border-left:1px solid rgba(197,209,255,.14); }
+  .tabs{ gap:2px; border-bottom:1px solid rgba(197,209,255,.14); margin-bottom:16px; }
+  .tabs button{ background:none; border:none; border-bottom:2px solid transparent; border-radius:0; margin-bottom:-1px; padding:8px 4px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.1rem; color:var(--ink-soft); transition:color .15s, border-color .15s; }
+  .tabs button:hover{ color:var(--ink); }
+  .tabs button.on{ background:none; color:var(--gold); border-bottom-color:var(--gold); }
+  .f > label{ font-size:.9rem; letter-spacing:.02em; }
+  .f input[type=text], .f textarea, .f select{ background:rgba(255,255,255,.035); border:1px solid rgba(197,209,255,.16); }
+  .f input[type=text]:focus, .f textarea:focus, .f select:focus{ outline:none; border-color:var(--gold-dim); box-shadow:0 0 0 3px rgba(217,195,131,.12); }
+  .seg button, .mini{ font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.02rem; background:none; border:1px solid rgba(217,195,131,.35); color:var(--gold); border-radius:3px; padding:7px 14px; }
+  .seg button:hover, .mini:hover{ background:rgba(217,195,131,.10); border-color:var(--gold); }
+  .seg button.on{ background:rgba(217,195,131,.16); border-color:var(--gold); color:#f1e2b0; }
+  .stk button{ background:rgba(255,255,255,.035); border:1px solid rgba(197,209,255,.14); }
+  .sw button{ border:2px solid rgba(197,209,255,.25); }
+  .chk input{ accent-color:var(--gold); }
+  /* deslizadores */
+  .f input[type=range]{ -webkit-appearance:none; appearance:none; background:transparent; border:none; padding:0; height:24px; cursor:pointer; }
+  .f input[type=range]:focus{ outline:none; }
+  .f input[type=range]::-webkit-slider-runnable-track{ height:3px; border-radius:3px; background:linear-gradient(90deg, rgba(217,195,131,.55), rgba(197,209,255,.18)); }
+  .f input[type=range]::-moz-range-track{ height:3px; border-radius:3px; background:linear-gradient(90deg, rgba(217,195,131,.55), rgba(197,209,255,.18)); }
+  .f input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:18px; height:18px; margin-top:-7.5px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #fff3c9, var(--gold) 60%); border:1px solid #8a7430; box-shadow:0 0 10px rgba(217,195,131,.55); }
+  .f input[type=range]::-moz-range-thumb{ width:16px; height:16px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #fff3c9, #d9c383 60%); border:1px solid #8a7430; box-shadow:0 0 10px rgba(217,195,131,.55); }
+  .f input[type=range]:focus-visible::-webkit-slider-thumb{ box-shadow:0 0 0 3px rgba(217,195,131,.3), 0 0 10px rgba(217,195,131,.55); }
+  .f input[type=color]{ -webkit-appearance:none; appearance:none; height:34px; padding:3px; background:rgba(255,255,255,.035); border:1px solid rgba(197,209,255,.16); border-radius:3px; }
+  .f input[type=color]::-webkit-color-swatch-wrapper{ padding:0; }
+  .f input[type=color]::-webkit-color-swatch{ border:none; border-radius:2px; }
+  .f input[type=color]::-moz-color-swatch{ border:none; border-radius:2px; }
+  .f select{ color-scheme:dark; }
+  .f select option{ background:#141a36; color:#eef0fb; font-size:1.1rem; padding:6px; }
+  /* barra de acciones */
+  .foot{ border-top:1px solid rgba(197,209,255,.14); padding-top:12px; }
+  .foot .acts{ gap:12px; align-items:center; }
+  .foot .btn-primary{ font-family:'Cormorant',serif; font-style:italic; font-weight:700; font-size:1.1rem; letter-spacing:.01em; padding:9px 22px; border:none; border-radius:3px; background:linear-gradient(180deg,#ecdca6,#d1b968); color:#241c0c; cursor:pointer; box-shadow:0 4px 18px rgba(217,195,131,.25); transition:transform .12s, box-shadow .12s; }
+  .foot .btn-primary:hover{ transform:translateY(-1px); box-shadow:0 6px 22px rgba(217,195,131,.38); }
+  .foot .btn-ghost{ font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.05rem; padding:9px 16px; border:1px solid rgba(197,209,255,.22); border-radius:3px; background:none; color:var(--ink-soft); cursor:pointer; }
+  .foot .btn-ghost:hover{ border-color:var(--gold-dim); color:var(--ink); }
+  @media (max-width:820px){
+    #ctrl{ padding:0; border-left:none; }
+    #card{ width:min(100%, calc(34dvh * 1.6129)); }
+    .tabs{ margin-bottom:10px; }
+    .tabs button{ font-size:1.02rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="starsLayer" aria-hidden="true"></div>
+<div class="mist m1" aria-hidden="true"></div>
+<div class="mist m2" aria-hidden="true"></div>
+<div class="moon" aria-hidden="true"></div>
+
+<div class="app">
+  <div class="bar">
+    <a class="back-link" href="index.html">← Índice</a>
+    <div class="title-wrap"><h1>MoonCard</h1></div>
+    <p class="sub">Todo se queda en tu navegador: no se sube nada.</p>
+  </div>
+
+  <div class="main">
+    <section class="panel" id="cardPanel">
+      <canvas id="card" width="1000" height="620" aria-label="Vista previa de tu MoonCard"></canvas>
+      <p class="cc-note">Arrastra con el dedo o el ratón: adornos, tu imagen o la foto de fondo.</p>
+    </section>
+
+    <section class="panel" id="ctrl">
+      <div class="tabs" id="tabs" role="tablist">
+        <button type="button" data-t="t1" class="on">Texto</button>
+        <button type="button" data-t="t2">Imagen</button>
+        <button type="button" data-t="t3">Estilo</button>
+        <button type="button" data-t="t5">Fondo</button>
+        <button type="button" data-t="t4">Adornos</button>
+      </div>
+
+      <div class="tabbody">
+        <div class="tabpane" id="t1">
+          <div class="f"><label for="iSub">Personaje</label><input id="iSub" type="text" maxlength="40" value="Tu personaje" autocomplete="off"></div>
+          <div class="f"><label for="iNombre">Tu nombre (opcional)</label><input id="iNombre" type="text" maxlength="24" value="" placeholder="Si lo dejas vacío, se verá tu personaje en grande" autocomplete="off"></div>
+          <div class="f"><label for="iBio">Sobre ti</label><textarea id="iBio" maxlength="160">Cuéntanos un poco de ti bajo la luna…</textarea></div>
+          <div class="f chk"><input id="iTag" type="checkbox" checked><label for="iTag" style="margin:0">Mostrar «Moonlight Team» en la tarjeta</label></div>
+        </div>
+
+        <div class="tabpane" id="t2" hidden>
+          <div class="f">
+            <label>Imagen de tu personaje</label>
+            <div class="acts" style="margin-top:0">
+              <button class="mini" id="bFoto" type="button">Elegir imagen</button>
+              <button class="mini" id="bFotoQ" type="button">Quitar</button>
+              <input type="file" id="iFoto" accept="image/*" hidden>
+            </div>
+            <p class="cc-note" style="margin:6px 0 0">Usa una imagen de tu personaje, no una foto tuya. Para encuadrarla, haz zoom y arrástrala dentro del marco, sobre la tarjeta.</p>
+          </div>
+          <div class="f"><label>Forma</label><div class="seg" id="sShape"><button type="button" data-v="circle" class="on">Círculo</button><button type="button" data-v="square">Cuadrado</button></div></div>
+          <div class="f"><label for="iZoom">Zoom de la imagen</label><input id="iZoom" type="range" min="1" max="3" step="0.05" value="1"></div>
+        </div>
+
+        <div class="tabpane" id="t3" hidden>
+          <div class="f"><label for="iFont">Tipografía del nombre</label><select id="iFont"></select></div>
+          <div class="f"><label for="iSize">Tamaño del nombre</label><input id="iSize" type="range" min="24" max="110" value="76"></div>
+          <div class="row2">
+            <div class="f"><label for="iCName">Color del nombre</label><input id="iCName" type="color" value="#eef0fb"></div>
+            <div class="f"><label for="iCAcc">Color de los detalles</label><input id="iCAcc" type="color" value="#d9c383"></div>
+          </div>
+        </div>
+
+        <div class="tabpane" id="t5" hidden>
+          <div class="f"><label>Estilo de fondo</label><div class="sw" id="swatches"></div></div>
+          <div class="f">
+            <label>Foto de fondo (opcional)</label>
+            <div class="acts" style="margin-top:0">
+              <button class="mini" id="bBg" type="button">Elegir foto</button>
+              <button class="mini" id="bBgQ" type="button">Quitar</button>
+              <input type="file" id="iBg" accept="image/*" hidden>
+            </div>
+            <p class="cc-note" style="margin:6px 0 0">Arrastra la foto sobre la tarjeta (fuera del marco de tu personaje) para encuadrarla.</p>
+          </div>
+          <div class="f"><label for="iBgZoom">Zoom de la foto</label><input id="iBgZoom" type="range" min="1" max="3" step="0.05" value="1"></div>
+          <div class="f"><label for="iDim">Oscurecer la foto</label><input id="iDim" type="range" min="0" max="85" value="40"></div>
+        </div>
+
+        <div class="tabpane" id="t4" hidden>
+          <div class="f">
+            <label>Toca un adorno para añadirlo</label>
+            <div class="stk" id="stk"></div>
+          </div>
+          <div class="f">
+            <div class="acts" style="margin-top:0"><button class="mini" id="bStImg" type="button">📷 Subir fotos como adornos</button><input type="file" id="iStImg" accept="image/*" multiple hidden></div>
+            <p class="cc-note" style="margin:6px 0 0">Vale cualquier imagen. Los PNG con fondo transparente quedan como pegatinas.</p>
+          </div>
+          <div class="f"><label for="iStSize">Tamaño del adorno seleccionado</label><input id="iStSize" type="range" min="30" max="400" value="70" style="width:100%;padding:0"></div>
+          <div class="acts"><button class="mini" id="bStDel" type="button">Quitar seleccionado</button><button class="mini" id="bStClr" type="button">Quitar todos</button></div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <div class="acts">
+          <button class="btn-primary" id="bDown" type="button">Descargar imagen</button>
+          <button class="btn-ghost" id="bReset" type="button">Empezar de nuevo</button>
+        </div>
+        <p class="cc-note" id="msg"></p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  var tb = document.querySelectorAll('#tabs button');
+  tb.forEach(function(b){ b.onclick = function(){
+    tb.forEach(function(x){ x.classList.toggle('on', x === b); });
+    document.querySelectorAll('.tabpane').forEach(function(p){ p.hidden = p.id !== b.dataset.t; });
+  }; });
+})();
+</script>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var W = 1000, H = 620;
+  var FONTS = [
+    { n:'Cormorant (elegante)', f:'Cormorant', s:'italic 600' },
+    { n:'Crimson Pro (clásica)', f:'Crimson Pro', s:'600' },
+    { n:'Cinzel (épica)', f:'Cinzel', s:'600' },
+    { n:'Playfair Display (cursiva)', f:'Playfair Display', s:'italic 600' },
+    { n:'Dancing Script (manuscrita)', f:'Dancing Script', s:'700' },
+    { n:'Great Vibes (caligrafía)', f:'Great Vibes', s:'400' }
+  ];
+  var THEMES = [
+    { n:'Noche', a:'#0e1326', b:'#090c1a', glow:'#d9c383', star:'255,255,255', name:'#eef0fb', acc:'#d9c383', ink:'#cdd3ee' },
+    { n:'Aurora', a:'#0b2230', b:'#08121f', glow:'#6ee7d8', star:'220,255,250', name:'#e9fffb', acc:'#6ee7d8', ink:'#c9ece8' },
+    { n:'Atardecer', a:'#2b1320', b:'#130a14', glow:'#ff9e5a', star:'255,235,220', name:'#fff1e6', acc:'#ffb072', ink:'#f0d9c8' },
+    { n:'Sakura', a:'#2a1230', b:'#170a21', glow:'#ff8fb3', star:'255,225,240', name:'#ffeef5', acc:'#ff9fc0', ink:'#efd3e0' },
+    { n:'Bosque', a:'#0c1f1a', b:'#07120f', glow:'#8fe3a0', star:'225,255,230', name:'#effff2', acc:'#8fe3a0', ink:'#cfe8d4' },
+    { n:'Pergamino', a:'#f3ecdc', b:'#e3d8bd', glow:'#c9a24a', star:'', name:'#2a2438', acc:'#9a7424', ink:'#4a4258' }
+  ];
+  var ICONS = ['🌙','✦','⭐','🌸','❄️','🔥','⚡','🍃','💧','☁️','🦋','👑'];
+  var DEF = function(){ return { nombre:'', sub:'Tu personaje', bg:null, dim:.4, ix:0, iy:0, bx:0, by:0, bz:1, bio:'Cuéntanos un poco de ti bajo la luna…', font:0, size:76, nameColor:THEMES[0].name, accent:THEMES[0].acc, theme:0, shape:'circle', zoom:1, tag:true, img:null, stickers:[], sel:-1 }; };
+  var S = DEF();
+
+  // ---------- Estrellas del fondo de la página ----------
+  (function(){ var l = $('starsLayer'), n = innerWidth < 480 ? 24 : 40, fr = document.createDocumentFragment();
+    for (var i = 0; i < n; i++){ var s = document.createElement('span'); s.className = 'star'; var z = (Math.random() * 1.6 + .8).toFixed(2);
+      s.style.top = (Math.random() * 100).toFixed(2) + '%'; s.style.left = (Math.random() * 100).toFixed(2) + '%'; s.style.width = z + 'px'; s.style.height = z + 'px';
+      s.style.setProperty('--dur', (Math.random() * 3 + 2).toFixed(2) + 's'); s.style.setProperty('--delay', (Math.random() * 5).toFixed(2) + 's');
+      s.style.setProperty('--o-min', (Math.random() * .2 + .15).toFixed(2)); s.style.setProperty('--o-max', (Math.random() * .3 + .7).toFixed(2)); fr.appendChild(s); }
+    l.appendChild(fr); })();
+
+  // ---------- Dibujo de la tarjeta ----------
+  function rr(c, x, y, w, h, r){ c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+  function wrapLines(c, text, maxW, maxLines){
+    var out = [], paras = String(text).split('\n');
+    for (var p = 0; p < paras.length; p++){
+      var words = paras[p].split(/\s+/).filter(Boolean), line = '';
+      if (!words.length){ out.push(''); continue; }
+      for (var i = 0; i < words.length; i++){
+        var w = words[i];
+        if (c.measureText(w).width > maxW){
+          // palabra más ancha que la línea: se parte por letras
+          if (line){ out.push(line); line = ''; }
+          var ch = Array.from(w), cur = '';
+          for (var k = 0; k < ch.length; k++){
+            var tt = cur + ch[k];
+            if (c.measureText(tt).width > maxW && cur){ out.push(cur); cur = ch[k]; } else cur = tt;
+          }
+          line = cur; continue;
+        }
+        var t = line ? line + ' ' + w : w;
+        if (c.measureText(t).width > maxW && line){ out.push(line); line = w; } else line = t;
+      }
+      out.push(line);
+    }
+    if (out.length > maxLines){ out = out.slice(0, maxLines); var last = out[maxLines - 1]; while (last.length > 1 && c.measureText(last + '…').width > maxW) last = last.slice(0, -1); out[maxLines - 1] = last.trim() + '…'; }
+    return out;
+  }
+  // "Sobre ti": se reduce la letra hasta que todo el texto cabe (nunca se corta con «…» salvo que sea absurdo)
+  function fitBio(c, text, maxW, top, bottom){
+    var size = 25, ls;
+    for (; size >= 13; size--){
+      c.font = '400 ' + size + 'px "Crimson Pro", serif';
+      ls = wrapLines(c, text, maxW, 999);
+      if (top + (ls.length - 1) * size * 1.44 <= bottom) return { ls: ls, size: size, lh: size * 1.44 };
+    }
+    size = 13; c.font = '400 13px "Crimson Pro", serif';
+    var lh = size * 1.44, max = Math.max(1, Math.floor((bottom - top) / lh) + 1);
+    return { ls: wrapLines(c, text, maxW, max), size: size, lh: lh };
+  }
+  // tamaño en pantalla de un adorno (las fotos conservan su proporción; size = lado mayor)
+  function ext(st){ if (!st.img) return { w: st.size, h: st.size }; var k = st.size / Math.max(st.img.width, st.img.height); return { w: st.img.width * k, h: st.img.height * k }; }
+  // reduce imágenes grandes para no gastar memoria
+  function fit(b, max){ var k = Math.min(1, max / Math.max(b.width, b.height)); if (k === 1) return b; var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(b.width * k)); c.height = Math.max(1, Math.round(b.height * k)); c.getContext('2d').drawImage(b, 0, 0, c.width, c.height); return c; }
+  var PX = 70, PY = 150, PS = 320;
+  // tamaño de la imagen del personaje y margen sobrante (lo que se puede desplazar)
+  function imgGeo(){ var sc = Math.max(PS / S.img.width, PS / S.img.height) * S.zoom, iw = S.img.width * sc, ih = S.img.height * sc; return { iw: iw, ih: ih, sx: Math.max(0, (iw - PS) / 2), sy: Math.max(0, (ih - PS) / 2) }; }
+  function bgGeo(){ var bs = Math.max(W / S.bg.width, H / S.bg.height) * S.bz, bw = S.bg.width * bs, bh = S.bg.height * bs; return { sx: Math.max(0, (bw - W) / 2), sy: Math.max(0, (bh - H) / 2) }; }
+  function clamp1(v){ return Math.max(-1, Math.min(1, v)); }
+  function draw(c, preview){
+    var th = THEMES[S.theme], F = FONTS[S.font], acc = S.accent;
+    var bg = c.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, th.a); bg.addColorStop(1, th.b);
+    c.fillStyle = bg; c.fillRect(0, 0, W, H);
+    if (S.bg){
+      var bs = Math.max(W / S.bg.width, H / S.bg.height) * S.bz, bw = S.bg.width * bs, bh = S.bg.height * bs;
+      c.drawImage(S.bg, W / 2 + S.bx * (bw - W) / 2 - bw / 2, H / 2 + S.by * (bh - H) / 2 - bh / 2, bw, bh);
+      c.globalAlpha = S.dim; c.fillStyle = th.b; c.fillRect(0, 0, W, H); c.globalAlpha = 1;
+    } else {
+      var gl = c.createRadialGradient(W * .86, 40, 0, W * .86, 40, 520); gl.addColorStop(0, th.glow + '40'); gl.addColorStop(1, th.glow + '00');
+      c.fillStyle = gl; c.fillRect(0, 0, W, H);
+    }
+    if (th.star && !S.bg){
+      var seed = 4242, rnd = function(){ return (seed = (seed * 16807) % 2147483647) / 2147483647; };
+      for (var i = 0; i < 90; i++){ c.fillStyle = 'rgba(' + th.star + ',' + (0.2 + rnd() * 0.7).toFixed(2) + ')'; c.beginPath(); c.arc(rnd() * W, rnd() * H, 0.6 + rnd() * 1.2, 0, 7); c.fill(); }
+    }
+    // marco
+    c.lineWidth = 2; c.strokeStyle = acc; c.globalAlpha = .6; rr(c, 18, 18, W - 36, H - 36, 18); c.stroke();
+    c.globalAlpha = .2; c.lineWidth = 1; rr(c, 30, 30, W - 60, H - 60, 12); c.stroke(); c.globalAlpha = 1;
+    // imagen
+    var px = 70, py = 150, ps = 320, cx = px + ps / 2, cy = py + ps / 2;
+    c.save();
+    if (S.shape === 'circle'){ c.beginPath(); c.arc(cx, cy, ps / 2, 0, 7); } else rr(c, px, py, ps, ps, 26);
+    c.shadowColor = acc + '66'; c.shadowBlur = 24; c.fillStyle = 'rgba(255,255,255,0.06)'; c.fill(); c.shadowBlur = 0;
+    c.clip();
+    if (S.img){
+      var g = imgGeo();
+      c.drawImage(S.img, cx + S.ix * g.sx - g.iw / 2, cy + S.iy * g.sy - g.ih / 2, g.iw, g.ih);
+    } else { c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '110px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif'; c.globalAlpha = .55; c.fillText('🌙', cx, cy + 6); c.globalAlpha = 1; }
+    c.restore();
+    c.lineWidth = 4; c.strokeStyle = acc;
+    if (S.shape === 'circle'){ c.beginPath(); c.arc(cx, cy, ps / 2, 0, 7); } else rr(c, px, py, ps, ps, 26);
+    c.stroke();
+    // textos
+    var tx = 450, maxW = W - tx - 70;
+    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    var nom = (S.nombre || '').trim(), per = (S.sub || '').trim();
+    var big = nom || per || ' ', small = nom ? per : '';
+    var sz = S.size; c.font = F.s + ' ' + sz + 'px "' + F.f + '", serif';
+    while (sz > 24 && c.measureText(big).width > maxW){ sz -= 2; c.font = F.s + ' ' + sz + 'px "' + F.f + '", serif'; }
+    c.fillStyle = S.nameColor; c.fillText(big, tx, 235, maxW);
+    if (small){ c.font = 'italic 500 30px "Cormorant", serif'; c.fillStyle = acc; c.fillText(small, tx, 282, maxW); }
+    // adorno divisor
+    c.strokeStyle = acc; c.globalAlpha = .6; c.lineWidth = 1.4;
+    c.beginPath(); c.moveTo(tx, 316); c.lineTo(tx + maxW * .42, 316); c.stroke();
+    c.beginPath(); c.moveTo(tx + maxW * .58, 316); c.lineTo(tx + maxW, 316); c.stroke(); c.globalAlpha = 1;
+    c.fillStyle = acc; c.beginPath(); c.moveTo(tx + maxW * .5, 307); c.lineTo(tx + maxW * .5 + 9, 316); c.lineTo(tx + maxW * .5, 325); c.lineTo(tx + maxW * .5 - 9, 316); c.closePath(); c.fill();
+    var fb = fitBio(c, S.bio, maxW, 372, S.tag ? 535 : 560);
+    c.font = '400 ' + fb.size + 'px "Crimson Pro", serif'; c.fillStyle = th.ink;
+    for (var j = 0; j < fb.ls.length; j++) c.fillText(fb.ls[j], tx, 372 + j * fb.lh);
+    if (S.tag){ c.textAlign = 'right'; c.font = 'italic 500 24px "Cormorant", serif'; c.fillStyle = acc; c.globalAlpha = .85; c.fillText('Moonlight Team 🌙', W - 56, H - 50); c.globalAlpha = 1; c.textAlign = 'left'; }
+    // adornos
+    for (var k = 0; k < S.stickers.length; k++){
+      var st = S.stickers[k];
+      var ex = ext(st);
+      if (st.img){ c.drawImage(st.img, st.x - ex.w / 2, st.y - ex.h / 2, ex.w, ex.h); }
+      else { c.font = st.size + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = acc; c.fillText(st.sym, st.x, st.y); }
+      if (preview && k === S.sel){ c.strokeStyle = acc; c.lineWidth = 2; c.setLineDash([6, 6]);
+        if (st.img){ c.strokeRect(st.x - ex.w / 2 - 4, st.y - ex.h / 2 - 4, ex.w + 8, ex.h + 8); } else { c.beginPath(); c.arc(st.x, st.y, st.size * .62, 0, 7); c.stroke(); }
+        c.setLineDash([]); }
+    }
+  }
+  var cv = $('card'), ctx = cv.getContext('2d'), raf = 0;
+  // El tamaño máximo del nombre depende de lo largo que sea: el deslizador no deja pasarse
+  function limitSize(){
+    var F = FONTS[S.font], big = (S.nombre || '').trim() || (S.sub || '').trim() || ' ', maxW = W - 450 - 70, m = 24;
+    for (var sz = 110; sz >= 24; sz -= 2){ ctx.font = F.s + ' ' + sz + 'px "' + F.f + '", serif'; if (ctx.measureText(big).width <= maxW){ m = sz; break; } }
+    var r = $('iSize'); r.max = m; r.min = Math.min(24, m); r.value = Math.min(S.size, m);
+  }
+  function redraw(){ if (raf) return; raf = requestAnimationFrame(function(){ raf = 0; draw(ctx, true); }); }
+  function ensureFont(){ var F = FONTS[S.font]; return Promise.all([document.fonts.load(F.s + ' 40px "' + F.f + '"'), document.fonts.load('italic 500 30px "Cormorant"'), document.fonts.load('400 25px "Crimson Pro"')]).catch(function(){}); }
+
+  // ---------- Controles ----------
+  var sel = $('iFont'); FONTS.forEach(function(f, i){ var o = document.createElement('option'); o.value = i; o.textContent = f.n; o.style.fontFamily = '"' + f.f + '", serif'; sel.appendChild(o); });
+  sel.onchange = function(){ S.font = +sel.value; ensureFont().then(function(){ limitSize(); redraw(); }); };
+  $('iNombre').oninput = function(){ S.nombre = this.value; limitSize(); redraw(); };
+  $('iSub').oninput = function(){ S.sub = this.value; limitSize(); redraw(); };
+  $('iBio').oninput = function(){ S.bio = this.value; redraw(); };
+  $('iSize').oninput = function(){ S.size = +this.value; redraw(); };
+  $('iCName').oninput = function(){ S.nameColor = this.value; redraw(); };
+  $('iCAcc').oninput = function(){ S.accent = this.value; redraw(); };
+  $('bBg').onclick = function(){ $('iBg').click(); };
+  $('bBgQ').onclick = function(){ S.bg = null; redraw(); };
+  $('iBgZoom').oninput = function(){ S.bz = +this.value; redraw(); };
+  $('iDim').oninput = function(){ S.dim = +this.value / 100; redraw(); };
+  $('iBg').onchange = function(e){
+    var f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    createImageBitmap(f).then(function(b){ S.bg = fit(b, 2000); S.bx = 0; S.by = 0; S.bz = 1; $('iBgZoom').value = 1; redraw(); }).catch(function(){ $('msg').textContent = 'No se pudo leer esa imagen, prueba con otra.'; });
+  };
+  $('bStImg').onclick = function(){ $('iStImg').click(); };
+  $('iStImg').onchange = function(e){
+    var fs = Array.prototype.slice.call(e.target.files); e.target.value = '';
+    fs.forEach(function(f){
+      if (S.stickers.length >= 40){ $('msg').textContent = 'Máximo 40 adornos.'; return; }
+      createImageBitmap(f).then(function(b){
+        var n = S.stickers.length;
+        S.stickers.push({ img: fit(b, 800), x: W / 2 + (n % 5) * 24 - 48, y: H / 2 + (n % 5) * 18 - 36, size: 180 });
+        S.sel = S.stickers.length - 1; $('iStSize').value = 180; cv.style.touchAction = 'none'; redraw();
+      }).catch(function(){ $('msg').textContent = 'No se pudo leer una de las imágenes.'; });
+    });
+  };
+  $('iZoom').oninput = function(){ S.zoom = +this.value; redraw(); };
+  $('iTag').onchange = function(){ S.tag = this.checked; redraw(); };
+  document.querySelectorAll('#sShape button').forEach(function(b){ b.onclick = function(){ S.shape = b.dataset.v; document.querySelectorAll('#sShape button').forEach(function(x){ x.classList.toggle('on', x === b); }); redraw(); }; });
+  $('bFoto').onclick = function(){ $('iFoto').click(); };
+  $('bFotoQ').onclick = function(){ S.img = null; redraw(); };
+  $('iFoto').onchange = function(e){
+    var f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    createImageBitmap(f).then(function(b){ S.img = b; S.ix = 0; S.iy = 0; redraw(); }).catch(function(){ $('msg').textContent = 'No se pudo leer esa imagen, prueba con otra.'; });
+  };
+  var sw = $('swatches');
+  THEMES.forEach(function(t, i){ var b = document.createElement('button'); b.type = 'button'; b.title = t.n; b.setAttribute('aria-label', 'Fondo ' + t.n);
+    b.style.background = 'linear-gradient(135deg,' + t.a + ',' + t.glow + ')'; if (!i) b.className = 'on';
+    b.onclick = function(){ S.theme = i; S.nameColor = t.name; S.accent = t.acc; $('iCName').value = t.name; $('iCAcc').value = t.acc; sw.querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x === b); }); redraw(); };
+    sw.appendChild(b); });
+  var stk = $('stk');
+  ICONS.forEach(function(sym){ var b = document.createElement('button'); b.type = 'button'; b.textContent = sym; b.setAttribute('aria-label', 'Añadir adorno ' + sym);
+    b.onclick = function(){ var n = S.stickers.length; S.stickers.push({ sym: sym, x: W / 2 + (n % 5) * 24 - 48, y: H / 2 + (n % 5) * 18 - 36, size: +$('iStSize').value }); S.sel = S.stickers.length - 1; cv.style.touchAction = 'none'; redraw(); };
+    stk.appendChild(b); });
+  $('iStSize').oninput = function(){ if (S.sel >= 0){ S.stickers[S.sel].size = +this.value; redraw(); } };
+  $('bStDel').onclick = function(){ if (S.sel >= 0){ S.stickers.splice(S.sel, 1); S.sel = -1; if (!S.stickers.length) cv.style.touchAction = 'none'; redraw(); } };
+  $('bStClr').onclick = function(){ S.stickers = []; S.sel = -1; cv.style.touchAction = 'none'; redraw(); };
+  $('bReset').onclick = function(){ if (!confirm('¿Empezar de nuevo? Se pierde el diseño actual.')) return; S = DEF();
+    $('iNombre').value = S.nombre; $('iSub').value = S.sub; $('iBio').value = S.bio; $('iSize').value = S.size; $('iZoom').value = 1; $('iDim').value = 40; $('iBgZoom').value = 1; $('iStSize').value = 70; $('iFont').value = 0; $('iCName').value = S.nameColor; $('iCAcc').value = S.accent; $('iTag').checked = true;
+    document.querySelectorAll('#sShape button').forEach(function(x, i){ x.classList.toggle('on', !i); }); sw.querySelectorAll('button').forEach(function(x, i){ x.classList.toggle('on', !i); }); cv.style.touchAction = 'none'; ensureFont().then(function(){ limitSize(); redraw(); }); };
+
+  // arrastrar adornos sobre la tarjeta
+  var drag = null;
+  cv.style.touchAction = 'none';
+  function pos(e){ var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; }
+  function enFoto(p){ return S.shape === 'circle' ? Math.hypot(p.x - (PX + PS / 2), p.y - (PY + PS / 2)) <= PS / 2 : (p.x >= PX && p.x <= PX + PS && p.y >= PY && p.y <= PY + PS); }
+  cv.addEventListener('pointerdown', function(e){
+    var p = pos(e); S.sel = -1; drag = null;
+    for (var i = S.stickers.length - 1; i >= 0; i--){ var s = S.stickers[i]; var ex = ext(s), hit = s.img ? (Math.abs(p.x - s.x) <= Math.max(26, ex.w / 2) && Math.abs(p.y - s.y) <= Math.max(26, ex.h / 2)) : (Math.hypot(p.x - s.x, p.y - s.y) <= Math.max(26, s.size * .6));
+      if (hit){ S.sel = i; drag = { m: 's', dx: p.x - s.x, dy: p.y - s.y }; $('iStSize').value = s.size; break; } }
+    // si no hay adorno: mover la imagen del personaje (dentro del marco) o la foto de fondo (fuera)
+    if (!drag && S.img && enFoto(p)) drag = { m: 'i', lx: p.x, ly: p.y };
+    else if (!drag && S.bg) drag = { m: 'b', lx: p.x, ly: p.y };
+    if (drag){ try { cv.setPointerCapture(e.pointerId); } catch (x) {} }
+    redraw();
+  });
+  cv.addEventListener('pointermove', function(e){
+    if (!drag) return; var p = pos(e);
+    if (drag.m === 's'){ var s = S.stickers[S.sel]; if (!s) return; s.x = Math.max(0, Math.min(W, p.x - drag.dx)); s.y = Math.max(0, Math.min(H, p.y - drag.dy)); }
+    else if (drag.m === 'i'){ var g = imgGeo(); if (g.sx) S.ix = clamp1(S.ix + (p.x - drag.lx) / g.sx); if (g.sy) S.iy = clamp1(S.iy + (p.y - drag.ly) / g.sy); drag.lx = p.x; drag.ly = p.y; }
+    else { var h = bgGeo(); if (h.sx) S.bx = clamp1(S.bx + (p.x - drag.lx) / h.sx); if (h.sy) S.by = clamp1(S.by + (p.y - drag.ly) / h.sy); drag.lx = p.x; drag.ly = p.y; }
+    redraw();
+  });
+  ['pointerup', 'pointercancel'].forEach(function(t){ cv.addEventListener(t, function(){ drag = null; }); });
+
+  // ---------- Descargar ----------
+  $('bDown').onclick = function(){
+    ensureFont().then(function(){
+      var k = 2, out = document.createElement('canvas'); out.width = W * k; out.height = H * k;
+      var c = out.getContext('2d'); c.scale(k, k); draw(c, false);
+      out.toBlob(function(b){
+        if (!b){ $('msg').textContent = 'No se pudo generar la imagen.'; return; }
+        var a = document.createElement('a'), nm = (S.nombre || S.sub || 'tarjeta').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'tarjeta';
+        a.href = URL.createObjectURL(b); a.download = 'mooncard-' + nm + '.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+        $('msg').textContent = 'Listo. Si la mandas por WhatsApp, envíala como Documento para que no se comprima.';
+      }, 'image/png');
+    });
+  };
+
+  ensureFont().then(function(){ limitSize(); redraw(); }); redraw();
+  if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', function(){ limitSize(); redraw(); });
+})();
+</script>
+</body>
+</html>

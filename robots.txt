@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://moonlight-team-whatsapp.github.io/sitemap.xml
