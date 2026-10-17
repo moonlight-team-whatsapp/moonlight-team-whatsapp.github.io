@@ -87,6 +87,33 @@
   @media (max-width:600px){
     #sheet{ top:auto; left:0; width:100%; height:62vh; border-left:0; border-top:1px solid var(--border); transform:translateY(105%); }
   }
+
+  /* ---- Reglas de la familia ---- */
+  .rules-btn{ border-color:var(--gold-dim); color:var(--gold); }
+  .rules-btn:hover{ border-color:var(--gold); color:#f1e2b0; background:rgba(217,195,131,.08); }
+  #rulesDialog{ width:min(640px, 94vw); max-width:none; max-height:88vh; padding:0; border:1px solid rgba(217,195,131,.35); border-radius:8px; background:linear-gradient(180deg,#171e3d,#0f1429); color:var(--ink); box-shadow:0 30px 80px rgba(0,0,0,.65), 0 0 60px rgba(217,195,131,.08); overflow:hidden; }
+  #rulesDialog[open]{ display:flex; flex-direction:column; animation:rulesIn .22s ease-out; }
+  #rulesDialog::backdrop{ background:rgba(4,6,14,.72); backdrop-filter:blur(3px); }
+  @keyframes rulesIn{ from{ opacity:0; transform:translateY(14px) scale(.985); } to{ opacity:1; transform:none; } }
+  .rules-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:20px 22px 12px; border-bottom:1px solid rgba(197,209,255,.12); }
+  .rules-head h3{ margin:0; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.7rem; color:var(--gold); }
+  .rules-head p{ margin:2px 0 0; font-size:.92rem; color:var(--ink-soft); }
+  .rules-x{ flex:0 0 auto; width:34px; height:34px; border-radius:50%; border:1px solid rgba(197,209,255,.25); background:none; color:var(--ink-soft); font-size:1.2rem; line-height:1; cursor:pointer; }
+  .rules-x:hover{ border-color:var(--gold); color:var(--gold); }
+  .rules-body{ padding:16px 22px 22px; overflow-y:auto; }
+  .rules-body h4{ margin:20px 0 8px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.2rem; color:#e6d9a8; }
+  .rules-body h4:first-child{ margin-top:4px; }
+  .rules-body p, .rules-body li{ font-size:1rem; line-height:1.55; color:var(--ink); margin:0 0 8px; }
+  .rules-body ul{ margin:0; padding-left:20px; }
+  .rules-body li::marker{ color:var(--gold-dim); }
+  .rules-limits{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:6px 0 4px; }
+  .rules-limit{ border:1px solid rgba(217,195,131,.35); border-radius:6px; background:rgba(217,195,131,.06); padding:12px 14px; text-align:center; }
+  .rules-limit span{ display:block; font-size:.85rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); }
+  .rules-limit b{ display:block; margin-top:2px; font-family:'Cormorant',serif; font-size:1.9rem; color:var(--gold); }
+  .rules-notice{ margin-top:6px; padding:12px 14px; border-left:3px solid var(--gold); background:rgba(255,255,255,.04); border-radius:0 6px 6px 0; }
+  .rules-notice p{ margin:0; }
+  .rules-foot{ margin-top:18px; font-style:italic; color:var(--ink-soft); text-align:center; font-size:.95rem; }
+  @media (max-width:520px){ .rules-limits{ grid-template-columns:1fr; } .rules-head{ padding:16px 16px 10px; } .rules-body{ padding:12px 16px 18px; } }
 </style>
 </head>
 <body>
@@ -108,6 +135,7 @@
       <p class="subtitle">Los lazos entre quienes comparten la noche. Toca un personaje para ver su familia.</p>
     </div>
     <div class="admin-actions">
+      <button class="admin-toggle rules-btn" id="rulesBtn" type="button" aria-haspopup="dialog">Reglas de la familia</button>
       <button class="admin-toggle" id="exportImgBtn" type="button">Exportar imagen (PNG)</button>
       <button class="admin-toggle" id="exportPdfBtn" type="button" title="Se envía por WhatsApp como documento, sin que lo comprima">Exportar PDF</button>
       <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
@@ -122,6 +150,40 @@
   </main>
 
 </div>
+
+<dialog id="rulesDialog" aria-labelledby="rulesTitle">
+  <div class="rules-head">
+    <div>
+      <h3 id="rulesTitle">Reglas de la familia</h3>
+      <p>Decididas por los admins. Valen para todas las familias del árbol.</p>
+    </div>
+    <button class="rules-x" id="rulesClose" type="button" aria-label="Cerrar">×</button>
+  </div>
+  <div class="rules-body">
+    <h4>Límite de adopciones</h4>
+    <div class="rules-limits">
+      <div class="rules-limit"><span>Por persona</span><b>2 hijos</b></div>
+      <div class="rules-limit"><span>Por familia</span><b>4 hijos</b></div>
+    </div>
+
+    <h4>Relaciones de más de dos personas</h4>
+    <p>Si se forma una relación de más de 2 personas y quieren adoptar, se aplica la misma regla de la familia: <b>4 hijos en total</b> para toda la relación. No son 4 por persona.</p>
+
+    <h4>Parejas y adopciones: avisa siempre</h4>
+    <div class="rules-notice"><p>Toda pareja y toda adopción debe comunicarse a <b>Kazuha / Ei</b>. Solo aparecen en el árbol una vez comunicadas.</p></div>
+
+    <h4>Aclaraciones</h4>
+    <ul>
+      <li>Una persona sola puede tener hasta 2 hijos. En pareja, cada una puede tener hasta 2 y la familia no pasa de 4.</li>
+      <li>El tope de 4 es de la familia entera, sea cual sea el número de personas que la formen y quién haya adoptado a quién.</li>
+      <li>Si dos familias se unen y juntas superan los 4 hijos, se consulta con Kazuha / Ei antes de cambiar nada.</li>
+      <li>Si un hijo deja el team, su hueco queda libre.</li>
+      <li>Cualquier caso que no esté aquí se consulta con Kazuha / Ei antes de decidir.</li>
+    </ul>
+
+    <p class="rules-foot">Gracias por respetar la decisión de los admins.</p>
+  </div>
+</dialog>
 
 <dialog id="loginDialog">
   <div class="dialog-inner">
@@ -143,6 +205,16 @@
 </dialog>
 
 <aside id="sheet" aria-live="polite"></aside>
+
+<script>
+(function(){
+  var d = document.getElementById('rulesDialog'), b = document.getElementById('rulesBtn');
+  if (!d || !b) return;
+  b.addEventListener('click', function(){ if (d.showModal) d.showModal(); else d.setAttribute('open', ''); d.querySelector('.rules-body').scrollTop = 0; });
+  document.getElementById('rulesClose').addEventListener('click', function(){ d.close(); });
+  d.addEventListener('click', function(e){ if (e.target === d) d.close(); }); // clic fuera = cerrar
+})();
+</script>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
