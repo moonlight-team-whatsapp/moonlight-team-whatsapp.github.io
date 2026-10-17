@@ -89,8 +89,9 @@
   }
 
   /* ---- Reglas de la familia ---- */
-  .rules-btn{ border-color:var(--gold-dim); color:var(--gold); }
-  .rules-btn:hover{ border-color:var(--gold); color:#f1e2b0; background:rgba(217,195,131,.08); }
+  .rules-btn{ display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; margin-left:8px; padding:0; vertical-align:middle; border-radius:50%; border:1px solid var(--gold-dim); background:rgba(217,195,131,.08); color:var(--gold); cursor:pointer; transition:background .15s, border-color .15s, color .15s, box-shadow .15s; }
+  .rules-btn:hover{ border-color:var(--gold); color:#f6e9b8; background:rgba(217,195,131,.18); box-shadow:0 0 14px rgba(217,195,131,.35); }
+  .rules-btn:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
   #rulesDialog{ width:min(640px, 94vw); max-width:none; max-height:88vh; padding:0; border:1px solid rgba(217,195,131,.35); border-radius:8px; background:linear-gradient(180deg,#171e3d,#0f1429); color:var(--ink); box-shadow:0 30px 80px rgba(0,0,0,.65), 0 0 60px rgba(217,195,131,.08); overflow:hidden; }
   #rulesDialog[open]{ display:flex; flex-direction:column; animation:rulesIn .22s ease-out; }
   #rulesDialog::backdrop{ background:rgba(4,6,14,.72); backdrop-filter:blur(3px); }
@@ -132,10 +133,10 @@
       <div class="title-wrap">
         <h1>Árbol de Moonlight</h1>
       </div>
-      <p class="subtitle">Los lazos entre quienes comparten la noche. Toca un personaje para ver su familia.</p>
+      <p class="subtitle">Los lazos entre quienes comparten la noche. Toca un personaje para ver su familia.
+        <button class="rules-btn" id="rulesBtn" type="button" aria-haspopup="dialog" aria-label="Reglas de la familia" title="Reglas de la familia"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5.5C4.5 4 8 4 12 6c4-2 7.5-2 10-.5V19c-2.5-1.5-6-1.5-10 .5-4-2-7.5-2-10-.5z"/><path d="M12 6v13.5"/></svg></button></p>
     </div>
     <div class="admin-actions">
-      <button class="admin-toggle rules-btn" id="rulesBtn" type="button" aria-haspopup="dialog">Reglas de la familia</button>
       <button class="admin-toggle" id="exportImgBtn" type="button">Exportar imagen (PNG)</button>
       <button class="admin-toggle" id="exportPdfBtn" type="button" title="Se envía por WhatsApp como documento, sin que lo comprima">Exportar PDF</button>
       <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
