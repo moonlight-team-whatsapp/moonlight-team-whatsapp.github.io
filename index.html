@@ -25,6 +25,40 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<style>
+  /* ---- Reglas del team (botón de info + ventana) ---- */
+  .rules-btn{ display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; margin-left:8px; padding:0; vertical-align:middle; border-radius:50%; border:1px solid var(--gold-dim); background:rgba(217,195,131,.08); color:var(--gold); cursor:pointer; transition:background .15s, border-color .15s, color .15s, box-shadow .15s; }
+  .rules-btn:hover{ border-color:var(--gold); color:#f6e9b8; background:rgba(217,195,131,.18); box-shadow:0 0 14px rgba(217,195,131,.35); }
+  .rules-btn:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+  #rulesDialog{ width:min(660px, 94vw); max-width:none; max-height:88vh; padding:0; border:1px solid rgba(217,195,131,.35); border-radius:8px; background:linear-gradient(180deg,#171e3d,#0f1429); color:var(--ink); box-shadow:0 30px 80px rgba(0,0,0,.65), 0 0 60px rgba(217,195,131,.08); overflow:hidden; }
+  #rulesDialog[open]{ display:flex; flex-direction:column; animation:rulesIn .22s ease-out; }
+  #rulesDialog::backdrop{ background:rgba(4,6,14,.72); backdrop-filter:blur(3px); }
+  @keyframes rulesIn{ from{ opacity:0; transform:translateY(14px) scale(.985); } to{ opacity:1; transform:none; } }
+  .rules-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:20px 22px 12px; border-bottom:1px solid rgba(197,209,255,.12); }
+  .rules-head h3{ margin:0; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.7rem; color:var(--gold); }
+  .rules-head p{ margin:2px 0 0; font-size:.92rem; color:var(--ink-soft); }
+  .rules-x{ flex:0 0 auto; width:34px; height:34px; border-radius:50%; border:1px solid rgba(197,209,255,.25); background:none; color:var(--ink-soft); font-size:1.2rem; line-height:1; cursor:pointer; }
+  .rules-x:hover{ border-color:var(--gold); color:var(--gold); }
+  .rules-body{ padding:16px 22px 22px; overflow-y:auto; }
+  .rules-body h4{ margin:20px 0 8px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.2rem; color:#e6d9a8; }
+  .rules-body h4:first-child{ margin-top:4px; }
+  .rules-body p, .rules-body li{ font-size:1rem; line-height:1.55; color:var(--ink); margin:0 0 8px; }
+  .rules-body ul{ margin:0; padding-left:20px; }
+  .rules-body li::marker{ color:var(--gold-dim); }
+  .rules-body a{ color:var(--gold); }
+  .rules-limits{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:6px 0 4px; }
+  .rules-limit{ border:1px solid rgba(217,195,131,.35); border-radius:6px; background:rgba(217,195,131,.06); padding:12px 14px; text-align:center; }
+  .rules-limit span{ display:block; font-size:.85rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); }
+  .rules-limit b{ display:block; margin-top:2px; font-family:'Cormorant',serif; font-size:1.9rem; color:var(--gold); }
+  .rules-notice{ margin-top:6px; padding:12px 14px; border-left:3px solid var(--gold); background:rgba(255,255,255,.04); border-radius:0 6px 6px 0; }
+  .rules-notice p{ margin:0; }
+  .rules-couples{ display:flex; flex-wrap:wrap; gap:10px; margin:4px 0 8px; }
+  .rules-couple{ border:1px solid rgba(217,195,131,.35); border-radius:999px; padding:7px 16px; background:rgba(217,195,131,.06); font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.15rem; color:#f1e2b0; }
+  .rules-couple i{ color:var(--gold-dim); font-style:normal; margin:0 6px; }
+  .rules-foot{ margin-top:18px; font-style:italic; color:var(--ink-soft); text-align:center; font-size:.95rem; }
+  .rules-sign{ margin-top:4px; text-align:center; font-size:.9rem; color:var(--gold-dim); }
+  @media (max-width:520px){ .rules-limits{ grid-template-columns:1fr; } .rules-head{ padding:16px 16px 10px; } .rules-body{ padding:12px 16px 18px; } }
+</style>
 </head>
 <body class="page-index">
 
@@ -53,7 +87,8 @@
       <div class="title-wrap">
         <h1 id="heroTitle">Moonlight Team</h1>
       </div>
-      <p class="subtitle">Elige a dónde quieres ir.</p>
+      <p class="subtitle">Elige a dónde quieres ir.
+        <button class="rules-btn" id="rulesBtn" type="button" aria-haspopup="dialog" aria-label="Reglas del team" title="Reglas del team"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/></svg></button></p>
     </div>
     <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
   </header>
@@ -61,6 +96,58 @@
   <div class="nav-grid" id="navGrid"></div>
 
 </div>
+
+<dialog id="rulesDialog" aria-labelledby="rulesTitle">
+  <div class="rules-head">
+    <div>
+      <h3 id="rulesTitle">Reglas del team</h3>
+      <p>Bienvenidx a este bello team. Esperamos que pases una buena estancia y que entre todos tengamos una buena convivencia.</p>
+    </div>
+    <button class="rules-x" id="rulesClose" type="button" aria-label="Cerrar">×</button>
+  </div>
+  <div class="rules-body">
+    <h4>Convivencia</h4>
+    <ul>
+      <li>Trato amable y respetuoso entre todos. No ignorar ni excluir a ningún integrante, admin u owner, y no acosar a nadie.</li>
+      <li>Evitar bromas de mal gusto o que puedan incomodar. Cuando a alguien le empieza a sentar mal, deja de ser una broma: pon límites.</li>
+      <li>Evitar conflictos y mantener un ambiente tranquilo. No peleas. Se permiten las groserías, pero sin exagerar hasta causar problemas.</li>
+    </ul>
+
+    <h4>Contenido prohibido</h4>
+    <ul>
+      <li>Temas <b>+18</b> y <b>gore</b>: pornografía de cualquier tipo (también stickers, vídeos e imágenes) y muertes con exceso de sangre.</li>
+      <li>Sitios web con virus o similares.</li>
+      <li>Spam. Incluye el spam de menciones: si una persona recibe <b>más de 3 menciones</b>, cuenta como spam aunque las hagan personas distintas.</li>
+      <li>Evitar la mención de @todos: solo los admins pueden usarla, y solo para cosas necesarias. Si la usan mal, recibirán una penalización.</li>
+    </ul>
+
+    <h4>Temas delicados e información personal</h4>
+    <ul>
+      <li>Por favor, no hablar ni tocar temas de suicidio, autolesiones u otros temas personales delicados: puede incomodar a los demás. Si necesitas hablar con alguien, acude a administración.</li>
+      <li>No compartir información personal que te pueda poner en riesgo.</li>
+    </ul>
+
+    <h4>Penalizaciones y salidas</h4>
+    <div class="rules-limits">
+      <div class="rules-limit"><span>Penalizaciones para expulsión</span><b>3</b></div>
+      <div class="rules-limit"><span>Máximo de salidas</span><b>3</b></div>
+    </div>
+    <p>Cada regla rota tendrá una penalización. Con tres penalizaciones se aplica la expulsión.</p>
+
+    <h4>Inactividad</h4>
+    <p>En caso de inactividad, avisa a los owners o admins.</p>
+
+    <h4>Parejas oficiales del team</h4>
+    <div class="rules-couples">
+      <span class="rules-couple">Pantalone<i>×</i>Dottore</span>
+      <span class="rules-couple">Kazuha<i>×</i>Ayaka</span>
+    </div>
+    <p>Toda pareja y toda adopción debe comunicarse a <b>Kazuha / Ei</b>. Los límites de adopción están en las <a href="arbol.html">reglas de la familia del árbol genealógico</a>.</p>
+
+    <p class="rules-foot">¡Diviértete!</p>
+    <p class="rules-sign">Att: Furina, Neuvillette y Kazuha</p>
+  </div>
+</dialog>
 
 <dialog id="loginDialog">
   <div class="dialog-inner">
@@ -81,6 +168,15 @@
   </div>
 </dialog>
 
+<script>
+(function(){
+  var d = document.getElementById('rulesDialog'), b = document.getElementById('rulesBtn');
+  if (!d || !b) return;
+  b.addEventListener('click', function(){ if (d.showModal) d.showModal(); else d.setAttribute('open', ''); d.querySelector('.rules-body').scrollTop = 0; });
+  document.getElementById('rulesClose').addEventListener('click', function(){ d.close(); });
+  d.addEventListener('click', function(e){ if (e.target === d) d.close(); }); // clic fuera = cerrar
+})();
+</script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
