@@ -53,6 +53,11 @@ service cloud.firestore {
       allow read, update, delete: if request.auth != null;
     }
 
+    // Dispositivos de los admins que reciben avisos push: solo el admin logueado.
+    match /suscripciones/{docId} {
+      allow read, create, update, delete: if request.auth != null;
+    }
+
     // Miembros (identificados por su tel/usuario de WhatsApp): SOLO el admin logueado puede leer o escribir.
     // A propósito no hay "allow read: if true" aquí — sin sesión, Firestore deniega la lectura
     // antes de que el dato llegue al navegador, no es solo una cuestión de interfaz.
