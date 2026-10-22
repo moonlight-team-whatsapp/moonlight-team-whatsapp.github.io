@@ -125,10 +125,20 @@
   .msg.unread{ border-color:var(--t1); box-shadow:0 0 0 1px color-mix(in srgb, var(--t1) 50%, transparent) inset; }
   .msg.unread::before{ content:''; position:absolute; left:-5px; top:18px; width:9px; height:9px; border-radius:50%; background:var(--t1); box-shadow:0 0 12px var(--t1); }
   .avs{ display:flex; margin-right:4px; } .avs img{ width:30px; height:30px; border-radius:50%; object-fit:cover; border:2px solid #121830; margin-left:-9px; } .avs img:first-child{ margin-left:0; }
-  .exp-btn{ display:inline-flex; align-items:center; gap:6px; cursor:pointer; font:inherit; font-size:.85rem; font-weight:600; color:#10142a; border:none; border-radius:999px; padding:5px 13px 5px 10px;
-    background:linear-gradient(110deg,var(--t1),var(--tsoft)); box-shadow:0 6px 16px -8px var(--t1); transition:transform .2s, box-shadow .2s, filter .2s; }
-  .exp-btn:hover{ transform:translateY(-2px); box-shadow:0 10px 20px -8px var(--t1); filter:brightness(1.08); }
-  .exp-btn:active{ transform:scale(.96); } .exp-btn svg{ transition:transform .25s; } .exp-btn:hover svg{ transform:translateY(2px); }
+  .ico{ width:36px; height:36px; display:inline-grid; place-items:center; cursor:pointer; border-radius:50%; padding:0; color:var(--ink); background:rgba(255,255,255,.05);
+    border:1px solid color-mix(in srgb, var(--t1) 40%, transparent); transition:transform .2s, background .2s, box-shadow .2s, color .2s, border-color .2s; -webkit-tap-highlight-color:transparent; }
+  .ico svg{ width:18px; height:18px; display:block; }
+  .ico:hover{ transform:translateY(-2px); background:color-mix(in srgb, var(--t1) 22%, transparent); box-shadow:0 8px 18px -8px var(--t1); }
+  .ico:active{ transform:scale(.92); }
+  .ico.dl svg{ transition:transform .25s; } .ico.dl:hover svg{ transform:translateY(2px); }
+  .ico.wa{ color:#25d366; border-color:rgba(37,211,102,.5); } .ico.wa:hover{ background:rgba(37,211,102,.2); box-shadow:0 8px 18px -8px #25d366; }
+  .ico.rd{ color:rgba(255,255,255,.45); } .ico.rd.on{ color:#53bdeb; border-color:rgba(83,189,235,.55); background:rgba(83,189,235,.12); }
+  .ico.rd:hover{ color:#53bdeb; }
+  .ico.del{ color:var(--danger); border-color:rgba(209,138,118,.45); } .ico.del:hover{ background:rgba(209,138,118,.2); box-shadow:0 8px 18px -8px #d18a76; }
+  .msg-foot .acts{ gap:7px !important; }
+  .nf-row{ display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 12px; }
+  .nf-row .fchip{ font-size:.88rem; padding:5px 12px; }
+  .nf-row .fchip:not(.on){ opacity:.6; }
   .bar-tools{ display:flex; gap:8px; flex-wrap:wrap; margin:-4px 0 14px; }
   .msg.fresh{ animation:msgIn .55s both, glow 2.5s ease-out; }
   @keyframes glow{ 0%{ box-shadow:0 0 0 0 rgba(217,195,131,.8); } 100%{ box-shadow:0 0 0 22px rgba(217,195,131,0); } }
@@ -207,8 +217,10 @@
 
     <div class="notif-box">
       <h4>Avisos en el móvil</h4>
-      <p>Cada admin recibe un aviso en su móvil con la app gratuita <b>ntfy</b> (iOS/Android): instálala, pulsa «+» y suscríbete al tema de tu nombre. El aviso solo dice «nuevo anónimo», nunca el contenido.</p>
+      <p>Cada admin recibe un aviso en su móvil con la app gratuita <b>ntfy</b> (iOS/Android): instálala, pulsa «+» y suscríbete <b>solo a los temas de quienes quieras recibir avisos</b> (el tuyo, varios o los tres). El aviso solo dice «nuevo anónimo», nunca el contenido.</p>
       <div id="topicList"></div>
+      <p style="margin:12px 0 0">Avisarme en este navegador de los anónimos dirigidos a:</p>
+      <div class="nf-row" id="nfRow"></div>
       <p style="margin-top:10px"><button class="btn-ghost" id="notifBtn" type="button" style="font-family:inherit;padding:6px 14px;border-radius:8px;cursor:pointer">Activar avisos también en este navegador</button> <span id="notifState" style="font-size:.85rem"></span></p>
     </div>
   </section>
@@ -454,16 +466,17 @@
       <div class="msg-top"><span class="avs">${(m.para || []).filter(k => ADMINS[k]).map(k => `<img src="${ADMINS[k].img}" alt="">`).join('')}</span>${(m.para || []).map(k => `<span class="tag" data-a="${k}">${esc(ADMINS[k]?.nombre || k)}</span>`).join('')}</div>
       <div class="msg-text">${esc(m.texto)}</div>
       <div class="msg-foot"><span>${fechaTxt(m)}</span><span class="acts">
-        <button class="exp-btn" data-act="img" type="button" title="Descargar como imagen"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>Descargar imagen</button>
-        <button class="icon-btn icon-btn-confirm" data-act="read" type="button">${m.leido ? 'Marcar sin leer' : 'Marcar leído'}</button>
-        <button class="icon-btn" data-act="del" type="button">Borrar</button></span></div></li>`).join('');
+        <button class="ico dl" data-act="img" type="button" title="Descargar imagen" aria-label="Descargar imagen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg></button>
+        <button class="ico wa" data-act="wa" type="button" title="Compartir por WhatsApp" aria-label="Compartir por WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></button>
+        <button class="ico rd${m.leido ? ' on' : ''}" data-act="read" type="button" title="${m.leido ? 'Leído (pulsa para marcar sin leer)' : 'Marcar como leído'}" aria-label="Marcar leído"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 13l4.5 4.5L15 7.5"/><path d="M10 16.5l1 1 9.5-10"/></svg></button>
+        <button class="ico del" data-act="del" type="button" title="Borrar" aria-label="Borrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v5M14 11v5"/></svg></button></span></div></li>`).join('');
   }
   $('tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (b){ filtro = b.dataset.f; renderInbox(); } });
   $('msgs').addEventListener('click', async (e) => {
     const b = e.target.closest('[data-act]'); if (!b) return;
     const id = b.closest('.msg').dataset.id, m = msgs.find(x => x.id === id); if (!m) return;
     try {
-      if (b.dataset.act === 'img') return exportarImagen(m, msgs.length - msgs.indexOf(m));
+      if (b.dataset.act === 'img' || b.dataset.act === 'wa') return exportarImagen(m, msgs.length - msgs.indexOf(m), b.dataset.act);
       if (b.dataset.act === 'read') await updateDoc(doc(db, 'anonimos', id), { leido: !m.leido });
       else if (confirm('¿Borrar este mensaje?')) await deleteDoc(doc(db, 'anonimos', id));
     } catch (er) { $('statusLine').textContent = 'No se pudo completar la acción.'; }
@@ -484,7 +497,7 @@
   });
   const imgCache = {};
   const loadImg = (k) => imgCache[k] ||= new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = ADMINS[k].img; });
-  async function exportarImagen(m, num){
+  async function exportarImagen(m, num, modo){
     const t = themeOf(m.para), W = 1080, P = 90, keys = (m.para || []).filter(k => ADMINS[k]);
     try { await Promise.all([document.fonts.load('italic 600 48px Cormorant'), document.fonts.load('italic 600 40px Cormorant')]); } catch (e) {}
     const imgs = await Promise.all(keys.map(loadImg));
@@ -523,10 +536,32 @@
     x.fillStyle = t.soft; x.globalAlpha = .8; x.font = 'italic 600 34px Cormorant, Georgia, serif'; x.fillText('☾  Moonlight Team', W / 2, H - 78); x.globalAlpha = 1;
     cv.toBlob(async (blob) => {
       const nombre = 'anonimo' + keys.map(k => ADMINS[k].nombre).join('') + num + '.png';
+      if (modo === 'wa'){
+        const file = new File([blob], nombre, { type: 'image/png' });
+        try { if (navigator.canShare && navigator.canShare({ files: [file] })){ await navigator.share({ files: [file] }); return; } }
+        catch (e) { if (e && e.name === 'AbortError') return; }
+        toast('Tu navegador no puede compartir directo: se descarga la imagen y la subes a WhatsApp.');
+      }
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-      toast('Descargada: ' + nombre);
+      if (modo !== 'wa') toast('Descargada: ' + nombre);
     }, 'image/png');
   }
+
+  // Qué anónimos me avisan en este navegador (se guarda aquí, por dispositivo)
+  let avisoSel = new Set(KEYS);
+  try { const g = JSON.parse(localStorage.getItem('anon-aviso') || 'null'); if (Array.isArray(g)) avisoSel = new Set(g.filter(k => ADMINS[k])); } catch (e) {}
+  function paintNf(){
+    $('nfRow').innerHTML = KEYS.map(k => `<button type="button" class="fchip${avisoSel.has(k) ? ' on' : ''}" data-k="${k}" style="--c:${ADMINS[k].color}" aria-pressed="${avisoSel.has(k)}">${ADMINS[k].nombre}</button>`).join('') +
+      `<button type="button" class="fchip${avisoSel.size === KEYS.length ? ' on' : ''}" data-k="all" aria-pressed="${avisoSel.size === KEYS.length}">Todos</button>`;
+  }
+  $('nfRow').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-k]'); if (!b) return;
+    if (b.dataset.k === 'all') avisoSel = avisoSel.size === KEYS.length ? new Set() : new Set(KEYS);
+    else avisoSel.has(b.dataset.k) ? avisoSel.delete(b.dataset.k) : avisoSel.add(b.dataset.k);
+    try { localStorage.setItem('anon-aviso', JSON.stringify([...avisoSel])); } catch (er) {}
+    paintNf();
+  });
+  paintNf();
 
   // Avisos del navegador (solo funcionan con esta página abierta)
   function paintNotif(){
@@ -548,7 +583,9 @@
         if (!firstLoad) s.docChanges().forEach(ch => {
           if (ch.type === 'added' && !ch.doc.metadata.hasPendingWrites){
             fresh.add(ch.doc.id); setTimeout(() => { fresh.delete(ch.doc.id); }, 3000);
-            const para = (ch.doc.data().para || []).map(k => ADMINS[k]?.nombre || k).join(', ');
+            const paraK = ch.doc.data().para || [];
+            if (!paraK.some(k => avisoSel.has(k))) return;
+            const para = paraK.map(k => ADMINS[k]?.nombre || k).join(', ');
             toast('🌙 Nuevo anónimo para ' + para); chime();
             if ('Notification' in window && Notification.permission === 'granted') try { new Notification('Nuevo anónimo', { body: 'Para: ' + para, icon: 'favicon.png' }); } catch (e) {}
           }
