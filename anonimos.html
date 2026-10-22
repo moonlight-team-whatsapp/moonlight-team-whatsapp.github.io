@@ -40,7 +40,10 @@
   .fx{ position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
   .fx i{ position:absolute; font-style:normal; will-change:transform,opacity; }
   .fx .bub{ border:1.5px solid color-mix(in srgb, var(--p) 70%, #fff); background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 60%); border-radius:50%; bottom:-30px; animation:fxRise var(--dur) ease-in forwards; }
-  .fx .rip{ border:1.5px solid var(--p); border-radius:50%; transform:scale(0); animation:fxRip var(--dur) ease-out forwards; }
+  .fx .drop{ top:-20px; border-radius:50% 0 50% 50%; border:1px solid rgba(200,255,250,.5);
+    background:radial-gradient(circle at 30% 70%, rgba(255,255,255,.95) 0 10%, transparent 24%), radial-gradient(circle at 62% 38%, rgba(200,250,246,.14), rgba(40,175,175,.34) 75%);
+    box-shadow:inset -1px -2px 3px rgba(0,85,95,.4), inset 1px 1px 2px rgba(255,255,255,.35), 0 1px 3px rgba(0,0,0,.3); animation:fxDrop var(--dur) cubic-bezier(.5,0,.9,.6) forwards; }
+  @keyframes fxDrop{ 0%{ transform:translate(0,0) rotate(-45deg); opacity:0; } 10%{ opacity:.95; } 100%{ transform:translate(var(--dx),640px) rotate(-45deg); opacity:.9; } }
   .fx .leaf{ top:-30px; animation:fxFall var(--dur) linear forwards; filter:drop-shadow(0 0 6px rgba(240,144,74,.5)); }
   .fx .star{ color:var(--p); text-shadow:0 0 10px var(--p); bottom:-20px; animation:fxRise var(--dur) ease-in forwards; }
   @keyframes fxRise{ 0%{ transform:translate(0,0) scale(.6); opacity:0; } 12%{ opacity:.9; } 100%{ transform:translate(var(--dx),-115vh) scale(1.1); opacity:0; } }
@@ -122,6 +125,10 @@
   .msg.unread{ border-color:var(--t1); box-shadow:0 0 0 1px color-mix(in srgb, var(--t1) 50%, transparent) inset; }
   .msg.unread::before{ content:''; position:absolute; left:-5px; top:18px; width:9px; height:9px; border-radius:50%; background:var(--t1); box-shadow:0 0 12px var(--t1); }
   .avs{ display:flex; margin-right:4px; } .avs img{ width:30px; height:30px; border-radius:50%; object-fit:cover; border:2px solid #121830; margin-left:-9px; } .avs img:first-child{ margin-left:0; }
+  .exp-btn{ display:inline-flex; align-items:center; gap:6px; cursor:pointer; font:inherit; font-size:.85rem; font-weight:600; color:#10142a; border:none; border-radius:999px; padding:5px 13px 5px 10px;
+    background:linear-gradient(110deg,var(--t1),var(--tsoft)); box-shadow:0 6px 16px -8px var(--t1); transition:transform .2s, box-shadow .2s, filter .2s; }
+  .exp-btn:hover{ transform:translateY(-2px); box-shadow:0 10px 20px -8px var(--t1); filter:brightness(1.08); }
+  .exp-btn:active{ transform:scale(.96); } .exp-btn svg{ transition:transform .25s; } .exp-btn:hover svg{ transform:translateY(2px); }
   .bar-tools{ display:flex; gap:8px; flex-wrap:wrap; margin:-4px 0 14px; }
   .msg.fresh{ animation:msgIn .55s both, glow 2.5s ease-out; }
   @keyframes glow{ 0%{ box-shadow:0 0 0 0 rgba(217,195,131,.8); } 100%{ box-shadow:0 0 0 22px rgba(217,195,131,0); } }
@@ -276,10 +283,10 @@
     e.style.setProperty('--dur', dur + 's'); e.style.setProperty('--dx', dx + 'px');
     e.style.left = (Math.random() * 96) + '%';
     if (kind === 'sea'){ const z = 8 + Math.random() * 22; e.className = 'bub'; e.style.width = e.style.height = z + 'px'; e.style.setProperty('--p', '#7fe3ff'); e.style.setProperty('--dx', dx + 'px'); e.style.animationName = 'fxRise'; e.style.setProperty('--dx', dx + 'px'); e.style.transformOrigin = 'center'; e.style.animationDuration = dur + 's'; }
-    else if (kind === 'teal'){ const z = 40 + Math.random() * 70; e.className = 'rip'; e.style.width = e.style.height = z + 'px'; e.style.top = (Math.random() * 90) + '%'; e.style.setProperty('--p', '#6fe7d0'); e.style.animationDuration = (2.5 + Math.random() * 2) + 's'; }
+    else if (kind === 'teal'){ const z = 4 + Math.random() * 6; e.className = 'drop'; e.style.width = e.style.height = z + 'px'; e.style.setProperty('--dx', (Math.random() * 20 - 10) + 'px'); e.style.animationDuration = (2.6 + Math.random() * 2.4) + 's'; }
     else if (kind === 'autumn'){ e.className = 'leaf'; e.textContent = ['🍁', '🍂', '🍁'][Math.floor(Math.random() * 3)]; e.style.fontSize = (14 + Math.random() * 14) + 'px'; }
     else { e.className = 'star'; e.textContent = ['✦', '✧', '☾'][Math.floor(Math.random() * 3)]; e.style.fontSize = (10 + Math.random() * 12) + 'px'; e.style.setProperty('--p', Math.random() > .5 ? '#f1e0a8' : '#c5d1ff'); }
-    box.appendChild(e); setTimeout(() => e.remove(), (kind === 'teal' ? 5 : dur) * 1000 + 200);
+    box.appendChild(e); setTimeout(() => e.remove(), (kind === 'teal' ? 5.2 : dur) * 1000 + 200);
   }
   setInterval(spawnFx, 520);
 
@@ -447,8 +454,7 @@
       <div class="msg-top"><span class="avs">${(m.para || []).filter(k => ADMINS[k]).map(k => `<img src="${ADMINS[k].img}" alt="">`).join('')}</span>${(m.para || []).map(k => `<span class="tag" data-a="${k}">${esc(ADMINS[k]?.nombre || k)}</span>`).join('')}</div>
       <div class="msg-text">${esc(m.texto)}</div>
       <div class="msg-foot"><span>${fechaTxt(m)}</span><span class="acts">
-        <button class="icon-btn icon-btn-edit" data-act="copy" type="button">Copiar texto</button>
-        <button class="icon-btn icon-btn-edit" data-act="img" type="button">Imagen</button>
+        <button class="exp-btn" data-act="img" type="button" title="Descargar como imagen"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>Descargar imagen</button>
         <button class="icon-btn icon-btn-confirm" data-act="read" type="button">${m.leido ? 'Marcar sin leer' : 'Marcar leído'}</button>
         <button class="icon-btn" data-act="del" type="button">Borrar</button></span></div></li>`).join('');
   }
@@ -457,8 +463,7 @@
     const b = e.target.closest('[data-act]'); if (!b) return;
     const id = b.closest('.msg').dataset.id, m = msgs.find(x => x.id === id); if (!m) return;
     try {
-      if (b.dataset.act === 'copy') return copiar(textoWA(m), 'Texto copiado ✔ Pégalo en WhatsApp');
-      if (b.dataset.act === 'img') return exportarImagen(m);
+      if (b.dataset.act === 'img') return exportarImagen(m, msgs.length - msgs.indexOf(m));
       if (b.dataset.act === 'read') await updateDoc(doc(db, 'anonimos', id), { leido: !m.leido });
       else if (confirm('¿Borrar este mensaje?')) await deleteDoc(doc(db, 'anonimos', id));
     } catch (er) { $('statusLine').textContent = 'No se pudo completar la acción.'; }
@@ -479,7 +484,7 @@
   });
   const imgCache = {};
   const loadImg = (k) => imgCache[k] ||= new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = ADMINS[k].img; });
-  async function exportarImagen(m){
+  async function exportarImagen(m, num){
     const t = themeOf(m.para), W = 1080, P = 90, keys = (m.para || []).filter(k => ADMINS[k]);
     try { await Promise.all([document.fonts.load('italic 600 48px Cormorant'), document.fonts.load('italic 600 40px Cormorant')]); } catch (e) {}
     const imgs = await Promise.all(keys.map(loadImg));
@@ -494,11 +499,12 @@
     const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, t.deep); g.addColorStop(.55, hexMix(t.deep, '#0b1022')); g.addColorStop(1, '#0b1022'); x.fillStyle = g; x.fillRect(0, 0, W, H);
     [[W * .85, H * .12, 420, t.a], [W * .1, H * .9, 460, t.b]].forEach(([cx, cy, r, c]) => { const rg = x.createRadialGradient(cx, cy, 0, cx, cy, r); rg.addColorStop(0, c + '55'); rg.addColorStop(1, c + '00'); x.fillStyle = rg; x.fillRect(0, 0, W, H); });
     // decoración del tema
-    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-    for (let i = 0; i < 46; i++){
+    let seed = 1 + Math.floor(Math.random() * 2147483646); const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const nFig = 34 + Math.floor(rnd() * 26);
+    for (let i = 0; i < nFig; i++){
       const kind = t.kinds[i % t.kinds.length], px = rnd() * W, py = rnd() * H, z = 5 + rnd() * 18; x.globalAlpha = .18 + rnd() * .4;
       if (kind === 'sea'){ x.strokeStyle = t.b; x.lineWidth = 2; x.beginPath(); x.arc(px, py, z, 0, 7); x.stroke(); }
-      else if (kind === 'teal'){ x.strokeStyle = t.soft; x.lineWidth = 2; x.beginPath(); x.ellipse(px, py, z * 2.4, z * .8, 0, 0, 7); x.stroke(); }
+      else if (kind === 'teal'){ const r = 3 + z * .38, gd = x.createRadialGradient(px + r * .2, py - r * .2, 0, px, py, r * 1.4); gd.addColorStop(0, 'rgba(200,250,246,.25)'); gd.addColorStop(1, 'rgba(40,175,175,.6)'); x.fillStyle = gd; x.strokeStyle = 'rgba(210,255,250,.7)'; x.lineWidth = 1.2; x.beginPath(); x.moveTo(px, py - r * 2); x.bezierCurveTo(px + r * .15, py - r * 1.2, px + r, py - r * .5, px + r, py); x.arc(px, py, r, 0, Math.PI); x.bezierCurveTo(px - r, py - r * .5, px - r * .15, py - r * 1.2, px, py - r * 2); x.fill(); x.stroke(); x.fillStyle = 'rgba(255,255,255,.9)'; x.beginPath(); x.ellipse(px - r * .4, py + r * .15, r * .16, r * .3, .3, 0, 7); x.fill(); }
       else if (kind === 'autumn'){ x.font = (z * 2.2) + 'px serif'; x.fillText(i % 2 ? '🍁' : '🍂', px, py); }
       else { x.fillStyle = i % 2 ? '#f1e0a8' : '#c5d1ff'; x.font = (z * 1.8) + 'px serif'; x.fillText('✦', px, py); }
     }
@@ -516,10 +522,9 @@
     lines.forEach((l, i) => x.fillText(l, W / 2, ly + 70 + i * LH));
     x.fillStyle = t.soft; x.globalAlpha = .8; x.font = 'italic 600 34px Cormorant, Georgia, serif'; x.fillText('☾  Moonlight Team', W / 2, H - 78); x.globalAlpha = 1;
     cv.toBlob(async (blob) => {
-      const file = new File([blob], 'anonimo-' + (m.id || 'moonlight') + '.png', { type: 'image/png' });
-      try { if (navigator.canShare && navigator.canShare({ files: [file] })){ await navigator.share({ files: [file] }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-      toast('Imagen descargada ✔');
+      const nombre = 'anonimo' + keys.map(k => ADMINS[k].nombre).join('') + num + '.png';
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast('Descargada: ' + nombre);
     }, 'image/png');
   }
 
