@@ -264,7 +264,7 @@
 
   adminToggleBtn.addEventListener('click', () => {
     if (isAdmin) {
-      authP.then(({ m, auth }) => m.signOut(auth));
+      authP.then(({ m, auth }) => m.signOut(auth)); import('./supabase-sesion.js').then(m => m.supaSignOut()).catch(() => {});
     } else {
       loginError.textContent = '';
       loginEmail.value = '';
@@ -279,7 +279,7 @@
     loginError.textContent = '';
     try {
       const { m, auth } = await authP;
-      await m.signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPass.value);
+      await m.signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPass.value); import('./supabase-sesion.js').then(m => m.supaSignIn(loginEmail.value.trim(), loginPass.value)).catch(() => {});
       loginDialog.close();
     } catch (e) {
       loginError.textContent = 'Email o contraseña incorrectos.';

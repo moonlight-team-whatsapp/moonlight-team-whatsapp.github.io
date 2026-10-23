@@ -827,14 +827,14 @@
 
   // ---------- Login admin ----------
   $('adminToggleBtn').addEventListener('click', () => {
-    if (isAdmin) { signOut(auth); return; }
+    if (isAdmin) { signOut(auth); import('./supabase-sesion.js').then(m => m.supaSignOut()).catch(() => {}); return; }
     $('loginError').textContent = ''; $('loginEmail').value = ''; $('loginPass').value = '';
     $('loginDialog').showModal();
   });
   $('loginCancel').addEventListener('click', () => $('loginDialog').close());
   $('loginSubmit').addEventListener('click', async () => {
     $('loginError').textContent = '';
-    try { await signInWithEmailAndPassword(auth, $('loginEmail').value.trim(), $('loginPass').value); $('loginDialog').close(); }
+    try { await signInWithEmailAndPassword(auth, $('loginEmail').value.trim(), $('loginPass').value); import('./supabase-sesion.js').then(m => m.supaSignIn($('loginEmail').value.trim(), $('loginPass').value)).catch(() => {}); $('loginDialog').close(); }
     catch (e) { $('loginError').textContent = 'Email o contraseña incorrectos.'; }
   });
   onAuthStateChanged(auth, (user) => {
