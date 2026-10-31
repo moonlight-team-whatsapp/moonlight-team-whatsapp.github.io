@@ -15,9 +15,15 @@
 <meta property="og:image" content="https://moonlight-team-whatsapp.github.io/luna.jpg">
 <meta name="twitter:card" content="summary">
 <link rel="icon" type="image/png" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0e1326">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Moonlight">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500;1,600&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Cinzel:wght@600&family=Playfair+Display:ital,wght@1,600&family=Dancing+Script:wght@700&family=Great+Vibes&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500;1,600&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Cinzel:wght@600&family=Playfair+Display:ital,wght@1,600&family=Dancing+Script:wght@700&family=Great+Vibes&family=Pinyon+Script&family=Italianno&family=Allura&family=Parisienne&family=Satisfy&family=Cinzel+Decorative:wght@700&family=Uncial+Antiqua&family=Almendra:ital,wght@1,400&family=Marcellus&family=Cormorant+Unicase:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <style>
   html, body{ height:100%; overflow:hidden; }
@@ -242,8 +248,28 @@
     { n:'Cinzel (épica)', f:'Cinzel', s:'600' },
     { n:'Playfair Display (cursiva)', f:'Playfair Display', s:'italic 600' },
     { n:'Dancing Script (manuscrita)', f:'Dancing Script', s:'700' },
-    { n:'Great Vibes (caligrafía)', f:'Great Vibes', s:'400' }
+    { n:'Great Vibes (caligrafía)', f:'Great Vibes', s:'400' },
+    { n:'Pinyon Script (invitación)', f:'Pinyon Script', s:'400' },
+    { n:'Italianno (fina)', f:'Italianno', s:'400' },
+    { n:'Allura (romántica)', f:'Allura', s:'400' },
+    { n:'Parisienne (elegante)', f:'Parisienne', s:'400' },
+    { n:'Satisfy (pincel)', f:'Satisfy', s:'400' },
+    { n:'Cinzel Decorative (épica+)', f:'Cinzel Decorative', s:'700' },
+    { n:'Uncial Antiqua (medieval)', f:'Uncial Antiqua', s:'400' },
+    { n:'Almendra (fantasía)', f:'Almendra', s:'italic 400' },
+    { n:'Marcellus (romana)', f:'Marcellus', s:'400' },
+    { n:'Cormorant Unicase', f:'Cormorant Unicase', s:'600' }
   ];
+  // Aston Script: se activa solo si existe el archivo fonts/aston-script.ttf en el repo
+  (function(){
+    var st = document.createElement('style'); st.textContent = "@font-face{font-family:'Aston Script';src:url('fonts/aston-script.ttf') format('truetype');font-display:swap}"; document.head.appendChild(st);
+    fetch('fonts/aston-script.ttf', { method:'HEAD' }).then(function(r){
+      if (!r.ok) return;
+      FONTS.push({ n:'Aston Script (caligrafía)', f:'Aston Script', s:'400' });
+      var o = document.createElement('option'); o.value = FONTS.length - 1; o.textContent = 'Aston Script (caligrafía)'; o.style.fontFamily = '"Aston Script", serif';
+      var sel = document.getElementById('iFont'); if (sel) sel.appendChild(o);
+    }).catch(function(){});
+  })();
   var THEMES = [
     { n:'Noche', a:'#0e1326', b:'#090c1a', glow:'#d9c383', star:'255,255,255', name:'#eef0fb', acc:'#d9c383', ink:'#cdd3ee' },
     { n:'Aurora', a:'#0b2230', b:'#08121f', glow:'#6ee7d8', star:'220,255,250', name:'#e9fffb', acc:'#6ee7d8', ink:'#c9ece8' },
