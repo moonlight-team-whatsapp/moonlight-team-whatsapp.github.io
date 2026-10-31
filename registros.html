@@ -20,6 +20,12 @@
 <meta name="twitter:description" content="Ranking mensual de Moonlight Team: quién ha hablado más cada mes en nuestro roleplay de Genshin Impact, con el top 10 de participantes.">
 <meta name="twitter:image" content="https://moonlight-team-whatsapp.github.io/luna.jpg">
 <link rel="icon" type="image/png" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0e1326">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Moonlight">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
@@ -179,21 +185,23 @@
   }
   const disp = (k) => k.replace(/(^|[\s|])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
   function parseChat(text){
-    const re = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4}),? \d{1,2}:\d{2}(?:\s?[ap]\.?\s?m\.?)? - (.*)$/i;
-    const L = []; let first13 = false, second13 = false;
+    // Admite Android ("10/1/26, 12:05 - Nombre: msg") e iPhone ("[10/1/26, 12:05:15 AM] Nombre: msg")
+    const re = /^\[?(\d{1,2})\/(\d{1,2})\/(\d{2,4}),? \d{1,2}:\d{2}(?::\d{2})?(\s?[ap]\.?\s?m\.?)?\]?(?: -)? (.*)$/i;
+    const L = []; let first13 = false, second13 = false, ampm = false;
     for (const raw of text.replace(/\u202f/g, ' ').replace(/[\u200e\u200f]/g, '').split('\n')){
       const m = re.exec(raw.replace(/\r$/, '')); if (!m) continue;
-      if (+m[1] > 12) first13 = true; if (+m[2] > 12) second13 = true;
-      L.push([+m[1], +m[2], +m[3], m[4]]);
+      if (+m[1] > 12) first13 = true; if (+m[2] > 12) second13 = true; if (m[4]) ampm = true;
+      L.push([+m[1], +m[2], +m[3], m[5]]);
     }
-    const monthFirst = second13 && !first13;
+    // Si no se puede deducir, con AM/PM (formato de EE. UU.) el mes va primero
+    const monthFirst = (second13 && !first13) || (!first13 && !second13 && ampm);
     const out = {};
     for (const [a, b, y, rest] of L){
       const i = rest.indexOf(': '); if (i < 1) continue;
       const id = (y < 100 ? 2000 + y : y) + '-' + String(monthFirst ? a : b).padStart(2, '0');
       const r = ((out[id] ??= {})[chatKey(rest.slice(0, i))] ??= { n: 0, media: 0 });
       r.n++;
-      if (/^<(media omitted|multimedia omitido)>$/i.test(rest.slice(i + 2).trim())) r.media++;
+      if (/^<?[\wáéíóúñ ]{0,30}(omitid[oa]|omitted)>?$/i.test(rest.slice(i + 2).trim())) r.media++;
     }
     return out;
   }
