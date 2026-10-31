@@ -43,9 +43,18 @@
   .bar i{display:block;height:100%;min-width:3px;background:linear-gradient(90deg,var(--gold-dim),var(--gold))}
   .imp-month{margin:16px 0 6px;color:var(--gold);font-family:'Cormorant',serif;font-size:1.3rem;text-transform:capitalize}
   .imp-row{display:grid;grid-template-columns:1fr 64px 1.4fr;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
-  .imp-row.warn select{border-color:var(--danger)}
+  .imp-row.warn .cb input{border-color:var(--danger)}
+  .cb{position:relative;min-width:0}
+  .cb input{width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);color:var(--ink);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font:inherit}
+  .cb input:focus{outline:none;border-color:var(--gold)}
+  .cb-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;max-height:280px;overflow:auto;background:#151b34;border:1px solid var(--gold-dim);border-radius:8px;box-shadow:0 14px 32px -8px rgba(0,0,0,.7)}
+  .cb-it{padding:8px 10px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)}
+  .cb-it:last-child{border-bottom:none}
+  .cb-it.on,.cb-it:hover{background:rgba(217,195,131,.16)}
+  .cb-it small{display:block;color:var(--ink-soft)}
+  .cb-no{padding:10px;color:var(--ink-soft);font-style:italic}
   .imp-row b{text-align:right}
-  @media(max-width:560px){.imp-row{grid-template-columns:1fr 64px}.imp-row select{grid-column:1/-1}}
+  @media(max-width:560px){.imp-row{grid-template-columns:1fr 64px}.imp-row .cb{grid-column:1/-1}}
   .dropzone{ position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:26px 16px; text-align:center;
     border:1.5px dashed var(--gold-dim); border-radius:8px; background:rgba(255,255,255,0.03); cursor:pointer; transition:background .2s, border-color .2s, box-shadow .2s; }
   .dropzone:hover, .dropzone.over, .dropzone:focus-within{ border-color:var(--gold); background:rgba(217,195,131,.08); }
@@ -369,6 +378,44 @@
     $('fileIn').value = '';
   }
 
+  // Buscador de miembros: escribe cualquier parte del nombre del personaje, del apodo o del "Miembro-0xx"
+  function makeCb(sel, chatKeyTxt){
+    const wrap = document.createElement('div'); wrap.className = 'cb';
+    const inp = document.createElement('input'); inp.type = 'text'; inp.autocomplete = 'off'; inp.placeholder = 'Buscar miembro o personaje…'; inp.setAttribute('aria-label', 'Miembro');
+    const list = document.createElement('div'); list.className = 'cb-list'; list.hidden = true;
+    wrap.append(inp, list); sel.style.display = 'none'; sel.after(wrap);
+    const kt = simp(chatKeyTxt).split(/[\s|]+/).filter(x => x.length > 1);
+    const items = [...sel.options].filter(o => o.value).map(o => {
+      const m = miembros.find(x => x.id === o.value);
+      return { v: o.value, t: o.textContent, n: simp(o.textContent + ' ' + ((m && m.aliasesChat) || []).join(' ') + ' ' + ((m && m.apodoInterno) || '')) };
+    });
+    let shown = [], act = 0;
+    const labelOf = (v) => { const i = items.find(x => x.v === v); return i ? i.t : ''; };
+    const sync = () => { inp.value = labelOf(sel.value); };
+    function render(){
+      const q = simp(inp.dataset.q || '').split(/\s+/).filter(Boolean);
+      shown = items.filter(i => q.every(t => i.n.includes(t)));
+      if (!q.length) shown = shown.map((i, ix) => ({ i, sc: kt.filter(t => i.n.includes(t)).length, ix })).sort((a, b) => b.sc - a.sc || a.ix - b.ix).map(x => x.i);
+      shown = shown.slice(0, 60); act = 0;
+      list.innerHTML = shown.length ? shown.map((i, ix) => `<div class="cb-it${ix === 0 ? ' on' : ''}" data-ix="${ix}">${esc(i.t)}</div>`).join('') : '<div class="cb-no">Sin resultados</div>';
+    }
+    const open = () => { list.hidden = false; };
+    const close = () => { list.hidden = true; sync(); };
+    function mark(n){ const els = list.querySelectorAll('.cb-it'); if (!els.length) return; act = (n + els.length) % els.length; els.forEach((e, i) => e.classList.toggle('on', i === act)); els[act].scrollIntoView({ block: 'nearest' }); }
+    function pick(v){ sel.value = v; sel.dispatchEvent(new Event('change')); sync(); list.hidden = true; inp.blur(); }
+    inp.addEventListener('focus', () => { inp.dataset.q = ''; inp.select(); render(); open(); });
+    inp.addEventListener('input', () => { inp.dataset.q = inp.value; render(); open(); });
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown'){ e.preventDefault(); open(); mark(act + 1); }
+      else if (e.key === 'ArrowUp'){ e.preventDefault(); mark(act - 1); }
+      else if (e.key === 'Enter'){ e.preventDefault(); if (shown[act]) pick(shown[act].v); }
+      else if (e.key === 'Escape'){ close(); inp.blur(); }
+    });
+    inp.addEventListener('blur', () => setTimeout(close, 120));
+    list.addEventListener('mousedown', (e) => { const it = e.target.closest('.cb-it'); if (it){ e.preventDefault(); pick(shown[+it.dataset.ix].v); } });
+    sync(); wrap.sync = sync; return wrap;
+  }
+
   function renderImport(){
     const box = $('importOut'); box.innerHTML = '';
     const ids = Object.keys(pending).sort();
@@ -384,6 +431,7 @@
       sec.querySelectorAll('.imp-row').forEach(r => {
         const s = r.querySelector('select'), a = autoMatch(r.dataset.k);
         if (a) s.value = a;
+        makeCb(s, r.dataset.k);
         r.classList.toggle('warn', !s.value);
         s.addEventListener('change', () => r.classList.toggle('warn', !s.value));
       });
