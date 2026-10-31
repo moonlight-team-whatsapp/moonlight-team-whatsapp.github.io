@@ -198,7 +198,9 @@
     const re = /^\[?(\d{1,2})\/(\d{1,2})\/(\d{2,4}),? \d{1,2}:\d{2}(?::\d{2})?(\s?[ap]\.?\s?m\.?)?\]?(?: -)? (.*)$/i;
     const L = []; let first13 = false, second13 = false, ampm = false;
     for (const raw of text.replace(/\u202f/g, ' ').replace(/[\u200e\u200f]/g, '').split('\n')){
-      const m = re.exec(raw.replace(/\r$/, '')); if (!m) continue;
+      const line = raw.replace(/\r$/, '');
+      if (/^\[[^\]]*\] - /.test(line)) continue; // avisos del sistema de iPhone ("] - Fulano cambió los ajustes: …"), no son mensajes
+      const m = re.exec(line); if (!m) continue;
       if (+m[1] > 12) first13 = true; if (+m[2] > 12) second13 = true; if (m[4]) ampm = true;
       L.push([+m[1], +m[2], +m[3], m[5]]);
     }
