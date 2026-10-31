@@ -201,7 +201,7 @@
       const id = (y < 100 ? 2000 + y : y) + '-' + String(monthFirst ? a : b).padStart(2, '0');
       const r = ((out[id] ??= {})[chatKey(rest.slice(0, i))] ??= { n: 0, media: 0 });
       r.n++;
-      if (/^<?[\wáéíóúñ ]{0,30}(omitid[oa]|omitted)>?$/i.test(rest.slice(i + 2).trim())) r.media++;
+      if (/^(\[(reenviado|forwarded)[^\]]*\]\s*)?<?[\wáéíóúñ ]{0,30}(omitid[oa]|omitted)>?$/i.test(rest.slice(i + 2).trim())) r.media++;
     }
     return out;
   }
