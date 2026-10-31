@@ -44,6 +44,8 @@
   .imp-month{margin:16px 0 6px;color:var(--gold);font-family:'Cormorant',serif;font-size:1.3rem;text-transform:capitalize}
   .imp-row{display:grid;grid-template-columns:1fr 64px 1.4fr;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
   .imp-row.warn .cb input{border-color:var(--danger)}
+  .imp-new{margin:10px 0;padding:10px 12px;border:1px solid var(--gold-dim);border-radius:8px;background:rgba(217,195,131,.07);line-height:1.5}
+  .imp-new small,.imp-new-t{color:var(--gold)}
   .cb{position:relative;min-width:0}
   .cb input{width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);color:var(--ink);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font:inherit}
   .cb input:focus{outline:none;border-color:var(--gold)}
@@ -199,22 +201,46 @@
     const L = []; let first13 = false, second13 = false, ampm = false;
     for (const raw of text.replace(/\u202f/g, ' ').replace(/[\u200e\u200f]/g, '').split('\n')){
       const line = raw.replace(/\r$/, '');
-      if (/^\[[^\]]*\] - /.test(line)) continue; // avisos del sistema de iPhone ("] - Fulano cambió los ajustes: …"), no son mensajes
+      const sys = /^\[[^\]]*\] - /.test(line); // avisos del sistema de iPhone ("] - Fulano cambió los ajustes: …"): no son mensajes
       const m = re.exec(line); if (!m) continue;
       if (+m[1] > 12) first13 = true; if (+m[2] > 12) second13 = true; if (m[4]) ampm = true;
-      L.push([+m[1], +m[2], +m[3], m[5]]);
+      L.push([+m[1], +m[2], +m[3], m[5], sys]);
     }
     // Si no se puede deducir, con AM/PM (formato de EE. UU.) el mes va primero
     const monthFirst = (second13 && !first13) || (!first13 && !second13 && ampm);
-    const out = {};
-    for (const [a, b, y, rest] of L){
+    const out = {}, ev = [], firstMsg = {}; let ord = 0;
+    for (const [a, b, y, rest, sys] of L){
+      ord++;
+      const id = (y < 100 ? 2000 + y : y) + '-' + String(monthFirst ? a : b).padStart(2, '0'), dia = monthFirst ? b : a;
+      if (sys){ sysEvents(rest).forEach(([tipo, nom]) => ev.push({ id, dia, key: chatKey(nom), tipo, ord })); continue; }
       const i = rest.indexOf(': '); if (i < 1) continue;
-      const id = (y < 100 ? 2000 + y : y) + '-' + String(monthFirst ? a : b).padStart(2, '0');
-      const r = ((out[id] ??= {})[chatKey(rest.slice(0, i))] ??= { n: 0, media: 0 });
+      const kk = chatKey(rest.slice(0, i));
+      ((firstMsg[id] ??= {})[kk] ??= ord);
+      const r = ((out[id] ??= {})[kk] ??= { n: 0, media: 0 });
       r.n++;
       if (/^(\[(reenviado|forwarded)[^\]]*\]\s*)?<?[\wáéíóúñ ]{0,30}(omitid[oa]|omitted)>?$/i.test(rest.slice(i + 2).trim())) r.media++;
     }
+    // Quién se unió este mes: su primer aviso del mes es una entrada y no había escrito antes
+    chatJoins = {};
+    const vistos = new Set();
+    ev.forEach(e => {
+      const k = e.id + '|' + e.key; if (vistos.has(k)) return; vistos.add(k);
+      if (e.tipo !== 'join' || !e.key || e.key === 'tu') return;
+      const fm = (firstMsg[e.id] || {})[e.key];
+      if (fm && fm < e.ord) return;
+      (chatJoins[e.id] ??= []).push({ key: e.key, dia: e.dia });
+    });
     return out;
+  }
+  let chatJoins = {};
+  // Avisos del sistema de WhatsApp: entradas y salidas de miembros
+  function sysEvents(t){
+    t = t.replace(/^-\s*/, '').replace(/\.$/, '').trim(); let m;
+    if ((m = /^(.+?) (?:añadió a|added) (.+)$/i.exec(t))) return m[2].split(/, /).map(x => ['join', x.trim()]);
+    if ((m = /^(.+?) se unió(?: .*)?$/i.exec(t)) || (m = /^(.+?) joined(?: .*)?$/i.exec(t))) return [['join', m[1]]];
+    if ((m = /^(.+?) (?:eliminó a|removed) (.+)$/i.exec(t))) return [['leave', m[2]]];
+    if ((m = /^(.+?) (?:salió(?: del grupo)?|left)$/i.exec(t))) return [['leave', m[1]]];
+    return [];
   }
   function parseSheet(buf){
     const wb = XLSX.read(buf, { type: 'array' });
@@ -227,6 +253,7 @@
       const e = ((out[mes] ??= {})[chatKey(nom)] ??= { n: 0, media: 0 });
       e.n += n; e.media += +g('multimedia') || 0;
     });
+    chatJoins = {};
     return out;
   }
   // </PARSE>
@@ -257,6 +284,7 @@
     li.style.cssText = 'display:flex;gap:10px;align-items:flex-start';
     li.innerHTML = `<span class="rank">${rank}</span><div style="flex:1;min-width:0">
       <div class="li-name">${m ? esc(lbl(m)) + (charParts(m).length ? ' - ' + charsHtml(m) : ` <span class="li-admin-only">· ${esc(pubLabel(e))}</span>`) : esc(pubLabel(e))}</div>
+      ${isAdmin && e.unido ? `<div class="li-meta"><span class="li-admin-only">🆕 Se unió el día ${e.unido}: lleva ${diasEn(current, e.unido)} de ${diasMes(current)} días del mes</span></div>` : ''}
       <div class="li-meta">tiene un <b>${pct(e.mensajes, total)}</b> de los mensajes totales de este mes · ${fmt(e.mensajes)} mensajes (${fmt(e.multimedia || 0)} multimedia)</div>
       <div class="bar" title="${pct(e.mensajes, total)} del total del mes"><i style="width:${total ? e.mensajes / total * 100 : 0}%${e.mensajes ? '' : ';min-width:0'}"></i></div></div>`;
     return li;
@@ -418,6 +446,8 @@
     sync(); wrap.sync = sync; return wrap;
   }
 
+  const diasMes = (id) => new Date(+id.slice(0, 4), +id.slice(5, 7), 0).getDate();
+  const diasEn = (id, dia) => diasMes(id) - dia + 1;
   function renderImport(){
     const box = $('importOut'); box.innerHTML = '';
     const ids = Object.keys(pending).sort();
@@ -427,7 +457,8 @@
       const rows = Object.entries(pending[id]).sort((a, b) => b[1].n - a[1].n);
       const sec = document.createElement('div');
       sec.innerHTML = `<div class="imp-month">${mesLabel(id)} · ${fmt(rows.reduce((s, [, v]) => s + v.n, 0))} mensajes</div>` +
-        rows.map(([k, v]) => `<div class="imp-row" data-k="${esc(k)}"><span>${esc(disp(k))}</span><b>${fmt(v.n)}</b>
+        ((chatJoins[id] || []).length ? `<div class="imp-new"><b>🆕 Se unieron este mes (${chatJoins[id].length}):</b> ${chatJoins[id].map(j => `${esc(disp(j.key))} <small>día ${j.dia} · ${diasEn(id, j.dia)} de ${diasMes(id)} días</small>`).join(' · ')}<br><small>No se les puede exigir lo mismo que a quien lleva todo el mes.</small></div>` : '') +
+        rows.map(([k, v]) => `<div class="imp-row" data-k="${esc(k)}"><span>${esc(disp(k))}${(chatJoins[id] || []).find(j => j.key === k) ? ` <small class="imp-new-t">🆕 día ${(chatJoins[id] || []).find(j => j.key === k).dia}</small>` : ''}</span><b>${fmt(v.n)}</b>
           <select><option value="">— Elegir miembro —</option><option value="-">Antiguo miembro</option>${opts}</select></div>`).join('') +
         `<button class="submit-btn" type="button" style="margin-top:12px">Guardar ${mesLabel(id)}</button>`;
       sec.querySelectorAll('.imp-row').forEach(r => {
@@ -452,6 +483,7 @@
       if (mid === '-'){ ex.push({ miembroId: null, mensajes: v.n, multimedia: v.media }); return; }
       const e = (agg[mid] ??= { miembroId: mid, mensajes: 0, multimedia: 0 });
       e.mensajes += v.n; e.multimedia += v.media;
+      const j = (chatJoins[id] || []).find(x => x.key === r.dataset.k); if (j) e.unido = Math.min(e.unido || 99, j.dia);
     });
     const entradas = [...Object.values(agg).map(e => {
       const m = miembros.find(x => x.id === e.miembroId);
