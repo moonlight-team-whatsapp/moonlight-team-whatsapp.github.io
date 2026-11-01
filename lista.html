@@ -592,11 +592,14 @@
               }
               // Peticiones (buscados) hechas por esta persona
               const nn = normalize(item.nombre), nombresDe = (x) => String(x.pedidoPor || '').split(' / ');
-              const suyas = buscadosCache.filter(x => nombresDe(x).some(n => normalize(n) === nn));
-              const nuevaEtiqueta = (x) => nombresDe(x).map(n => normalize(n) === nn ? nombre : n).join(' / ');
+              // Peticiones con su nombre, o "huérfanas" del mismo miembro (a nombre de un personaje que ya no está ocupado)
+              const vivos = new Set(allCaches.ocupados.filter(o => o.id !== item.id).map(o => normalize(o.nombre)));
+              const huerfana = (x) => item.miembroId && x.pedidoPorId === item.miembroId && !nombresDe(x).some(n => vivos.has(normalize(n)) || normalize(n) === nn);
+              const suyas = buscadosCache.filter(x => nombresDe(x).some(n => normalize(n) === nn) || huerfana(x));
+              const nuevaEtiqueta = (x) => nombresDe(x).some(n => normalize(n) === nn) ? nombresDe(x).map(n => normalize(n) === nn ? nombre : n).join(' / ') : nombre;
               let borrar = [];
               if (!corrige && suyas.length){
-                const op = await ask('Personajes que pedía', 'Marca los que sigue pidiendo: pasarán a pedirlos como «' + nombre + '». Los desmarcados se borran de buscados.', [
+                const op = await ask('Personajes que pedía', 'Marca los que sigue pidiendo (' + item.nombre + ' → ' + nombre + '): pasarán a pedirlos como «' + nombre + '». Los desmarcados se borran de buscados.', [
                   { t: 'Aceptar', v: 'ok', c: 'btn-primary' },
                   { t: 'Cancelar', v: null, c: 'btn-ghost' }
                 ], suyas.map(x => ({ id: x.id, t: x.nombre + (x.motivo ? ' — ' + x.motivo : ''), on: true })));
