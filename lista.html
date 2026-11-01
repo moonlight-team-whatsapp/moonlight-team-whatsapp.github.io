@@ -566,6 +566,12 @@
             if (!nombre) return;
             if (nombre !== item.nombre){
               let corrige = false, quedan = null, ref = null;
+              // Peticiones (buscados) de este personaje, o "huérfanas" del mismo miembro (a nombre de un personaje que ya no está ocupado)
+              const nn = normalize(item.nombre), nombresDe = (x) => String(x.pedidoPor || '').split(' / ');
+              const vivos = new Set(allCaches.ocupados.filter(o => o.id !== item.id).map(o => normalize(o.nombre)));
+              const huerfana = (x) => item.miembroId && x.pedidoPorId === item.miembroId && !nombresDe(x).some(n => vivos.has(normalize(n)) || normalize(n) === nn);
+              const suyas = buscadosCache.filter(x => nombresDe(x).some(n => normalize(n) === nn) || huerfana(x));
+              const nuevaEtiqueta = (x) => nombresDe(x).some(n => normalize(n) === nn) ? nombresDe(x).map(n => normalize(n) === nn ? nombre : n).join(' / ') : nombre;
               if (item.miembroId){
                 // Cada cambio de personaje gasta 1 de "Cambios" en Contactos; sin cambios no se puede cambiar
                 try {
@@ -574,38 +580,20 @@
                   quedan = typeof d.cambiosDisponibles === 'number' ? d.cambiosDisponibles : 1;
                 } catch (e) { statusLine.textContent = 'No se pudo comprobar los cambios del miembro, inténtalo de nuevo.'; return; }
                 if (quedan <= 0){ statusLine.textContent = 'Este miembro no tiene cambios disponibles: súmale uno en Contactos si quieres permitírselo.'; return; }
-                const op = await ask('Cambiar personaje', 'Gastar un cambio de este miembro (le quedarán ' + (quedan - 1) + ') y empezar ficha nueva en el árbol, o solo corregir el nombre sin gastar nada (mismo personaje, conserva sus vínculos).', [
-                  { t: 'Gastar cambio', v: 'gasta', c: 'btn-primary' },
-                  { t: 'Corregir sin gastar', v: 'corrige', c: 'btn-ghost' },
-                  { t: 'Cancelar', v: null, c: 'btn-ghost' }
-                ]);
-                if (!op) return;
-                corrige = op === 'corrige';
-              } else {
-                const op = await ask('Cambiar personaje', 'Este ocupado no tiene miembro asociado. ¿Es un personaje nuevo (ficha nueva en el árbol) o solo corriges el nombre?', [
-                  { t: 'Personaje nuevo', v: 'nuevo', c: 'btn-primary' },
-                  { t: 'Corregir nombre', v: 'corrige', c: 'btn-ghost' },
-                  { t: 'Cancelar', v: null, c: 'btn-ghost' }
-                ]);
-                if (!op) return;
-                corrige = op === 'corrige';
               }
-              // Peticiones (buscados) hechas por esta persona
-              const nn = normalize(item.nombre), nombresDe = (x) => String(x.pedidoPor || '').split(' / ');
-              // Peticiones con su nombre, o "huérfanas" del mismo miembro (a nombre de un personaje que ya no está ocupado)
-              const vivos = new Set(allCaches.ocupados.filter(o => o.id !== item.id).map(o => normalize(o.nombre)));
-              const huerfana = (x) => item.miembroId && x.pedidoPorId === item.miembroId && !nombresDe(x).some(n => vivos.has(normalize(n)) || normalize(n) === nn);
-              const suyas = buscadosCache.filter(x => nombresDe(x).some(n => normalize(n) === nn) || huerfana(x));
-              const nuevaEtiqueta = (x) => nombresDe(x).some(n => normalize(n) === nn) ? nombresDe(x).map(n => normalize(n) === nn ? nombre : n).join(' / ') : nombre;
-              let borrar = [];
-              if (!corrige && suyas.length){
-                const op = await ask('Personajes que pedía', 'Marca los que sigue pidiendo (' + item.nombre + ' → ' + nombre + '): pasarán a pedirlos como «' + nombre + '». Los desmarcados se borran de buscados.', [
-                  { t: 'Aceptar', v: 'ok', c: 'btn-primary' },
-                  { t: 'Cancelar', v: null, c: 'btn-ghost' }
-                ], suyas.map(x => ({ id: x.id, t: x.nombre + (x.motivo ? ' — ' + x.motivo : ''), on: true })));
-                if (!op) return;
-                borrar = suyas.filter(x => !askSel.includes(x.id));
-              }
+              const hayPet = suyas.length > 0;
+              const txt = (item.miembroId
+                ? 'Gastar un cambio de este miembro (le quedarán ' + (quedan - 1) + ') y empezar ficha nueva en el árbol, o solo corregir el nombre sin gastar nada (mismo personaje, conserva sus vínculos).'
+                : 'Este ocupado no tiene miembro asociado. ¿Es un personaje nuevo (ficha nueva en el árbol) o solo corriges el nombre?')
+                + (hayPet ? ' Peticiones de ' + item.nombre + ': las marcadas pasan a ' + nombre + ' y las desmarcadas se borran (si corriges sin gastar, todas pasan a ' + nombre + ').' : '');
+              const op = await ask('Cambiar personaje: ' + item.nombre + ' → ' + nombre, txt, [
+                { t: item.miembroId ? 'Gastar cambio' : 'Personaje nuevo', v: 'gasta', c: 'btn-primary' },
+                { t: item.miembroId ? 'Corregir sin gastar' : 'Corregir nombre', v: 'corrige', c: 'btn-ghost' },
+                { t: 'Cancelar', v: null, c: 'btn-ghost' }
+              ], hayPet ? suyas.map(x => ({ id: x.id, t: x.nombre + (x.motivo ? ' — ' + x.motivo : ''), on: true })) : null);
+              if (!op) return;
+              corrige = op === 'corrige';
+              const borrar = corrige ? [] : suyas.filter(x => !askSel.includes(x.id));
               try {
                 if (!corrige && ref) await updateDoc(ref, {
                   cambiosDisponibles: quedan - 1,
