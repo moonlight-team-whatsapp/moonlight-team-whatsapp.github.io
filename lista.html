@@ -208,6 +208,14 @@
   </div>
 </dialog>
 
+<dialog id="askDialog">
+  <div class="dialog-inner">
+    <h3 id="askTitle"></h3>
+    <p id="askMsg" style="margin:0;line-height:1.5"></p>
+    <div class="dialog-actions" id="askBtns" style="flex-wrap:wrap"></div>
+  </div>
+</dialog>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
@@ -479,6 +487,22 @@
   }
 
   // ---------- Genérico: lista simple (ocupados / reservados) ----------
+    // Emergente propio (en lugar de confirm del navegador). opts: [{t:'Texto', v:valor, c:'btn-primary'|'btn-ghost'}]
+  function ask(title, msg, opts){
+    return new Promise(res => {
+      const dlg = $('askDialog'), box = $('askBtns');
+      $('askTitle').textContent = title; $('askMsg').textContent = msg; box.innerHTML = '';
+      let out = null;
+      opts.forEach(o => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = o.c || 'btn-ghost'; b.textContent = o.t;
+        b.addEventListener('click', () => { out = o.v; dlg.close(); });
+        box.appendChild(b);
+      });
+      dlg.addEventListener('close', () => res(out), { once: true });
+      dlg.showModal();
+    });
+  }
+
   function setupSimpleList(collectionName, listEl, emptyEl, emptyText){
     let cache = [];
     let editingId = null;
@@ -527,20 +551,42 @@
             const nombre = inp.value.trim();
             if (!nombre) return;
             if (nombre !== item.nombre){
+              let corrige = false;
               if (item.miembroId){
                 // Cada cambio de personaje gasta 1 de "Cambios" en Contactos; sin cambios no se puede cambiar
                 try {
                   const ref = doc(db, 'miembros', item.miembroId), snap = await getDoc(ref);
                   const d = snap.exists() ? snap.data() : {}, quedan = typeof d.cambiosDisponibles === 'number' ? d.cambiosDisponibles : 1;
                   if (quedan <= 0){ statusLine.textContent = 'Este miembro no tiene cambios disponibles: súmale uno en Contactos si quieres permitírselo.'; return; }
-                  if (!confirm('Este cambio gasta 1 cambio de este miembro (le quedarán ' + (quedan - 1) + '). ¿Continuar?')) return;
-                  await updateDoc(ref, {
+                  const op = await ask('Cambiar personaje', 'Gastar un cambio de este miembro (le quedarán ' + (quedan - 1) + ') y empezar ficha nueva en el árbol, o solo corregir el nombre sin gastar nada (mismo personaje, conserva sus vínculos).', [
+                    { t: 'Gastar cambio', v: 'gasta', c: 'btn-primary' },
+                    { t: 'Corregir sin gastar', v: 'corrige', c: 'btn-ghost' },
+                    { t: 'Cancelar', v: null, c: 'btn-ghost' }
+                  ]);
+                  if (!op) return;
+                  if (op === 'corrige') corrige = true;
+                  else await updateDoc(ref, {
                     cambiosDisponibles: quedan - 1,
                     historialPersonajes: arrayUnion({ nombre: item.nombre, fecha: new Date().toISOString() })
                   });
                 } catch (e) { statusLine.textContent = 'No se pudo comprobar los cambios del miembro, inténtalo de nuevo.'; return; }
               }
+              if (!item.miembroId){
+                const op = await ask('Cambiar personaje', 'Este ocupado no tiene miembro asociado. ¿Es un personaje nuevo (ficha nueva en el árbol) o solo corriges el nombre?', [
+                  { t: 'Personaje nuevo', v: 'nuevo', c: 'btn-primary' },
+                  { t: 'Corregir nombre', v: 'corrige', c: 'btn-ghost' },
+                  { t: 'Cancelar', v: null, c: 'btn-ghost' }
+                ]);
+                if (!op) return;
+                if (op === 'corrige') corrige = true;
+              }
               await updateDoc(doc(db, 'ocupados', item.id), { nombre });
+              if (corrige){
+                try {
+                  const sn = await getDocs(collection(db, 'arbol')), mia = sn.docs.find(d => d.data().oid === item.id);
+                  if (mia) await updateDoc(mia.ref, { nombre });
+                } catch (e) {}
+              } else
               // Personaje nuevo = ficha nueva en el árbol: sin los vínculos del anterior
               try {
                 const sn = await getDocs(collection(db, 'arbol')), mia = sn.docs.find(d => d.data().oid === item.id);
@@ -612,7 +658,7 @@
   // Un reservado se ha unido al team: sale de reservados y entra directamente en ocupados
   async function moveReservadoToOcupados(reservado){
     const dup = ocupadosCtl.getCache().some(o => normalize(o.nombre) === normalize(reservado.nombre));
-    if (dup && !confirm(`Ya hay un ocupado llamado «${reservado.nombre}». ¿Añadirlo igualmente?`)) return;
+    if (dup && !(await ask('Nombre repetido', `Ya hay un ocupado llamado «${reservado.nombre}». ¿Añadirlo igualmente?`, [{ t: 'Añadir', v: true, c: 'btn-primary' }, { t: 'Cancelar', v: false, c: 'btn-ghost' }]))) return;
     await addDoc(collection(db, 'ocupados'), {
       nombre: reservado.nombre,
       orden: nextOrden(ocupadosCtl.getCache()),
