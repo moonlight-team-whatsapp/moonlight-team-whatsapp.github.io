@@ -591,11 +591,12 @@
                 corrige = op === 'corrige';
               }
               // Peticiones (buscados) hechas por esta persona
-              const suyas = buscadosCache.filter(x => item.miembroId ? x.pedidoPorId === item.miembroId : (!x.pedidoPorId && x.pedidoPor === item.nombre));
-              const etiqueta = allCaches.ocupados.filter(o => item.miembroId ? o.miembroId === item.miembroId : o.id === item.id).map(o => o.id === item.id ? nombre : o.nombre).join(' / ');
+              const nn = normalize(item.nombre), nombresDe = (x) => String(x.pedidoPor || '').split(' / ');
+              const suyas = buscadosCache.filter(x => nombresDe(x).some(n => normalize(n) === nn));
+              const nuevaEtiqueta = (x) => nombresDe(x).map(n => normalize(n) === nn ? nombre : n).join(' / ');
               let borrar = [];
               if (!corrige && suyas.length){
-                const op = await ask('Personajes que pedía', 'Marca los que sigue pidiendo: pasarán a pedirlos como «' + etiqueta + '». Los desmarcados se borran de buscados.', [
+                const op = await ask('Personajes que pedía', 'Marca los que sigue pidiendo: pasarán a pedirlos como «' + nombre + '». Los desmarcados se borran de buscados.', [
                   { t: 'Aceptar', v: 'ok', c: 'btn-primary' },
                   { t: 'Cancelar', v: null, c: 'btn-ghost' }
                 ], suyas.map(x => ({ id: x.id, t: x.nombre + (x.motivo ? ' — ' + x.motivo : ''), on: true })));
@@ -609,7 +610,7 @@
                 });
                 await updateDoc(doc(db, 'ocupados', item.id), { nombre });
                 const bb = writeBatch(db);
-                suyas.forEach(x => { if (borrar.includes(x)) bb.delete(doc(db, 'buscados', x.id)); else bb.update(doc(db, 'buscados', x.id), { pedidoPor: etiqueta }); });
+                suyas.forEach(x => { if (borrar.includes(x)) bb.delete(doc(db, 'buscados', x.id)); else bb.update(doc(db, 'buscados', x.id), { pedidoPor: nuevaEtiqueta(x) }); });
                 if (suyas.length) await bb.commit();
               } catch (e) { statusLine.textContent = 'No se pudo guardar el cambio, inténtalo de nuevo.'; return; }
               if (corrige){
@@ -779,16 +780,10 @@
   );
   enableDragReorder(buscadosList, 'buscados', () => buscadosCache);
 
-  // Opciones de "Lo pide": solo personajes ocupados ahora (agrupados por miembro)
+  // Opciones de "Lo pide": personajes ocupados ahora
   function pedidoOptions(){
-    const out = [], byId = {};
-    allCaches.ocupados.forEach(o => {
-      if (o.miembroId){
-        if (!byId[o.miembroId]){ byId[o.miembroId] = { id: o.miembroId, label: [] }; out.push(byId[o.miembroId]); }
-        byId[o.miembroId].label.push(o.nombre);
-      } else out.push({ id: '', label: [o.nombre] });
-    });
-    return out.map(x => ({ id: x.id, label: x.label.join(' / ') }));
+    // Una opción por personaje (no por miembro)
+    return allCaches.ocupados.map(o => ({ id: o.miembroId || '', label: o.nombre }));
   }
   function fillPedidoSelect(sel, current){
     const opts = pedidoOptions();
