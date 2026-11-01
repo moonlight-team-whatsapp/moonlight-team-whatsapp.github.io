@@ -211,7 +211,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
-    getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, arrayUnion, setDoc,
+    getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, arrayUnion, setDoc, getDoc,
     onSnapshot, query, orderBy, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -528,9 +528,17 @@
             if (!nombre) return;
             if (nombre !== item.nombre){
               if (item.miembroId){
-                await updateDoc(doc(db, 'miembros', item.miembroId), {
-                  historialPersonajes: arrayUnion({ nombre: item.nombre, fecha: new Date().toISOString() })
-                });
+                // Cada cambio de personaje gasta 1 de "Cambios" en Contactos; sin cambios no se puede cambiar
+                try {
+                  const ref = doc(db, 'miembros', item.miembroId), snap = await getDoc(ref);
+                  const d = snap.exists() ? snap.data() : {}, quedan = typeof d.cambiosDisponibles === 'number' ? d.cambiosDisponibles : 1;
+                  if (quedan <= 0){ statusLine.textContent = 'Este miembro no tiene cambios disponibles: súmale uno en Contactos si quieres permitírselo.'; return; }
+                  if (!confirm('Este cambio gasta 1 cambio de este miembro (le quedarán ' + (quedan - 1) + '). ¿Continuar?')) return;
+                  await updateDoc(ref, {
+                    cambiosDisponibles: quedan - 1,
+                    historialPersonajes: arrayUnion({ nombre: item.nombre, fecha: new Date().toISOString() })
+                  });
+                } catch (e) { statusLine.textContent = 'No se pudo comprobar los cambios del miembro, inténtalo de nuevo.'; return; }
               }
               await updateDoc(doc(db, 'ocupados', item.id), { nombre });
             }
