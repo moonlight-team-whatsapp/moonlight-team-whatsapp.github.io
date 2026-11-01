@@ -307,9 +307,9 @@
     sorted.slice(0, 10).forEach((e, i) => $('topList').appendChild(rowLi(e, i + 1, r.total, max)));
     if (isAdmin){
       sorted.forEach((e, i) => $('fullList').appendChild(rowLi(e, i + 1, r.total, max)));
-      // Solo quienes ya estaban en el team ese mes (los que entraron después no aparecen)
+      // Sin mensajes solo salen quienes ocupan algún personaje ahora y ya estaban en el team ese mes: ausencia no es inactividad
       const finMes = new Date(r.anio, r.mes, 1).getTime();
-      miembros.filter(m => !r.entradas.some(e => e.miembroId === m.id) && !(m.createdAt && m.createdAt.toMillis && m.createdAt.toMillis() >= finMes))
+      miembros.filter(m => !r.entradas.some(e => e.miembroId === m.id) && ocupadosDe(m.id).length > 0 && !(m.createdAt && m.createdAt.toMillis && m.createdAt.toMillis() >= finMes))
         .forEach(m => $('fullList').appendChild(rowLi({ miembroId: m.id, mensajes: 0, mask: maskContacto(m.contacto || m.id) }, '–', r.total, max)));
     }
   }
