@@ -211,7 +211,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
-    getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, arrayUnion, setDoc, getDoc,
+    getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, setDoc, getDoc, getDocs, writeBatch,
     onSnapshot, query, orderBy, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -541,6 +541,21 @@
                 } catch (e) { statusLine.textContent = 'No se pudo comprobar los cambios del miembro, inténtalo de nuevo.'; return; }
               }
               await updateDoc(doc(db, 'ocupados', item.id), { nombre });
+              // Personaje nuevo = ficha nueva en el árbol: sin los vínculos del anterior
+              try {
+                const sn = await getDocs(collection(db, 'arbol')), mia = sn.docs.find(d => d.data().oid === item.id);
+                if (mia){
+                  const b = writeBatch(db);
+                  b.update(mia.ref, { nombre, genero: '', familia: '', padres: [], parejas: [] });
+                  sn.docs.forEach(d => {
+                    if (d.id === mia.id) return;
+                    const x = d.data();
+                    if ((x.padres || []).includes(mia.id)) b.update(d.ref, { padres: arrayRemove(mia.id) });
+                    if ((x.parejas || []).includes(mia.id)) b.update(d.ref, { parejas: arrayRemove(mia.id) });
+                  });
+                  await b.commit();
+                }
+              } catch (e) { statusLine.textContent = 'Personaje cambiado, pero no se pudo reiniciar su ficha del árbol: hazlo desde el árbol.'; }
             }
             editingId = null;
             paint();
