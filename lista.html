@@ -210,9 +210,14 @@
 
 <style>
   #askDialog{ max-width: 480px; }
-  #askChecks{ margin-top: 14px; display:flex; flex-direction:column; gap:8px; max-height: 40vh; overflow:auto; }
-  .ask-check{ display:flex; gap:10px; align-items:flex-start; cursor:pointer; line-height:1.35; }
-  .ask-check input{ margin-top:4px; accent-color: var(--gold); }
+  #askChecks{ margin-top: 14px; display:flex; flex-wrap:wrap; gap:8px; max-height: 40vh; overflow:auto; }
+  .ask-check{ position:relative; display:inline-flex; align-items:baseline; gap:6px; cursor:pointer; padding:5px 12px 5px 28px; border:1px solid var(--border); border-radius:999px; font-size:0.92rem; line-height:1.2; color: var(--ink-soft); transition: background .15s, border-color .15s, color .15s, opacity .15s; opacity:.6; user-select:none; }
+  .ask-check::before{ content:''; position:absolute; left:9px; top:50%; width:11px; height:11px; margin-top:-6px; border:1.5px solid var(--ink-soft); border-radius:50%; box-sizing:border-box; transition: all .15s; }
+  .ask-check:has(input:checked){ opacity:1; background: rgba(214,190,120,.14); border-color: var(--gold); color: var(--ink); }
+  .ask-check:has(input:checked)::before{ background: var(--gold); border-color: var(--gold); box-shadow: inset 0 0 0 2px #161d38; }
+  .ask-check input{ position:absolute; opacity:0; pointer-events:none; width:0; height:0; margin:0; padding:0; }
+  .ask-check b{ font-weight:600; }
+  .ask-check small{ font-size:0.8rem; opacity:.8; }
 </style>
 <dialog id="askDialog">
   <div class="dialog-inner">
@@ -503,8 +508,8 @@
       (checks || []).forEach(c => {
         const l = document.createElement('label'); l.className = 'ask-check';
         const i = document.createElement('input'); i.type = 'checkbox'; i.value = c.id; i.checked = c.on !== false;
-        const t = document.createElement('span'); t.textContent = c.t;
-        l.append(i, t); cl.appendChild(l);
+        const t = document.createElement('b'); t.textContent = c.t; const m = document.createElement('small'); m.textContent = c.m || '';
+        l.append(i, t, m); cl.appendChild(l);
       });
       let out = null;
       opts.forEach(o => {
@@ -590,7 +595,7 @@
                 { t: item.miembroId ? 'Gastar cambio' : 'Personaje nuevo', v: 'gasta', c: 'btn-primary' },
                 { t: item.miembroId ? 'Corregir sin gastar' : 'Corregir nombre', v: 'corrige', c: 'btn-ghost' },
                 { t: 'Cancelar', v: null, c: 'btn-ghost' }
-              ], hayPet ? suyas.map(x => ({ id: x.id, t: x.nombre + (x.motivo ? ' — ' + x.motivo : ''), on: true })) : null);
+              ], hayPet ? suyas.map(x => ({ id: x.id, t: x.nombre, m: x.motivo || '', on: true })) : null);
               if (!op) return;
               corrige = op === 'corrige';
               const borrar = corrige ? [] : suyas.filter(x => !askSel.includes(x.id));
