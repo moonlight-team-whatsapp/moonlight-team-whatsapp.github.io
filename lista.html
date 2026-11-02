@@ -92,7 +92,13 @@
           <button type="button" data-k="buscados">Buscados</button>
         </div>
       </div>
-      <button class="admin-toggle" id="exportBtn" hidden>Copiar texto para WhatsApp</button>
+      <div class="imgmenu" id="txtMenu" hidden>
+        <button class="admin-toggle" id="exportBtn" type="button" aria-haspopup="true" aria-expanded="false">Copiar texto para WhatsApp ▾</button>
+        <div class="imgmenu-list" id="txtMenuList" hidden>
+          <button type="button" data-k="listas">Solo las listas</button>
+          <button type="button" data-k="lobby">Descripción del lobby</button>
+        </div>
+      </div>
       <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
     </div>
   </header>
@@ -314,7 +320,7 @@
     $('ocupadoAdminForm').hidden = !isAdmin;
     $('reservadoAdminForm').hidden = !isAdmin;
     $('buscadoAdminForm').hidden = !isAdmin;
-    $('exportBtn').hidden = !isAdmin;
+    $('txtMenu').hidden = !isAdmin;
     paintLobby();
     $('imgMenu').hidden = !isAdmin;
     paintOcupados();
@@ -1244,16 +1250,36 @@
     return [bloque(T.ocupados, ocup), bloque(T.reservados, res), bloque(T.buscados, busc)].join('\n\n');
   }
 
-  $('exportBtn').addEventListener('click', async () => {
-    const btn = $('exportBtn');
-    const original = btn.textContent;
+  function generateLobbyText(){
+    return [
+      'ᰔ _*Si vas a unirte para salirte a los 1-3 días, ¡mejor no te unas!*_',
+      '',
+      '︶︶︶︶֪︶︶︶︶֪︶︶ ིྀ',
+      'moonlight-team-whatsapp.github.io/lista.html',
+      '',
+      '★ ————',
+      '',
+      generateWhatsAppText(),
+      '︶︶︶︶֪︶︶︶︶֪︶︶'
+    ].join('\n');
+  }
+
+  // desplegable «Copiar texto para WhatsApp»
+  const txtBtn = $('exportBtn'), txtList = $('txtMenuList'), txtOriginal = txtBtn.textContent;
+  const closeTxtMenu = () => { txtList.hidden = true; txtBtn.setAttribute('aria-expanded', 'false'); };
+  txtBtn.addEventListener('click', (e) => { e.stopPropagation(); txtList.hidden = !txtList.hidden; txtBtn.setAttribute('aria-expanded', String(!txtList.hidden)); });
+  document.addEventListener('click', closeTxtMenu);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeTxtMenu(); });
+  txtList.addEventListener('click', async (e) => {
+    const o = e.target.closest('button[data-k]'); if (!o) return;
+    closeTxtMenu();
     try {
-      await navigator.clipboard.writeText(generateWhatsAppText());
-      btn.textContent = '¡Copiado!';
-    } catch (e) {
-      btn.textContent = 'No se pudo copiar';
+      await navigator.clipboard.writeText(o.dataset.k === 'lobby' ? generateLobbyText() : generateWhatsAppText());
+      txtBtn.textContent = '¡Copiado!';
+    } catch (err) {
+      txtBtn.textContent = 'No se pudo copiar';
     }
-    setTimeout(() => { btn.textContent = original; }, 2000);
+    setTimeout(() => { txtBtn.textContent = txtOriginal; }, 2000);
   });
 </script>
 
