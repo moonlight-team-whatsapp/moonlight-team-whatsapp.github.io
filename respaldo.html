@@ -38,6 +38,8 @@
       <button class="submit-btn" id="goBtn" type="button" style="margin-top:16px">Descargar copia</button>
       <p class="bk-note" style="margin-top:22px"><b>Migración a Supabase:</b> copia todos los datos de Firestore a las tablas de Supabase (las deja idénticas). Se puede repetir todas las veces que quieras; no toca Firestore.</p>
       <button class="submit-btn" id="syncBtn" type="button">Copiar a Supabase</button>
+      <p class="bk-note" style="margin-top:22px"><b>Prueba de la capa nueva:</b> escribe, lee, actualiza y borra un documento de prueba en Supabase usando el mismo código que usarán las páginas.</p>
+      <button class="submit-btn" id="testBtn" type="button">Probar Supabase</button>
       <p class="bk-note" id="status"></p>
     </div>
   </section>
@@ -103,6 +105,30 @@
       }
       $('status').textContent = 'Listo: Supabase queda igual que Firestore (Firestore → Supabase).';
     } catch (e) { $('status').textContent = 'Error: ' + (e.message || e); }
+    btn.disabled = false;
+  });
+
+  $('testBtn').addEventListener('click', async () => {
+    const btn = $('testBtn'); btn.disabled = true; $('rows').innerHTML = ''; $('status').textContent = 'Probando…';
+    const pasos = [];
+    const paso = (n, ok, x) => { pasos.push(n); $('rows').insertAdjacentHTML('beforeend', `<div class="bk-row"><span>${n}</span><b>${ok ? 'OK' : 'FALLA' + (x ? ': ' + x : '')}</b></div>`); if (!ok) throw new Error(n); };
+    try {
+      const C = await import('./supa-compat.js');
+      const ref = C.doc(C.getFirestore(), 'ajustes', '__prueba');
+      await C.setDoc(ref, { n: 1, lista: [], createdAt: C.serverTimestamp() }); let sn = await C.getDoc(ref);
+      paso('Escribir y leer', sn.exists() && sn.data().n === 1);
+      paso('Fecha de creación', typeof sn.data().createdAt.toMillis() === 'number');
+      await C.updateDoc(ref, { lista: C.arrayUnion({ a: 1 }, { a: 2 }), n: C.increment(4) }); sn = await C.getDoc(ref);
+      paso('Actualizar (listas y contadores)', sn.data().lista.length === 2 && sn.data().n === 5);
+      await C.updateDoc(ref, { lista: C.arrayRemove({ a: 1 }) }); sn = await C.getDoc(ref);
+      paso('Quitar de una lista', sn.data().lista.length === 1);
+      let vio = 0; const un = C.onSnapshot(C.collection(C.getFirestore(), 'ajustes'), () => { vio++; });
+      await new Promise(r => setTimeout(r, 700)); await C.updateDoc(ref, { n: 6 }); await new Promise(r => setTimeout(r, 700)); un();
+      paso('Tiempo real', vio >= 2, 'avisos: ' + vio);
+      await C.deleteDoc(ref); paso('Borrar', !(await C.getDoc(ref)).exists());
+      const m = await C.getDocs(C.collection(C.getFirestore(), 'miembros')); paso('Leer miembros como admin (' + m.size + ')', m.size > 0);
+      $('status').textContent = 'Todo correcto: la capa nueva funciona con tu Supabase.';
+    } catch (e) { $('status').textContent = 'Falló un paso: ' + (e.message || e); }
     btn.disabled = false;
   });
 
