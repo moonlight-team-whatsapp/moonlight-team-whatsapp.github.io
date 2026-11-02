@@ -124,7 +124,7 @@
   @keyframes msgIn{ from{ opacity:0; transform:translateY(14px) scale(.98); } }
   .msg.unread{ border-color:var(--t1); box-shadow:0 0 0 1px color-mix(in srgb, var(--t1) 50%, transparent) inset; }
   .msg.unread::before{ content:''; position:absolute; left:-5px; top:18px; width:9px; height:9px; border-radius:50%; background:var(--t1); box-shadow:0 0 12px var(--t1); }
-  .avs{ display:flex; margin-right:4px; } .avs img{ width:30px; height:30px; border-radius:50%; object-fit:cover; border:2px solid #121830; margin-left:-9px; } .avs img:first-child{ margin-left:0; }
+  .avs{ display:flex; margin-right:4px; } .avs img{ width:30px; height:30px; border-radius:50%; object-fit:cover; border:2px solid #121830; margin-left:-9px; } .avs img:first-child{ margin-left:0; } .avs img.seen{ border-color:#53bdeb; }
   .ico{ width:36px; height:36px; display:inline-grid; place-items:center; cursor:pointer; border-radius:50%; padding:0; color:var(--ink); background:rgba(255,255,255,.05);
     border:1px solid color-mix(in srgb, var(--t1) 40%, transparent); transition:transform .2s, background .2s, box-shadow .2s, color .2s, border-color .2s; -webkit-tap-highlight-color:transparent; }
   .ico svg{ width:18px; height:18px; display:block; }
@@ -445,7 +445,10 @@
     return d ? d.toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'ahora';
   };
   const cuenta = (k) => msgs.filter(m => k === 'todos' || (m.para || []).includes(k)).length;
-  const sinLeer = (k) => msgs.filter(m => !m.leido && (k === 'todos' || (m.para || []).includes(k))).length;
+  // Lectura por admin: leido_por = lista de admins que ya lo han leído (si la columna aún no existe, se usa el antiguo "leido")
+  const leidoPor = (m, k) => 'leido_por' in m ? (m.leido_por || []).includes(k) : !!m.leido;
+  const leidoEn = (m, f) => f === 'todos' ? (m.para || []).every(k => leidoPor(m, k)) : leidoPor(m, f);
+  const sinLeer = (k) => msgs.filter(m => (k === 'todos' || (m.para || []).includes(k)) && !leidoEn(m, k)).length;
   const fresh = new Set();
 
   function renderInbox(){
@@ -455,36 +458,43 @@
     }).join('');
     const filtrados = msgs.filter(m => filtro === 'todos' || (m.para || []).includes(filtro));
     // Sin leer arriba (los más antiguos primero); leídos abajo del todo (los más recientes primero)
-    const list = [...filtrados.filter(m => !m.leido).reverse(), ...filtrados.filter(m => m.leido)];
+    const list = [...filtrados.filter(m => !leidoEn(m, filtro)).reverse(), ...filtrados.filter(m => leidoEn(m, filtro))];
     $('emptyInbox').hidden = list.length > 0;
-    $('msgs').innerHTML = list.map(m => `<li class="msg${m.leido ? '' : ' unread'}${fresh.has(m.id) ? ' fresh' : ''}" data-id="${m.id}" style="${themeVars(themeOf(m.para))}">
-      <div class="msg-top"><span class="avs">${(m.para || []).filter(k => ADMINS[k]).map(k => `<img src="${ADMINS[k].img}" alt="">`).join('')}</span>${(m.para || []).map(k => `<span class="tag" data-a="${k}">${esc(ADMINS[k]?.nombre || k)}</span>`).join('')}</div>
+    $('msgs').innerHTML = list.map(m => { const rd = leidoEn(m, filtro); return `<li class="msg${rd ? '' : ' unread'}${fresh.has(m.id) ? ' fresh' : ''}" data-id="${m.id}" style="${themeVars(themeOf(m.para))}">
+      <div class="msg-top"><span class="avs">${(m.para || []).filter(k => ADMINS[k]).map(k => `<img class="${leidoPor(m, k) ? 'seen' : ''}" src="${ADMINS[k].img}" alt="" title="${ADMINS[k].nombre}${leidoPor(m, k) ? ': leído' : ': sin leer'}">`).join('')}</span>${(m.para || []).map(k => `<span class="tag" data-a="${k}">${esc(ADMINS[k]?.nombre || k)}</span>`).join('')}</div>
       <div class="msg-text">${esc(m.texto)}</div>
       <div class="msg-foot"><span>${fechaTxt(m)}</span><span class="acts">
         <button class="ico dl" data-act="img" type="button" title="Descargar imagen" aria-label="Descargar imagen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg></button>
         <button class="ico wa" data-act="wa" type="button" title="Compartir por WhatsApp" aria-label="Compartir por WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></button>
-        <button class="ico rd${m.leido ? ' on' : ''}" data-act="read" type="button" title="${m.leido ? 'Leído (pulsa para marcar sin leer)' : 'Marcar como leído'}" aria-label="Marcar leído"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 13l4.5 4.5L15 7.5"/><path d="M10 16.5l1 1 9.5-10"/></svg></button>
-        <button class="ico del" data-act="del" type="button" title="Borrar" aria-label="Borrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v5M14 11v5"/></svg></button></span></div></li>`).join('');
+        <button class="ico rd${rd ? ' on' : ''}" data-act="read" type="button" title="${rd ? 'Leído' : 'Marcar como leído'}${filtro === 'todos' ? ' (para todos los destinatarios)' : ' por ' + ADMINS[filtro].nombre + ' (no afecta a los demás)'}" aria-label="Marcar leído"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 13l4.5 4.5L15 7.5"/><path d="M10 16.5l1 1 9.5-10"/></svg></button>
+        <button class="ico del" data-act="del" type="button" title="Borrar" aria-label="Borrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v5M14 11v5"/></svg></button></span></div></li>`; }).join('');
   }
   $('tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (b){ filtro = b.dataset.f; renderInbox(); } });
   $('msgs').addEventListener('click', async (e) => {
     const b = e.target.closest('[data-act]'); if (!b) return;
     const id = b.closest('.msg').dataset.id, m = msgs.find(x => x.id === id); if (!m) return;
     try {
-      if (b.dataset.act === 'img' || b.dataset.act === 'wa') return exportarImagen(m, msgs.length - msgs.indexOf(m), b.dataset.act);
+      if (b.dataset.act === 'img' || b.dataset.act === 'wa') return exportarImagen(m, msgs.length - msgs.indexOf(m), b.dataset.act, filtro !== 'todos' && (m.para || []).includes(filtro) ? filtro : null);
       let r;
-      if (b.dataset.act === 'read') r = await sb.from('anonimos').update({ leido: !m.leido }).eq('id', id);
+      if (b.dataset.act === 'read'){
+        const para = (m.para || []).filter(k => ADMINS[k]);
+        let set = new Set(para.filter(k => leidoPor(m, k)));
+        if (filtro === 'todos'){ if (leidoEn(m, 'todos')) set.clear(); else para.forEach(k => set.add(k)); }
+        else if (set.has(filtro)) set.delete(filtro); else set.add(filtro);
+        const lp = [...set];
+        r = await sb.from('anonimos').update({ leido_por: lp, leido: lp.length === para.length }).eq('id', id);
+      }
       else if (confirm('¿Borrar este mensaje?')) r = await sb.from('anonimos').delete().eq('id', id);
-      if (r && r.error) throw r.error;
+      if (r && r.error){ if (/leido_por/.test(r.error.message || '')) $('statusLine').textContent = 'Falta ejecutar el SQL de «leído por admin» en Supabase.'; throw r.error; }
       if (r) await cargar();
-    } catch (er) { $('statusLine').textContent = 'No se pudo completar la acción.'; }
+    } catch (er) { if (!/leido_por/.test((er && er.message) || '')) $('statusLine').textContent = 'No se pudo completar la acción.'; }
   });
 
   // ---------- exportar a WhatsApp ----------
   const nombres = (para) => { const n = (para || []).filter(k => ADMINS[k]).map(k => ADMINS[k].nombre); return n.length > 1 ? n.slice(0, -1).join(', ') + ' y ' + n[n.length - 1] : n[0] || ''; };
   const imgCache = {};
   const loadImg = (k) => imgCache[k] ||= new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = ADMINS[k].img; });
-  async function exportarImagen(m, num, modo){
+  async function exportarImagen(m, num, modo, como){
     const t = themeOf(m.para), W = 1080, P = 90, keys = (m.para || []).filter(k => ADMINS[k]);
     try { await Promise.all([document.fonts.load('italic 600 48px Cormorant'), document.fonts.load('italic 600 40px Cormorant')]); } catch (e) {}
     const imgs = await Promise.all(keys.map(loadImg));
@@ -513,8 +523,8 @@
     x.strokeStyle = t.a + 'aa'; x.lineWidth = 3; x.strokeRect(34, 34, W - 68, H - 68);
     // avatares
     const gap = 26, tw = imgs.length * avR * 2 + (imgs.length - 1) * gap; let ax = (W - tw) / 2;
-    imgs.forEach((im, i) => { const cx = ax + avR, cy = top + avR; x.save(); x.shadowColor = ADMINS[keys[i]].color; x.shadowBlur = 36; x.beginPath(); x.arc(cx, cy, avR + 6, 0, 7); x.fillStyle = ADMINS[keys[i]].color; x.fill(); x.restore();
-      x.save(); x.beginPath(); x.arc(cx, cy, avR, 0, 7); x.clip(); if (im) x.drawImage(im, cx - avR, cy - avR, avR * 2, avR * 2); x.restore(); ax += avR * 2 + gap; });
+    imgs.forEach((im, i) => { const cx = ax + avR, cy = top + avR, off = !!como && keys[i] !== como; x.save(); x.globalAlpha = off ? .38 : 1; x.shadowColor = ADMINS[keys[i]].color; x.shadowBlur = off ? 0 : 36; x.beginPath(); x.arc(cx, cy, avR + 6, 0, 7); x.fillStyle = ADMINS[keys[i]].color; x.fill(); x.restore();
+      x.save(); x.globalAlpha = off ? .38 : 1; x.beginPath(); x.arc(cx, cy, avR, 0, 7); x.clip(); if (im) x.drawImage(im, cx - avR, cy - avR, avR * 2, avR * 2); x.restore(); ax += avR * 2 + gap; });
     x.textAlign = 'center'; x.fillStyle = t.soft; x.font = 'italic 600 54px Cormorant, Georgia, serif';
     x.fillText('Anónimo para ' + nombres(m.para), W / 2, top + avR * 2 + 84);
     const ly = top + avR * 2 + 104; x.strokeStyle = t.a; x.lineWidth = 2; x.beginPath(); x.moveTo(W / 2 - 90, ly); x.lineTo(W / 2 + 90, ly); x.stroke();
