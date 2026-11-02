@@ -71,14 +71,14 @@
 </dialog>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { initializeApp } from "./supa-compat.js";
   import {
     getFirestore, collection, doc, updateDoc, deleteDoc, arrayUnion, increment,
     onSnapshot, query, orderBy
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  } from "./supa-compat.js";
   import {
     getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  } from "./supa-compat.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCJw3MuQQrYZ7xaabbKhK5Q4fAAB5xzZsk",

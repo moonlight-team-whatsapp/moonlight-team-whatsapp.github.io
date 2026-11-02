@@ -133,11 +133,11 @@
 </dialog>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { initializeApp } from "./supa-compat.js";
   import { getFirestore, collection, doc, setDoc, deleteDoc, updateDoc, arrayUnion, onSnapshot, serverTimestamp }
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    from "./supa-compat.js";
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    from "./supa-compat.js";
 
   const app = initializeApp({
     apiKey: "AIzaSyCJw3MuQQrYZ7xaabbKhK5Q4fAAB5xzZsk",
