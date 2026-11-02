@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Respaldo — Moonlight Team</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .bk-box{ max-width: 560px; margin: 0 auto; }
+  .bk-row{ display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--border); }
+  .bk-row b{ color: var(--gold); font-weight:600; }
+  .bk-note{ color: var(--ink-soft); font-size:.92rem; margin: 12px 0; line-height:1.5; }
+  .bk-login{ display:flex; flex-direction:column; gap:10px; margin-top:14px; }
+</style>
+</head>
+<body>
+<div class="stars" id="starsLayer" aria-hidden="true"></div>
+<div class="moon" aria-hidden="true"></div>
+<div class="page">
+  <header class="hero"><div class="title-wrap"><h1>Respaldo</h1></div>
+    <p class="subtitle">Descarga una copia de todos los datos de la web (solo admin).</p>
+  </header>
+  <section class="panel bk-box">
+    <div id="loginBox" class="bk-login" hidden>
+      <input id="email" type="email" placeholder="Email" autocomplete="username">
+      <input id="pass" type="password" placeholder="Contraseña" autocomplete="current-password">
+      <button class="submit-btn" id="loginBtn" type="button">Entrar</button>
+    </div>
+    <div id="main" hidden>
+      <p class="bk-note">Pulsa el botón y se descarga un único archivo <b>moonlight-respaldo.json</b> con todas las colecciones. Pásamelo para migrar los datos a Supabase. Guárdalo en un sitio privado: incluye datos de miembros.</p>
+      <div id="rows"></div>
+      <button class="submit-btn" id="goBtn" type="button" style="margin-top:16px">Descargar copia</button>
+      <p class="bk-note" id="status"></p>
+    </div>
+  </section>
+</div>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  const app = initializeApp({
+    apiKey: "AIzaSyCJw3MuQQrYZ7xaabbKhK5Q4fAAB5xzZsk", authDomain: "moonlight-teamm-947ee.firebaseapp.com", projectId: "moonlight-teamm-947ee",
+    storageBucket: "moonlight-teamm-947ee.firebasestorage.app", messagingSenderId: "664050217208", appId: "1:664050217208:web:194120b9ab73b43a984b0d"
+  });
+  const db = getFirestore(app), auth = getAuth(app), $ = (id) => document.getElementById(id);
+  const COLS = ['miembros', 'ocupados', 'reservados', 'buscados', 'arbol', 'registros', 'paginas', 'ajustes'];
+
+  onAuthStateChanged(auth, (u) => { $('loginBox').hidden = !!u; $('main').hidden = !u; });
+  $('loginBtn').addEventListener('click', async () => {
+    try { await signInWithEmailAndPassword(auth, $('email').value.trim(), $('pass').value); }
+    catch (e) { $('status').textContent = ''; alert('Email o contraseña incorrectos.'); }
+  });
+
+  // Timestamps -> {"__ts": "ISO"} para poder reconstruirlos al migrar
+  const plano = (v) => {
+    if (v instanceof Timestamp) return { __ts: v.toDate().toISOString() };
+    if (Array.isArray(v)) return v.map(plano);
+    if (v && typeof v === 'object'){ const o = {}; for (const k in v) o[k] = plano(v[k]); return o; }
+    return v;
+  };
+
+  $('goBtn').addEventListener('click', async () => {
+    const btn = $('goBtn'); btn.disabled = true; $('rows').innerHTML = ''; $('status').textContent = 'Leyendo…';
+    const out = { exportadoEl: new Date().toISOString(), colecciones: {} };
+    try {
+      for (const c of COLS){
+        const snap = await getDocs(collection(db, c));
+        out.colecciones[c] = snap.docs.map(d => ({ id: d.id, data: plano(d.data()) }));
+        $('rows').insertAdjacentHTML('beforeend', `<div class="bk-row"><span>${c}</span><b>${snap.size}</b></div>`);
+      }
+      const blob = new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'moonlight-respaldo.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      $('status').textContent = 'Listo: copia descargada.';
+    } catch (e) { $('status').textContent = 'No se pudo leer todo (¿sesión admin iniciada?): ' + (e.message || e); }
+    btn.disabled = false;
+  });
+</script>
+</body>
+</html>
