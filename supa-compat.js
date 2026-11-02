@@ -140,8 +140,9 @@ export async function getDoc(ref){
 }
 
 // ---------- Escritura ----------
-const subs = new Map();      // tabla -> funciones a repetir cuando cambia algo (también por escrituras propias)
-const notify = (table) => (subs.get(table) || new Set()).forEach(f => f());
+const subs = new Map();      // tabla -> oyentes {run}; tras una escritura propia se refrescan ANTES de que la escritura "termine",
+                             // como en Firestore (así el código que escribe y vuelve a mirar sus datos no se queda con datos viejos)
+const notify = (table) => Promise.all([...(subs.get(table) || [])].map(s => s.run()));
 async function readRow(ref){
   const { data, error } = await sb.from(ref.col).select('data').eq('id', ref.id).maybeSingle();
   if (error) throw error;
@@ -155,32 +156,32 @@ export async function setDoc(ref, data, opts){
   const fresh = applyUpdate({}, data);
   if (opts && opts.merge){ const cur = await readRow(ref); await writeRow(ref, cur ? deepMerge(cur, fresh) : fresh); }
   else await writeRow(ref, fresh);
-  notify(ref.col);
+  await notify(ref.col);
 }
 export async function updateDoc(ref, upd){
   const cur = await readRow(ref);
   if (cur === null){ const e = new Error('No document to update: ' + ref.col + '/' + ref.id); e.code = 'not-found'; throw e; }
   await writeRow(ref, applyUpdate(cur, upd));
-  notify(ref.col);
+  await notify(ref.col);
 }
 export async function addDoc(colRef, data){
   const ref = { __doc: true, col: colRef.name, id: rid() };
   await writeRow(ref, applyUpdate({}, data));
-  notify(ref.col);
+  await notify(ref.col);
   return ref;
 }
 export async function deleteDoc(ref){
   const { error } = await sb.from(ref.col).delete().eq('id', ref.id);
   if (error) throw error;
-  notify(ref.col);
+  await notify(ref.col);
 }
 export function writeBatch(){
-  const ops = [];
+  const ops = [], tables = new Set();
   const b = {
-    set(ref, data, opts){ ops.push(() => setDoc(ref, data, opts)); return b; },
-    update(ref, upd){ ops.push(() => updateDoc(ref, upd)); return b; },
-    delete(ref){ ops.push(() => deleteDoc(ref)); return b; },
-    async commit(){ for (const f of ops) await f(); }
+    set(ref, data, opts){ tables.add(ref.col); ops.push(async () => { const fresh = applyUpdate({}, data); if (opts && opts.merge){ const cur = await readRow(ref); await writeRow(ref, cur ? deepMerge(cur, fresh) : fresh); } else await writeRow(ref, fresh); }); return b; },
+    update(ref, upd){ tables.add(ref.col); ops.push(async () => { const cur = await readRow(ref); if (cur === null){ const e = new Error('No document to update: ' + ref.col + '/' + ref.id); e.code = 'not-found'; throw e; } await writeRow(ref, applyUpdate(cur, upd)); }); return b; },
+    delete(ref){ tables.add(ref.col); ops.push(async () => { const { error } = await sb.from(ref.col).delete().eq('id', ref.id); if (error) throw error; }); return b; },
+    async commit(){ try { for (const f of ops) await f(); } finally { await Promise.all([...tables].map(notify)); } }
   };
   return b;
 }
@@ -188,17 +189,19 @@ export function writeBatch(){
 // ---------- Tiempo real ----------
 export function onSnapshot(target, next, error){
   const isDoc = !!target.__doc, table = isDoc ? target.col : target.name;
-  let alive = true, timer = null;
-  const run = async () => {
+  let alive = true, timer = null, chain = Promise.resolve();
+  const doRun = async () => {
     try { const snap = isDoc ? await getDoc(target) : await getDocs(target); if (alive) next(snap); }
     catch (e) { if (alive && error) error(e); }
   };
+  const run = () => (chain = chain.then(doRun));   // lecturas en orden: quien espera a run() ya tiene los datos nuevos entregados
   const again = () => { clearTimeout(timer); timer = setTimeout(run, 40); };
+  const sub = { run };
   if (!subs.has(table)) subs.set(table, new Set());
-  subs.get(table).add(again);
+  subs.get(table).add(sub);
   run();
   const ch = sb.channel('rt-' + table + '-' + rid()).on('postgres_changes', { event: '*', schema: 'public', table }, again).subscribe();
-  return () => { alive = false; clearTimeout(timer); subs.get(table).delete(again); sb.removeChannel(ch); };
+  return () => { alive = false; clearTimeout(timer); subs.get(table).delete(sub); sb.removeChannel(ch); };
 }
 
 // ---------- Sesión (Firebase Auth -> Supabase Auth) ----------
