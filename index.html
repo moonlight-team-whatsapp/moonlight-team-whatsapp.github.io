@@ -308,6 +308,7 @@
     const el = $('heroTitle');
     const text = el.textContent;
     el.textContent = '';
+    el.dataset.text = text;
     [...text].forEach((ch, i) => {
       const span = document.createElement('span');
       span.className = 'letter';
