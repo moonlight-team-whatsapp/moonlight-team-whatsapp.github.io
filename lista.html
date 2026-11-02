@@ -241,16 +241,8 @@
     onSnapshot, query, orderBy, serverTimestamp
   } from "./supa-compat.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCJw3MuQQrYZ7xaabbKhK5Q4fAAB5xzZsk",
-    authDomain: "moonlight-teamm-947ee.firebaseapp.com",
-    projectId: "moonlight-teamm-947ee",
-    storageBucket: "moonlight-teamm-947ee.firebasestorage.app",
-    messagingSenderId: "664050217208",
-    appId: "1:664050217208:web:194120b9ab73b43a984b0d"
-  };
 
-  const app = initializeApp(firebaseConfig);
+  const app = initializeApp();
   const db = getFirestore(app);
   // El módulo de acceso admin se carga aparte para no retrasar la lista a los visitantes
   const authP = import("./supa-compat.js").then(m => ({ m, auth: m.getAuth(app) }));
@@ -290,7 +282,7 @@
 
   adminToggleBtn.addEventListener('click', () => {
     if (isAdmin) {
-      authP.then(({ m, auth }) => m.signOut(auth)); import('./supabase-sesion.js').then(m => m.supaSignOut()).catch(() => {});
+      authP.then(({ m, auth }) => m.signOut(auth));
     } else {
       loginError.textContent = '';
       loginEmail.value = '';
@@ -305,7 +297,7 @@
     loginError.textContent = '';
     try {
       const { m, auth } = await authP;
-      await m.signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPass.value); import('./supabase-sesion.js').then(m => m.supaSignIn(loginEmail.value.trim(), loginPass.value)).catch(() => {});
+      await m.signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPass.value);
       loginDialog.close();
     } catch (e) {
       loginError.textContent = 'Email o contraseña incorrectos.';

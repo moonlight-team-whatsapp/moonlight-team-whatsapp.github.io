@@ -241,14 +241,6 @@
 
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm";
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, signOut as fbSignOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-  // Firebase solo se usa aquí para que, al entrar como admin, también quedes como admin en el resto de la web.
-  const fbAuth = getAuth(initializeApp({
-    apiKey: "AIzaSyCJw3MuQQrYZ7xaabbKhK5Q4fAAB5xzZsk", authDomain: "moonlight-teamm-947ee.firebaseapp.com", projectId: "moonlight-teamm-947ee",
-    storageBucket: "moonlight-teamm-947ee.firebasestorage.app", messagingSenderId: "664050217208", appId: "1:664050217208:web:194120b9ab73b43a984b0d"
-  }));
 
   // Datos públicos de tu proyecto de Supabase (Project Settings → API). La clave "anon" es pública por diseño.
   const SUPABASE_URL = 'https://stedlptzaukqewtkzotg.supabase.co';
@@ -417,14 +409,13 @@
   // ---------- admin ----------
   let isAdmin = false, msgs = [], filtro = 'todos';
   $('adminToggleBtn').addEventListener('click', () => {
-    if (isAdmin){ sb && sb.auth.signOut(); fbSignOut(fbAuth).catch(() => {}); }
+    if (isAdmin){ sb && sb.auth.signOut(); }
     else { $('loginError').textContent = ''; $('loginEmail').value = ''; $('loginPass').value = ''; $('loginDialog').showModal(); }
   });
   $('loginCancel').addEventListener('click', () => $('loginDialog').close());
   $('loginSubmit').addEventListener('click', async () => {
     if (!sb){ $('loginError').textContent = 'Falta configurar el servidor.'; return; }
     const em = $('loginEmail').value.trim(), pw = $('loginPass').value;
-    signInWithEmailAndPassword(fbAuth, em, pw).catch(() => {});
     const { error } = await sb.auth.signInWithPassword({ email: em, password: pw });
     if (error) $('loginError').textContent = 'Email o contraseña incorrectos.'; else $('loginDialog').close();
   });
