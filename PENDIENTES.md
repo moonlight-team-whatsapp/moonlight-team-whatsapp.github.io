@@ -1,9 +1,9 @@
 # Pendientes de la web (Moonlight Team)
 
 ## MoonCard (en este orden)
-7. [ ] Detalles: reajuste automático de texto largo, vista previa mayor en móvil, guías de alineación al arrastrar
 
 ## Hecho en MoonCard
+- Detalles: guías de centrado al arrastrar adornos, vista previa mayor en móvil, línea de rol que se encoge si es larga
 - Galería (galeria.html): publicar con aprobación admin, máx. 3 por personaje, filtro por personaje y «Usar como plantilla». Tabla `mooncards` + bucket `mooncards` en Supabase
 - 36 adornos, giro y delante/detrás; marcos de foto hexágono, corazón, estrella y rombo
 - Texto flexible: posición izq/centro/der, sombra o contorno, campo «Rol o edad»
