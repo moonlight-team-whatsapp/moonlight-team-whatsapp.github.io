@@ -64,6 +64,10 @@
   .tpl{ display:flex; flex-wrap:wrap; gap:6px; }
   .tpl button{ padding:6px 12px; border-radius:999px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1rem; cursor:pointer; color:var(--ink); border:1px solid var(--border); background:rgba(255,255,255,.05); transition:transform .15s, border-color .2s; }
   .tpl button:hover{ transform:translateY(-1px); border-color:var(--gold); }
+  .pubdlg{ max-width:min(440px,92vw); background:#141b37; color:var(--ink); border:1px solid var(--border); border-radius:8px; padding:20px; }
+  .pubdlg::backdrop{ background:rgba(0,0,0,.6); }
+  .pubdlg h3{ margin:0 0 8px; font-family:'Cormorant',serif; font-style:italic; color:var(--gold); font-size:1.5rem; }
+  .pubdlg input{ width:100%; margin:4px 0 8px; padding:8px; background:rgba(255,255,255,.05); border:1px solid var(--border); color:var(--ink); border-radius:3px; font-family:inherit; }
   .hbar{ display:flex; gap:8px; align-self:center; width:min(100%, calc((100dvh - 170px) * 1.6129)); margin:0 0 10px; }
   .hb{ display:inline-flex; align-items:center; gap:8px; padding:8px 16px 8px 12px; border-radius:999px; cursor:pointer; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.05rem; color:var(--gold); background:linear-gradient(180deg,rgba(217,195,131,.16),rgba(217,195,131,.06)); border:1px solid rgba(217,195,131,.5); box-shadow:0 2px 10px rgba(0,0,0,.35); transition:transform .15s, background .2s, box-shadow .2s, opacity .2s; }
   .hb:hover:not(:disabled){ background:linear-gradient(180deg,rgba(217,195,131,.3),rgba(217,195,131,.12)); box-shadow:0 4px 16px rgba(217,195,131,.22); transform:translateY(-1px); }
@@ -248,6 +252,8 @@
           <button class="btn-ghost" id="bSaveF" type="button" title="Guardar el diseño como archivo">Guardar diseño</button>
           <button class="btn-ghost" id="bOpenF" type="button" title="Abrir un diseño guardado">Abrir diseño</button>
           <input type="file" id="iOpenF" accept=".json,application/json" hidden>
+          <button class="btn-ghost" id="bPub" type="button">Publicar en la galería</button>
+          <a class="btn-ghost" href="galeria.html" style="text-decoration:none">Ver galería</a>
           <button class="btn-ghost" id="bReset" type="button">Empezar de nuevo</button>
         </div>
         <p class="cc-note" id="msg"></p>
@@ -266,6 +272,12 @@
 })();
 </script>
 
+<dialog id="pubDlg" class="pubdlg"><h3>Publicar en la galería</h3>
+  <p>Se subirán la imagen de tu tarjeta y su <b>diseño editable</b> (con tus fotos), para que otros puedan usarlo como plantilla. Un admin la revisa antes de mostrarla. Máximo 3 tarjetas por personaje.</p>
+  <label for="pubName">Tu nombre (opcional)</label><input id="pubName" type="text" maxlength="24" autocomplete="off">
+  <p id="pubMsg" class="cc-note" role="status"></p>
+  <div class="acts"><button class="btn-primary" id="pubOk" type="button">Publicar</button><button class="btn-ghost" id="pubNo" type="button">Cancelar</button></div>
+</dialog>
 <script>
 (function(){
   var $ = function(id){ return document.getElementById(id); };
@@ -612,12 +624,17 @@
 
   // ---------- Diseño como archivo ----------
   function b2url(bl){ return new Promise(function(res){ if (!bl) return res(null); var r = new FileReader(); r.onload = function(){ res(r.result); }; r.readAsDataURL(bl); }); }
-  $('bSaveF').onclick = function(){
+  function designJson(){
     var o = snap(); o.sel = -1;
     var bl = [toBlob(o.img), toBlob(o.bg)].concat(o.stickers.map(function(t){ return toBlob(t.img); }));
-    Promise.all(bl).then(function(r){ return Promise.all(r.map(b2url)); }).then(function(u){
+    return Promise.all(bl).then(function(r){ return Promise.all(r.map(b2url)); }).then(function(u){
       o.img = u[0]; o.bg = u[1]; o.stickers.forEach(function(t, i){ if (t.img) t.img = u[2 + i]; });
-      var b = new Blob([JSON.stringify({ mooncard: 1, d: o })], { type: 'application/json' });
+      return JSON.stringify({ mooncard: 1, d: o });
+    });
+  }
+  $('bSaveF').onclick = function(){
+    designJson().then(function(js){
+      var b = new Blob([js], { type: 'application/json' });
       var a = document.createElement('a'), nm = (S.nombre || S.sub || 'diseno').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'diseno';
       a.href = URL.createObjectURL(b); a.download = 'mooncard-' + nm + '.mooncard.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
       $('msg').textContent = 'Diseño guardado como archivo. Ábrelo con «Abrir diseño» en cualquier dispositivo.';
@@ -626,14 +643,53 @@
   $('bOpenF').onclick = function(){ $('iOpenF').click(); };
   $('iOpenF').onchange = function(e){
     var f = e.target.files[0]; e.target.value = ''; if (!f) return;
-    f.text().then(function(t){
+    f.text().then(applyDesign).catch(function(){ $('msg').textContent = 'Ese archivo no es un diseño de MoonCard.'; });
+  };
+  function applyDesign(t){
+    return Promise.resolve().then(function(){
       var j = JSON.parse(t); if (!j || !j.mooncard || !j.d) throw 0; var o = j.d;
       var bm = function(u){ return u ? fetch(u).then(function(r){ return r.blob(); }).then(createImageBitmap) : Promise.resolve(null); };
       return Promise.all([bm(o.img), bm(o.bg)].concat((o.stickers || []).map(function(t){ return t.img ? bm(t.img) : Promise.resolve(null); }))).then(function(r){
         o.img = r[0]; o.bg = r[1]; o.stickers = o.stickers || []; o.stickers.forEach(function(t, i){ if (t.img) t.img = r[2 + i]; });
         S = Object.assign(DEF(), o); S.sel = -1; syncUI(); $('msg').textContent = 'Diseño abierto.';
       });
-    }).catch(function(){ $('msg').textContent = 'Ese archivo no es un diseño de MoonCard.'; });
+    });
+  }
+
+  // ---------- Galería ----------
+  var GID = new URLSearchParams(location.search).get('plantilla');
+  function sbp(){ return window.mcSb; }
+  if (GID) setTimeout(function(){ var t = 0; (function w(){ if (!sbp() && t++ < 40) return setTimeout(w, 150);
+    if (!sbp()) return; sbp().from('mooncards').select('diseno_path').eq('id', GID).maybeSingle().then(function(r){
+      if (!r.data) { $('msg').textContent = 'No se encontró esa tarjeta.'; return; }
+      fetch(sbp().storage.from('mooncards').getPublicUrl(r.data.diseno_path).data.publicUrl).then(function(x){ return x.text(); }).then(applyDesign).then(function(){ $('msg').textContent = 'Plantilla de la galería cargada. Cambia lo que quieras.'; histCommit(); }).catch(function(){ $('msg').textContent = 'No se pudo cargar esa plantilla.'; });
+    }); })(); }, 600);
+  $('bPub').onclick = function(){ $('pubMsg').textContent = ''; $('pubOk').disabled = false; $('pubName').value = S.nombre || ''; $('pubDlg').showModal(); };
+  $('pubNo').onclick = function(){ $('pubDlg').close(); };
+  $('pubOk').onclick = function(){
+    var sb = sbp(), pm = $('pubMsg'); if (!sb){ pm.textContent = 'No se pudo conectar. Prueba otra vez en un momento.'; return; }
+    var per = (S.sub || '').trim(); if (!per){ pm.textContent = 'Escribe primero el nombre de tu personaje (pestaña Texto).'; return; }
+    $('pubOk').disabled = true; pm.textContent = 'Subiendo…';
+    var id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2)), pi = 'mc/' + id + '.jpg', pd = 'mc/' + id + '.json';
+    ensureFont().then(function(){
+      var k = 1.5, out = document.createElement('canvas'); out.width = W * k; out.height = H * k; var c = out.getContext('2d'); c.scale(k, k); draw(c, false);
+      var t = document.createElement('canvas'); t.width = out.width; t.height = out.height; var tc = t.getContext('2d'); tc.fillStyle = THEMES[S.theme].b; tc.fillRect(0, 0, t.width, t.height); tc.drawImage(out, 0, 0);
+      return Promise.all([new Promise(function(r){ t.toBlob(r, 'image/jpeg', .88); }), designJson()]);
+    }).then(function(r){
+      return sb.storage.from('mooncards').upload(pi, r[0], { contentType: 'image/jpeg' }).then(function(e1){
+        if (e1.error) throw e1.error;
+        return sb.storage.from('mooncards').upload(pd, new Blob([r[1]], { type: 'application/json' }), { contentType: 'application/json' });
+      });
+    }).then(function(e2){
+      if (e2.error) throw e2.error;
+      return sb.from('mooncards').insert({ id: id, personaje: per, autor: $('pubName').value.trim().slice(0, 24) || null, img_path: pi, diseno_path: pd });
+    }).then(function(r){
+      if (r.error){ sb.storage.from('mooncards').remove([pi, pd]); throw r.error; }
+      pm.textContent = '¡Enviada! Aparecerá en la galería cuando la apruebe un admin.'; $('pubOk').hidden = true; $('pubNo').textContent = 'Cerrar';
+    }).catch(function(e){
+      $('pubOk').disabled = false;
+      pm.textContent = /limite_personaje/.test(e && e.message || '') ? 'Este personaje ya tiene 3 tarjetas en la galería (máximo).' : 'No se pudo publicar. Prueba con un diseño con fotos más ligeras.';
+    });
   };
   cur = snap(); histBtns(); loadSaved();
 
@@ -699,5 +755,6 @@
   if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', function(){ limitSize(); redraw(); });
 })();
 </script>
+<script type="module">import { sb } from './supabase-sesion.js'; window.mcSb = sb;</script>
 </body>
 </html>

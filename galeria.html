@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Galería MoonCard · Moonlight Team</title>
+<meta name="description" content="Galería de MoonCards del equipo de Moonlight Team: mira las tarjetas de los personajes y úsalas como plantilla.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .wrap{ max-width:1200px; }
+  .filters{ display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 16px; align-items:center; }
+  .filters select{ padding:8px 10px; font-family:'Crimson Pro',serif; font-size:1rem; color:var(--ink); background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:4px; min-width:200px; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
+  .gc{ border:1px solid var(--border); border-radius:10px; background:rgba(16,22,48,.7); overflow:hidden; display:flex; flex-direction:column; animation:gin .5s both; animation-delay:calc(var(--i,0) * 50ms); transition:transform .2s, border-color .2s, box-shadow .2s; }
+  .gc:hover{ transform:translateY(-3px); border-color:var(--gold-dim); box-shadow:0 10px 26px rgba(0,0,0,.4); }
+  .gc img{ display:block; width:100%; aspect-ratio:1000/620; object-fit:cover; background:#0e1326; cursor:zoom-in; }
+  .gc .meta{ padding:10px 12px; display:flex; flex-direction:column; gap:8px; }
+  .gc b{ font-family:'Cormorant',serif; font-style:italic; font-size:1.25rem; color:var(--gold); }
+  .gc small{ color:var(--ink-soft); }
+  .gc .row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .gc.pend{ border-style:dashed; }
+  .gbtn{ padding:6px 12px; border-radius:999px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1rem; cursor:pointer; color:var(--gold); border:1px solid rgba(217,195,131,.5); background:rgba(217,195,131,.08); text-decoration:none; transition:background .2s, transform .15s; }
+  .gbtn:hover{ background:rgba(217,195,131,.22); transform:translateY(-1px); }
+  .gbtn.red{ color:#ff9b9b; border-color:rgba(255,155,155,.5); background:rgba(255,155,155,.06); }
+  h2.sec{ font-family:'Cormorant',serif; font-style:italic; color:var(--gold); margin:22px 0 10px; }
+  #zoomDlg{ background:none; border:none; padding:0; max-width:94vw; } #zoomDlg::backdrop{ background:rgba(0,0,0,.8); } #zoomDlg img{ max-width:94vw; max-height:90vh; border-radius:12px; display:block; }
+  @keyframes gin{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+  @media (prefers-reduced-motion:reduce){ .gc{ animation:none; transition:none; } }
+</style>
+</head>
+<body>
+<div class="stars" id="starsLayer" aria-hidden="true"></div>
+<div class="mist m1" aria-hidden="true"></div>
+<div class="mist m2" aria-hidden="true"></div>
+<div class="moon" aria-hidden="true"></div>
+<div class="wrap">
+  <a class="back-link" href="index.html">← Volver al índice</a>
+  <header class="top">
+    <div>
+      <div class="title-wrap"><h1>Galería MoonCard</h1></div>
+      <p class="subtitle">Las tarjetas del equipo. Pulsa «Usar como plantilla» para abrir cualquiera en el editor y hacerla tuya. <a href="mooncard.html" style="color:var(--gold)">Crear mi MoonCard</a></p>
+    </div>
+    <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
+  </header>
+  <div id="pendBox" hidden><h2 class="sec">Pendientes de aprobar</h2><div class="grid" id="pendGrid"></div><h2 class="sec">Publicadas</h2></div>
+  <div class="filters"><select id="fPer" aria-label="Filtrar por personaje"><option value="">Todos los personajes</option></select><span id="count" class="subtitle"></span></div>
+  <div class="grid" id="grid"></div>
+  <p class="empty-note" id="empty" hidden>Todavía no hay tarjetas en la galería.</p>
+</div>
+<dialog id="loginDialog">
+  <div class="dialog-inner">
+    <h3>Acceso admin</h3>
+    <div class="dialog-field"><label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username"></div>
+    <div class="dialog-field"><label for="loginPass">Contraseña</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+    <p class="dialog-error" id="loginError"></p>
+    <div class="dialog-actions">
+      <button class="btn-primary" id="loginSubmit" type="button">Entrar</button>
+      <button class="btn-ghost" id="loginCancel" type="button">Cancelar</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="zoomDlg"><img id="zoomImg" alt=""></dialog>
+<script type="module">
+import { sb } from './supabase-sesion.js';
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+(function(){ const l = $('starsLayer'), fr = document.createDocumentFragment(); for (let i = 0; i < 36; i++){ const s = document.createElement('span'); s.className = 'star'; const z = (Math.random()*1.6+.8).toFixed(2); s.style.cssText = `top:${Math.random()*100}%;left:${Math.random()*100}%;width:${z}px;height:${z}px`; s.style.setProperty('--dur', (Math.random()*3+2).toFixed(2)+'s'); s.style.setProperty('--delay', (Math.random()*5).toFixed(2)+'s'); s.style.setProperty('--o-min', '.2'); s.style.setProperty('--o-max', '.85'); fr.appendChild(s); } l.appendChild(fr); })();
+let isAdmin = false, rows = [];
+const url = p => sb.storage.from('mooncards').getPublicUrl(p).data.publicUrl;
+async function load(){
+  const { data } = await sb.from('mooncards').select('*').order('creada', { ascending: false });
+  rows = data || []; paint();
+}
+function card(r, pend){
+  const d = new Date(r.creada).toLocaleDateString('es-ES');
+  return `<article class="gc${pend ? ' pend' : ''}" style="--i:IDX"><img src="${url(r.img_path)}" alt="MoonCard de ${esc(r.personaje)}" loading="lazy" data-zoom="${esc(url(r.img_path))}"><div class="meta"><b>${esc(r.personaje)}</b><small>${r.autor ? 'por ' + esc(r.autor) + ' · ' : ''}${d}</small><div class="row"><a class="gbtn" href="mooncard.html?plantilla=${r.id}">Usar como plantilla</a>${isAdmin ? (pend ? `<button class="gbtn" data-ok="${r.id}" type="button">Aprobar</button>` : '') + `<button class="gbtn red" data-del="${r.id}" type="button">Borrar</button>` : ''}</div></div></article>`;
+}
+function paint(){
+  const ap = rows.filter(r => r.aprobada), pe = rows.filter(r => !r.aprobada);
+  const keys = [...new Map(ap.map(r => [r.personaje_key, r.personaje])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  const sel = $('fPer'), cur = sel.value;
+  sel.innerHTML = '<option value="">Todos los personajes</option>' + keys.map(([k, n]) => `<option value="${esc(k)}">${esc(n)}</option>`).join(''); sel.value = keys.some(k => k[0] === cur) ? cur : '';
+  const list = ap.filter(r => !sel.value || r.personaje_key === sel.value);
+  $('grid').innerHTML = list.map((r, i) => card(r, false).replace('IDX', i)).join('');
+  $('empty').hidden = !!ap.length; $('count').textContent = ap.length ? list.length + ' tarjeta' + (list.length === 1 ? '' : 's') : '';
+  $('pendBox').hidden = !(isAdmin && pe.length);
+  $('pendGrid').innerHTML = pe.map((r, i) => card(r, true).replace('IDX', i)).join('');
+}
+$('fPer').onchange = paint;
+document.addEventListener('click', async e => {
+  const z = e.target.closest('[data-zoom]'); if (z){ $('zoomImg').src = z.dataset.zoom; $('zoomDlg').showModal(); return; }
+  if (e.target === $('zoomDlg') || e.target === $('zoomImg')) $('zoomDlg').close();
+  const ok = e.target.closest('[data-ok]'), del = e.target.closest('[data-del]');
+  if (ok){ ok.disabled = true; await sb.from('mooncards').update({ aprobada: true }).eq('id', ok.dataset.ok); load(); }
+  if (del){
+    if (del.dataset.arm !== '1'){ del.dataset.arm = '1'; del.textContent = '¿Seguro? Pulsa otra vez'; setTimeout(() => { del.dataset.arm = ''; del.textContent = 'Borrar'; }, 3500); return; }
+    const r = rows.find(x => x.id === del.dataset.del); del.disabled = true;
+    await sb.from('mooncards').delete().eq('id', r.id); await sb.storage.from('mooncards').remove([r.img_path, r.diseno_path]); load();
+  }
+});
+$('adminToggleBtn').addEventListener('click', () => {
+  if (isAdmin) sb.auth.signOut();
+  else { $('loginError').textContent = ''; $('loginEmail').value = ''; $('loginPass').value = ''; $('loginDialog').showModal(); }
+});
+$('loginCancel').addEventListener('click', () => $('loginDialog').close());
+$('loginSubmit').addEventListener('click', async () => {
+  const { error } = await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPass').value });
+  if (error) $('loginError').textContent = 'Email o contraseña incorrectos.'; else $('loginDialog').close();
+});
+sb.auth.onAuthStateChange((_e, session) => {
+  isAdmin = !!session; $('adminToggleBtn').textContent = isAdmin ? 'Cerrar sesión admin' : 'Acceso admin'; load();
+});
+load();
+</script>
+</body>
+</html>

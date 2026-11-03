@@ -1,10 +1,10 @@
 # Pendientes de la web (Moonlight Team)
 
 ## MoonCard (en este orden)
-6. [ ] Galería de MoonCards del equipo (Supabase; solo si la persona decide publicarla)
 7. [ ] Detalles: reajuste automático de texto largo, vista previa mayor en móvil, guías de alineación al arrastrar
 
 ## Hecho en MoonCard
+- Galería (galeria.html): publicar con aprobación admin, máx. 3 por personaje, filtro por personaje y «Usar como plantilla». Tabla `mooncards` + bucket `mooncards` en Supabase
 - 36 adornos, giro y delante/detrás; marcos de foto hexágono, corazón, estrella y rombo
 - Texto flexible: posición izq/centro/der, sombra o contorno, campo «Rol o edad»
 - Plantillas por elemento (pestaña Fondo) + 7 fondos nuevos
