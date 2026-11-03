@@ -59,6 +59,7 @@
   .seg button:hover, .mini:hover{ border-color:var(--gold-dim); }
   .seg button.on{ border-color:var(--gold); color:var(--gold); background:rgba(217,195,131,.12); }
   .mini{ flex:0 0 auto; }
+  .mini:disabled{ opacity:.35; cursor:default; }
   .sw{ display:flex; gap:10px; flex-wrap:wrap; }
   .sw button{ width:40px; height:40px; border-radius:50%; border:2px solid var(--border); cursor:pointer; padding:0; }
   .sw button.on{ border-color:var(--gold); box-shadow:0 0 12px rgba(217,195,131,.5); }
@@ -219,6 +220,8 @@
 
       <div class="foot">
         <div class="acts">
+          <button class="mini" id="bUndo" type="button" disabled title="Deshacer (Ctrl+Z)" aria-label="Deshacer">↶ Deshacer</button>
+          <button class="mini" id="bRedo" type="button" disabled title="Rehacer (Ctrl+Y)" aria-label="Rehacer">↷ Rehacer</button>
           <button class="btn-primary" id="bDown" type="button">Descargar imagen</button>
           <button class="btn-ghost" id="bReset" type="button">Empezar de nuevo</button>
         </div>
@@ -407,7 +410,7 @@
     for (var sz = 110; sz >= 24; sz -= 2){ ctx.font = F.s + ' ' + sz + 'px "' + F.f + '", serif'; if (ctx.measureText(big).width <= maxW){ m = sz; break; } }
     var r = $('iSize'); r.max = m; r.min = Math.min(24, m); r.value = Math.min(S.size, m);
   }
-  function redraw(){ if (raf) return; raf = requestAnimationFrame(function(){ raf = 0; draw(ctx, true); }); }
+  function redraw(){ histTick(); if (raf) return; raf = requestAnimationFrame(function(){ raf = 0; draw(ctx, true); }); }
   function ensureFont(){ var F = FONTS[S.font]; return Promise.all([document.fonts.load(F.s + ' 40px "' + F.f + '"'), document.fonts.load('italic 500 30px "Cormorant"'), document.fonts.load('400 25px "Crimson Pro"')]).catch(function(){}); }
 
   // ---------- Controles ----------
@@ -460,9 +463,50 @@
   $('iStSize').oninput = function(){ if (S.sel >= 0){ S.stickers[S.sel].size = +this.value; redraw(); } };
   $('bStDel').onclick = function(){ if (S.sel >= 0){ S.stickers.splice(S.sel, 1); S.sel = -1; if (!S.stickers.length) cv.style.touchAction = 'none'; redraw(); } };
   $('bStClr').onclick = function(){ S.stickers = []; S.sel = -1; cv.style.touchAction = 'none'; redraw(); };
-  $('bReset').onclick = function(){ if (!confirm('¿Empezar de nuevo? Se pierde el diseño actual.')) return; S = DEF();
+  $('bReset').onclick = function(){ S = DEF();
     $('iNombre').value = S.nombre; $('iSub').value = S.sub; $('iBio').value = S.bio; $('iSize').value = S.size; $('iZoom').value = 1; $('iDim').value = 40; $('iBgZoom').value = 1; $('iStSize').value = 70; $('iFont').value = 0; $('iCName').value = S.nameColor; $('iCAcc').value = S.accent; $('iTag').checked = true;
     document.querySelectorAll('#sShape button').forEach(function(x, i){ x.classList.toggle('on', !i); }); sw.querySelectorAll('button').forEach(function(x, i){ x.classList.toggle('on', !i); }); cv.style.touchAction = 'none'; ensureFont().then(function(){ limitSize(); redraw(); }); };
+
+  // ---------- Deshacer / rehacer ----------
+  var UNDO = [], REDO = [], cur = null, htm = 0, restoring = false;
+  function snap(){ var o = Object.assign({}, S); o.stickers = S.stickers.map(function(t){ return Object.assign({}, t); }); return o; }
+  function same(a, b){
+    var k; for (k in a){ if (k === 'sel' || k === 'stickers') continue; if (a[k] !== b[k]) return false; }
+    if (a.stickers.length !== b.stickers.length) return false;
+    for (var i = 0; i < a.stickers.length; i++){ var x = a.stickers[i], y = b.stickers[i]; for (k in x) if (x[k] !== y[k]) return false; }
+    return true;
+  }
+  function histBtns(){ $('bUndo').disabled = !UNDO.length; $('bRedo').disabled = !REDO.length; }
+  function histCommit(){
+    clearTimeout(htm); htm = 0; if (!cur) return;
+    var n = snap(); if (same(cur, n)) return;
+    UNDO.push(cur); if (UNDO.length > 60) UNDO.shift(); REDO = []; cur = n; histBtns();
+  }
+  function histTick(){ if (restoring || !cur) return; clearTimeout(htm); htm = setTimeout(histCommit, 350); }
+  function syncUI(){
+    $('iNombre').value = S.nombre; $('iSub').value = S.sub; $('iBio').value = S.bio; $('iZoom').value = S.zoom; $('iDim').value = Math.round(S.dim * 100); $('iBgZoom').value = S.bz;
+    $('iFont').value = S.font; $('iCName').value = S.nameColor; $('iCAcc').value = S.accent; $('iTag').checked = S.tag;
+    $('iStSize').value = S.sel >= 0 && S.stickers[S.sel] ? S.stickers[S.sel].size : 70;
+    document.querySelectorAll('#sShape button').forEach(function(x){ x.classList.toggle('on', x.dataset.v === S.shape); });
+    sw.querySelectorAll('button').forEach(function(x, i){ x.classList.toggle('on', i === S.theme); });
+    ensureFont().then(function(){ limitSize(); $('iSize').value = Math.min(S.size, +$('iSize').max); redraw(); });
+  }
+  function histGo(from, to){
+    histCommit(); if (!from.length) return;
+    to.push(cur); cur = from.pop(); restoring = true; S = Object.assign({}, cur); S.stickers = cur.stickers.map(function(t){ return Object.assign({}, t); }); S.sel = -1;
+    syncUI(); restoring = false; histBtns();
+  }
+  $('bUndo').onclick = function(){ histGo(UNDO, REDO); };
+  $('bRedo').onclick = function(){ histGo(REDO, UNDO); };
+  addEventListener('keydown', function(e){
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    var t = e.target, tag = t && t.tagName, typing = tag === 'TEXTAREA' || (tag === 'INPUT' && /^(text|search|)$/.test(t.type));
+    if (typing) return;
+    var k = e.key.toLowerCase();
+    if (k === 'z' && !e.shiftKey){ e.preventDefault(); histGo(UNDO, REDO); }
+    else if (k === 'y' || (k === 'z' && e.shiftKey)){ e.preventDefault(); histGo(REDO, UNDO); }
+  });
+  cur = snap(); histBtns();
 
   // arrastrar adornos sobre la tarjeta
   var drag = null;
