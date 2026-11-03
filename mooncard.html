@@ -236,6 +236,9 @@
           <div class="fmtrow"><select id="iFmt" aria-label="Formato"><option value="card">Tarjeta (horizontal)</option><option value="sq">Cuadrado 1:1</option><option value="vert">Vertical 4:5</option><option value="story">Estado / historia 9:16</option></select><select id="iFmtT" aria-label="Tipo de archivo"><option value="png">PNG</option><option value="jpg">JPG ligero</option></select></div>
           <button class="btn-primary" id="bDown" type="button">Descargar imagen</button>
           <button class="btn-ghost" id="bShare" type="button" hidden>Compartir</button>
+          <button class="btn-ghost" id="bSaveF" type="button" title="Guardar el diseño como archivo">Guardar diseño</button>
+          <button class="btn-ghost" id="bOpenF" type="button" title="Abrir un diseño guardado">Abrir diseño</button>
+          <input type="file" id="iOpenF" accept=".json,application/json" hidden>
           <button class="btn-ghost" id="bReset" type="button">Empezar de nuevo</button>
         </div>
         <p class="cc-note" id="msg"></p>
@@ -543,6 +546,32 @@
       });
     }).catch(function(){}).then(function(){ ready = true; });
   }
+
+  // ---------- Diseño como archivo ----------
+  function b2url(bl){ return new Promise(function(res){ if (!bl) return res(null); var r = new FileReader(); r.onload = function(){ res(r.result); }; r.readAsDataURL(bl); }); }
+  $('bSaveF').onclick = function(){
+    var o = snap(); o.sel = -1;
+    var bl = [toBlob(o.img), toBlob(o.bg)].concat(o.stickers.map(function(t){ return toBlob(t.img); }));
+    Promise.all(bl).then(function(r){ return Promise.all(r.map(b2url)); }).then(function(u){
+      o.img = u[0]; o.bg = u[1]; o.stickers.forEach(function(t, i){ if (t.img) t.img = u[2 + i]; });
+      var b = new Blob([JSON.stringify({ mooncard: 1, d: o })], { type: 'application/json' });
+      var a = document.createElement('a'), nm = (S.nombre || S.sub || 'diseno').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'diseno';
+      a.href = URL.createObjectURL(b); a.download = 'mooncard-' + nm + '.mooncard.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+      $('msg').textContent = 'Diseño guardado como archivo. Ábrelo con «Abrir diseño» en cualquier dispositivo.';
+    });
+  };
+  $('bOpenF').onclick = function(){ $('iOpenF').click(); };
+  $('iOpenF').onchange = function(e){
+    var f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    f.text().then(function(t){
+      var j = JSON.parse(t); if (!j || !j.mooncard || !j.d) throw 0; var o = j.d;
+      var bm = function(u){ return u ? fetch(u).then(function(r){ return r.blob(); }).then(createImageBitmap) : Promise.resolve(null); };
+      return Promise.all([bm(o.img), bm(o.bg)].concat((o.stickers || []).map(function(t){ return t.img ? bm(t.img) : Promise.resolve(null); }))).then(function(r){
+        o.img = r[0]; o.bg = r[1]; o.stickers = o.stickers || []; o.stickers.forEach(function(t, i){ if (t.img) t.img = r[2 + i]; });
+        S = Object.assign(DEF(), o); S.sel = -1; syncUI(); $('msg').textContent = 'Diseño abierto.';
+      });
+    }).catch(function(){ $('msg').textContent = 'Ese archivo no es un diseño de MoonCard.'; });
+  };
   cur = snap(); histBtns(); loadSaved();
 
   // arrastrar adornos sobre la tarjeta
