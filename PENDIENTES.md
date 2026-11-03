@@ -1,11 +1,11 @@
 # Pendientes de la web (Moonlight Team)
 
 ## MoonCard (en este orden)
-5. [ ] Más adornos (símbolos del juego), rotación, delante/detrás; más formas de marco de la foto (corazón, hexágono, estrella)
 6. [ ] Galería de MoonCards del equipo (Supabase; solo si la persona decide publicarla)
 7. [ ] Detalles: reajuste automático de texto largo, vista previa mayor en móvil, guías de alineación al arrastrar
 
 ## Hecho en MoonCard
+- 36 adornos, giro y delante/detrás; marcos de foto hexágono, corazón, estrella y rombo
 - Texto flexible: posición izq/centro/der, sombra o contorno, campo «Rol o edad»
 - Plantillas por elemento (pestaña Fondo) + 7 fondos nuevos
 - Guardar / abrir el diseño como archivo (.mooncard.json)

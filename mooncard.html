@@ -193,7 +193,7 @@
             </div>
             <p class="cc-note" style="margin:6px 0 0">Usa una imagen de tu personaje, no una foto tuya. Para encuadrarla, haz zoom y arrástrala dentro del marco, sobre la tarjeta.</p>
           </div>
-          <div class="f"><label>Forma</label><div class="seg" id="sShape"><button type="button" data-v="circle" class="on">Círculo</button><button type="button" data-v="square">Cuadrado</button></div></div>
+          <div class="f"><label>Forma</label><div class="seg" id="sShape"><button type="button" data-v="circle" class="on">Círculo</button><button type="button" data-v="hex">Hexágono</button><button type="button" data-v="heart">Corazón</button><button type="button" data-v="star">Estrella</button><button type="button" data-v="diamond">Rombo</button><button type="button" data-v="square">Cuadrado</button></div></div>
           <div class="f"><label for="iZoom">Zoom de la imagen</label><input id="iZoom" type="range" min="1" max="3" step="0.05" value="1"></div>
         </div>
 
@@ -234,6 +234,8 @@
             <p class="cc-note" style="margin:6px 0 0">Vale cualquier imagen. Los PNG con fondo transparente quedan como pegatinas.</p>
           </div>
           <div class="f"><label for="iStSize">Tamaño del adorno seleccionado</label><input id="iStSize" type="range" min="30" max="400" value="70" style="width:100%;padding:0"></div>
+          <div class="f"><label for="iStRot">Giro del adorno seleccionado</label><input id="iStRot" type="range" min="-180" max="180" value="0" style="width:100%;padding:0"></div>
+          <div class="acts"><button class="mini" id="bStFront" type="button">Traer al frente</button><button class="mini" id="bStBack" type="button">Enviar detrás</button></div>
           <div class="acts"><button class="mini" id="bStDel" type="button">Quitar seleccionado</button><button class="mini" id="bStClr" type="button">Quitar todos</button></div>
         </div>
       </div>
@@ -311,7 +313,7 @@
     { n:'Pyro', a:'#321008', b:'#170805', glow:'#ff6a3d', star:'255,225,205', name:'#fff0e6', acc:'#ff8a5c', ink:'#f0cdbd' },
     { n:'Cryo', a:'#12283a', b:'#0a1522', glow:'#a8e8ff', star:'230,248,255', name:'#effaff', acc:'#b5ecff', ink:'#cfe4ee' }
   ];
-  var ICONS = ['🌙','✦','⭐','🌸','❄️','🔥','⚡','🍃','💧','☁️','🦋','👑'];
+  var ICONS = ['🌙','✦','⭐','🌸','❄️','🔥','⚡','🍃','💧','☁️','🦋','👑','🌟','💫','✨','🪶','🌺','🌹','🍂','🌊','🗡️','🏹','📖','🔮','🪽','❤️','💜','🕊️','🌠','☀️','🌌','🐚','🍁','⚔️','🛡️','💎'];
   var DEF = function(){ return { nombre:'', sub:'Tu personaje', bg:null, dim:.4, ix:0, iy:0, bx:0, by:0, bz:1, bio:'Cuéntanos un poco de ti bajo la luna…', font:0, size:76, nameColor:THEMES[0].name, accent:THEMES[0].acc, theme:0, shape:'circle', zoom:1, tag:true, align:'left', tfx:'none', rol:'', img:null, stickers:[], sel:-1 }; };
   var S = DEF();
 
@@ -363,6 +365,20 @@
     return { ls: wrapLines(c, text, maxW, max), size: size, lh: lh };
   }
   // tamaño en pantalla de un adorno (las fotos conservan su proporción; size = lado mayor)
+  function shapePath(c, cx, cy, p){
+    var sh = S.shape, h = p / 2, i, a, r;
+    if (sh === 'circle'){ c.beginPath(); c.arc(cx, cy, h, 0, 7); return; }
+    if (sh === 'hex' || sh === 'star' || sh === 'diamond'){
+      var n = sh === 'hex' ? 6 : sh === 'diamond' ? 4 : 10; c.beginPath();
+      for (i = 0; i < n; i++){ a = -Math.PI / 2 + i * 2 * Math.PI / n; r = sh === 'star' ? (i % 2 ? h * .5 : h * 1.08) : h * (sh === 'hex' ? 1.02 : 1.08); c.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); }
+      c.closePath(); return;
+    }
+    if (sh === 'heart'){
+      c.beginPath(); c.moveTo(cx, cy + .46 * p); c.bezierCurveTo(cx - .78 * p, cy - .04 * p, cx - .44 * p, cy - .56 * p, cx, cy - .2 * p);
+      c.bezierCurveTo(cx + .44 * p, cy - .56 * p, cx + .78 * p, cy - .04 * p, cx, cy + .46 * p); c.closePath(); return;
+    }
+    rr(c, cx - h, cy - h, p, p, 26);
+  }
   function ext(st){ if (!st.img) return { w: st.size, h: st.size }; var k = st.size / Math.max(st.img.width, st.img.height); return { w: st.img.width * k, h: st.img.height * k }; }
   // reduce imágenes grandes para no gastar memoria
   function fit(b, max){ var k = Math.min(1, max / Math.max(b.width, b.height)); if (k === 1) return b; var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(b.width * k)); c.height = Math.max(1, Math.round(b.height * k)); c.getContext('2d').drawImage(b, 0, 0, c.width, c.height); return c; }
@@ -387,13 +403,14 @@
       var seed = 4242, rnd = function(){ return (seed = (seed * 16807) % 2147483647) / 2147483647; };
       for (var i = 0; i < 90; i++){ c.fillStyle = 'rgba(' + th.star + ',' + (0.2 + rnd() * 0.7).toFixed(2) + ')'; c.beginPath(); c.arc(rnd() * W, rnd() * H, 0.6 + rnd() * 1.2, 0, 7); c.fill(); }
     }
+    for (var kb = 0; kb < S.stickers.length; kb++) if (S.stickers[kb].back) drawSt(c, kb, preview, acc);
     // marco
     c.lineWidth = 2; c.strokeStyle = acc; c.globalAlpha = .6; rr(c, 18, 18, W - 36, H - 36, 18); c.stroke();
     c.globalAlpha = .2; c.lineWidth = 1; rr(c, 30, 30, W - 60, H - 60, 12); c.stroke(); c.globalAlpha = 1;
     // imagen
     var px = 70, py = 150, ps = 320, cx = px + ps / 2, cy = py + ps / 2;
     c.save();
-    if (S.shape === 'circle'){ c.beginPath(); c.arc(cx, cy, ps / 2, 0, 7); } else rr(c, px, py, ps, ps, 26);
+    shapePath(c, cx, cy, ps);
     c.shadowColor = acc + '66'; c.shadowBlur = 24; c.fillStyle = 'rgba(255,255,255,0.06)'; c.fill(); c.shadowBlur = 0;
     c.clip();
     if (S.img){
@@ -402,7 +419,7 @@
     } else { c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '110px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif'; c.globalAlpha = .55; c.fillText('🌙', cx, cy + 6); c.globalAlpha = 1; }
     c.restore();
     c.lineWidth = 4; c.strokeStyle = acc;
-    if (S.shape === 'circle'){ c.beginPath(); c.arc(cx, cy, ps / 2, 0, 7); } else rr(c, px, py, ps, ps, 26);
+    shapePath(c, cx, cy, ps);
     c.stroke();
     // textos
     var tx = 450, maxW = W - tx - 70;
@@ -429,16 +446,18 @@
     for (var j = 0; j < fb.ls.length; j++) put(fb.ls[j], ax, 372 + j * fb.lh, maxW);
     c.textAlign = 'left';
     if (S.tag){ c.textAlign = 'right'; c.font = 'italic 500 24px "Cormorant", serif'; c.fillStyle = acc; c.globalAlpha = .85; c.fillText('Moonlight Team 🌙', W - 56, H - 50); c.globalAlpha = 1; c.textAlign = 'left'; }
-    // adornos
-    for (var k = 0; k < S.stickers.length; k++){
-      var st = S.stickers[k];
-      var ex = ext(st);
-      if (st.img){ c.drawImage(st.img, st.x - ex.w / 2, st.y - ex.h / 2, ex.w, ex.h); }
-      else { c.font = st.size + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = acc; c.fillText(st.sym, st.x, st.y); }
-      if (preview && k === S.sel){ c.strokeStyle = acc; c.lineWidth = 2; c.setLineDash([6, 6]);
-        if (st.img){ c.strokeRect(st.x - ex.w / 2 - 4, st.y - ex.h / 2 - 4, ex.w + 8, ex.h + 8); } else { c.beginPath(); c.arc(st.x, st.y, st.size * .62, 0, 7); c.stroke(); }
-        c.setLineDash([]); }
-    }
+    // adornos (los de "detrás" ya se pintaron antes del marco)
+    for (var k = 0; k < S.stickers.length; k++) if (!S.stickers[k].back) drawSt(c, k, preview, acc);
+  }
+  function drawSt(c, k, preview, acc){
+    var st = S.stickers[k], ex = ext(st);
+    c.save(); c.translate(st.x, st.y); if (st.rot) c.rotate(st.rot * Math.PI / 180);
+    if (st.img){ c.drawImage(st.img, -ex.w / 2, -ex.h / 2, ex.w, ex.h); }
+    else { c.font = st.size + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = acc; c.fillText(st.sym, 0, 0); }
+    if (preview && k === S.sel){ c.strokeStyle = acc; c.lineWidth = 2; c.setLineDash([6, 6]);
+      if (st.img){ c.strokeRect(-ex.w / 2 - 4, -ex.h / 2 - 4, ex.w + 8, ex.h + 8); } else { c.beginPath(); c.arc(0, 0, st.size * .62, 0, 7); c.stroke(); }
+      c.setLineDash([]); }
+    c.restore();
   }
   var cv = $('card'), ctx = cv.getContext('2d'), raf = 0;
   // El tamaño máximo del nombre depende de lo largo que sea: el deslizador no deja pasarse
@@ -501,6 +520,9 @@
     b.onclick = function(){ var n = S.stickers.length; S.stickers.push({ sym: sym, x: W / 2 + (n % 5) * 24 - 48, y: H / 2 + (n % 5) * 18 - 36, size: +$('iStSize').value }); S.sel = S.stickers.length - 1; cv.style.touchAction = 'none'; redraw(); };
     stk.appendChild(b); });
   $('iStSize').oninput = function(){ if (S.sel >= 0){ S.stickers[S.sel].size = +this.value; redraw(); } };
+  $('iStRot').oninput = function(){ if (S.sel >= 0){ S.stickers[S.sel].rot = +this.value; redraw(); } };
+  $('bStFront').onclick = function(){ if (S.sel >= 0){ S.stickers[S.sel].back = false; redraw(); } };
+  $('bStBack').onclick = function(){ if (S.sel >= 0){ S.stickers[S.sel].back = true; redraw(); } };
   $('bStDel').onclick = function(){ if (S.sel >= 0){ S.stickers.splice(S.sel, 1); S.sel = -1; if (!S.stickers.length) cv.style.touchAction = 'none'; redraw(); } };
   $('bStClr').onclick = function(){ S.stickers = []; S.sel = -1; cv.style.touchAction = 'none'; redraw(); };
   $('bReset').onclick = function(){ S = DEF();
@@ -619,11 +641,11 @@
   var drag = null;
   cv.style.touchAction = 'none';
   function pos(e){ var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; }
-  function enFoto(p){ return S.shape === 'circle' ? Math.hypot(p.x - (PX + PS / 2), p.y - (PY + PS / 2)) <= PS / 2 : (p.x >= PX && p.x <= PX + PS && p.y >= PY && p.y <= PY + PS); }
+  function enFoto(p){ shapePath(ctx, PX + PS / 2, PY + PS / 2, PS); return ctx.isPointInPath(p.x, p.y); }
   cv.addEventListener('pointerdown', function(e){
     var p = pos(e); S.sel = -1; drag = null;
     for (var i = S.stickers.length - 1; i >= 0; i--){ var s = S.stickers[i]; var ex = ext(s), hit = s.img ? (Math.abs(p.x - s.x) <= Math.max(26, ex.w / 2) && Math.abs(p.y - s.y) <= Math.max(26, ex.h / 2)) : (Math.hypot(p.x - s.x, p.y - s.y) <= Math.max(26, s.size * .6));
-      if (hit){ S.sel = i; drag = { m: 's', dx: p.x - s.x, dy: p.y - s.y }; $('iStSize').value = s.size; break; } }
+      if (hit){ S.sel = i; drag = { m: 's', dx: p.x - s.x, dy: p.y - s.y }; $('iStSize').value = s.size; $('iStRot').value = s.rot || 0; break; } }
     // si no hay adorno: mover la imagen del personaje (dentro del marco) o la foto de fondo (fuera)
     if (!drag && S.img && enFoto(p)) drag = { m: 'i', lx: p.x, ly: p.y };
     else if (!drag && S.bg) drag = { m: 'b', lx: p.x, ly: p.y };
