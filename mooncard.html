@@ -61,6 +61,9 @@
   .mini{ flex:0 0 auto; }
   .fmtrow{ display:flex; gap:8px; width:100%; margin-bottom:8px; }
   .fmtrow select{ flex:1; min-width:0; padding:8px; font-family:'Crimson Pro',serif; font-size:.98rem; color:var(--ink); background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:3px; }
+  .tpl{ display:flex; flex-wrap:wrap; gap:6px; }
+  .tpl button{ padding:6px 12px; border-radius:999px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1rem; cursor:pointer; color:var(--ink); border:1px solid var(--border); background:rgba(255,255,255,.05); transition:transform .15s, border-color .2s; }
+  .tpl button:hover{ transform:translateY(-1px); border-color:var(--gold); }
   .hbar{ display:flex; gap:8px; align-self:center; width:min(100%, calc((100dvh - 170px) * 1.6129)); margin:0 0 10px; }
   .hb{ display:inline-flex; align-items:center; gap:8px; padding:8px 16px 8px 12px; border-radius:999px; cursor:pointer; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.05rem; color:var(--gold); background:linear-gradient(180deg,rgba(217,195,131,.16),rgba(217,195,131,.06)); border:1px solid rgba(217,195,131,.5); box-shadow:0 2px 10px rgba(0,0,0,.35); transition:transform .15s, background .2s, box-shadow .2s, opacity .2s; }
   .hb:hover:not(:disabled){ background:linear-gradient(180deg,rgba(217,195,131,.3),rgba(217,195,131,.12)); box-shadow:0 4px 16px rgba(217,195,131,.22); transform:translateY(-1px); }
@@ -203,6 +206,7 @@
         </div>
 
         <div class="tabpane" id="t5" hidden>
+          <div class="f"><label>Plantillas por elemento</label><div class="tpl" id="tpl"></div></div>
           <div class="f"><label>Estilo de fondo</label><div class="sw" id="swatches"></div></div>
           <div class="f">
             <label>Foto de fondo (opcional)</label>
@@ -295,7 +299,14 @@
     { n:'Atardecer', a:'#2b1320', b:'#130a14', glow:'#ff9e5a', star:'255,235,220', name:'#fff1e6', acc:'#ffb072', ink:'#f0d9c8' },
     { n:'Sakura', a:'#2a1230', b:'#170a21', glow:'#ff8fb3', star:'255,225,240', name:'#ffeef5', acc:'#ff9fc0', ink:'#efd3e0' },
     { n:'Bosque', a:'#0c1f1a', b:'#07120f', glow:'#8fe3a0', star:'225,255,230', name:'#effff2', acc:'#8fe3a0', ink:'#cfe8d4' },
-    { n:'Pergamino', a:'#f3ecdc', b:'#e3d8bd', glow:'#c9a24a', star:'', name:'#2a2438', acc:'#9a7424', ink:'#4a4258' }
+    { n:'Pergamino', a:'#f3ecdc', b:'#e3d8bd', glow:'#c9a24a', star:'', name:'#2a2438', acc:'#9a7424', ink:'#4a4258' },
+    { n:'Anemo', a:'#0b2a2c', b:'#07181a', glow:'#74f2c8', star:'210,255,240', name:'#e6fff6', acc:'#74f2c8', ink:'#c4ece0' },
+    { n:'Geo', a:'#2a2208', b:'#161205', glow:'#f0c64a', star:'255,244,200', name:'#fff6d6', acc:'#f0c64a', ink:'#eadfb4' },
+    { n:'Electro', a:'#1e1236', b:'#0d0820', glow:'#b98cff', star:'235,220,255',name:'#f3eaff', acc:'#c4a0ff', ink:'#ddd0f2' },
+    { n:'Dendro', a:'#0d2410', b:'#07130a', glow:'#9be35b', star:'230,255,210', name:'#f0ffe0', acc:'#a9e86b', ink:'#d2ecc0' },
+    { n:'Hydro', a:'#0a1d3a', b:'#060f22', glow:'#5aa8ff', star:'215,235,255', name:'#e8f3ff', acc:'#6fb4ff', ink:'#c6d9f0' },
+    { n:'Pyro', a:'#321008', b:'#170805', glow:'#ff6a3d', star:'255,225,205', name:'#fff0e6', acc:'#ff8a5c', ink:'#f0cdbd' },
+    { n:'Cryo', a:'#12283a', b:'#0a1522', glow:'#a8e8ff', star:'230,248,255', name:'#effaff', acc:'#b5ecff', ink:'#cfe4ee' }
   ];
   var ICONS = ['🌙','✦','⭐','🌸','❄️','🔥','⚡','🍃','💧','☁️','🦋','👑'];
   var DEF = function(){ return { nombre:'', sub:'Tu personaje', bg:null, dim:.4, ix:0, iy:0, bx:0, by:0, bz:1, bio:'Cuéntanos un poco de ti bajo la luna…', font:0, size:76, nameColor:THEMES[0].name, accent:THEMES[0].acc, theme:0, shape:'circle', zoom:1, tag:true, img:null, stickers:[], sel:-1 }; };
@@ -482,6 +493,23 @@
   $('bReset').onclick = function(){ S = DEF();
     $('iNombre').value = S.nombre; $('iSub').value = S.sub; $('iBio').value = S.bio; $('iSize').value = S.size; $('iZoom').value = 1; $('iDim').value = 40; $('iBgZoom').value = 1; $('iStSize').value = 70; $('iFont').value = 0; $('iCName').value = S.nameColor; $('iCAcc').value = S.accent; $('iTag').checked = true;
     document.querySelectorAll('#sShape button').forEach(function(x, i){ x.classList.toggle('on', !i); }); sw.querySelectorAll('button').forEach(function(x, i){ x.classList.toggle('on', !i); }); cv.style.touchAction = 'none'; ensureFont().then(function(){ limitSize(); redraw(); }); };
+
+  // ---------- Plantillas por elemento ----------
+  var TPL = [
+    ['Anemo', 'Anemo', 2, ['🍃', '🌀', '🍃']], ['Geo', 'Geo', 11, ['💎', '✦', '💎']], ['Electro', 'Electro', 3, ['⚡', '🔮', '⚡']],
+    ['Dendro', 'Dendro', 13, ['🌿', '🍃', '🌿']], ['Hydro', 'Hydro', 1, ['💧', '🌊', '💧']], ['Pyro', 'Pyro', 12, ['🔥', '✦', '🔥']], ['Cryo', 'Cryo', 0, ['❄️', '✦', '❄️']]
+  ];
+  var POS = [[900, 78, 76], [940, 150, 44], [70, 556, 58]];
+  TPL.forEach(function(t){
+    var ti = THEMES.findIndex(function(x){ return x.n === t[1]; }), b = document.createElement('button'); b.type = 'button'; b.textContent = t[0];
+    b.onclick = function(){
+      var T = THEMES[ti]; S.theme = ti; S.nameColor = T.name; S.accent = T.acc; S.font = t[2]; S.bg = null;
+      S.stickers = t[3].map(function(sym, k){ return { sym: sym, x: POS[k][0], y: POS[k][1], size: POS[k][2] }; }); S.sel = -1;
+      $('iCName').value = T.name; $('iCAcc').value = T.acc; $('iFont').value = S.font; sw.querySelectorAll('button').forEach(function(x, i){ x.classList.toggle('on', i === ti); });
+      ensureFont().then(function(){ limitSize(); redraw(); });
+    };
+    $('tpl').appendChild(b);
+  });
 
   // ---------- Deshacer / rehacer ----------
   var UNDO = [], REDO = [], cur = null, htm = 0, restoring = false;
