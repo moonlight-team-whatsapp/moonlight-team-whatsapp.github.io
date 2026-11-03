@@ -59,7 +59,14 @@
   .seg button:hover, .mini:hover{ border-color:var(--gold-dim); }
   .seg button.on{ border-color:var(--gold); color:var(--gold); background:rgba(217,195,131,.12); }
   .mini{ flex:0 0 auto; }
-  .mini:disabled{ opacity:.35; cursor:default; }
+  .hbar{ display:flex; gap:8px; align-self:center; width:min(100%, calc((100dvh - 170px) * 1.6129)); margin:0 0 10px; }
+  .hb{ display:inline-flex; align-items:center; gap:8px; padding:8px 16px 8px 12px; border-radius:999px; cursor:pointer; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.05rem; color:var(--gold); background:linear-gradient(180deg,rgba(217,195,131,.16),rgba(217,195,131,.06)); border:1px solid rgba(217,195,131,.5); box-shadow:0 2px 10px rgba(0,0,0,.35); transition:transform .15s, background .2s, box-shadow .2s, opacity .2s; }
+  .hb:hover:not(:disabled){ background:linear-gradient(180deg,rgba(217,195,131,.3),rgba(217,195,131,.12)); box-shadow:0 4px 16px rgba(217,195,131,.22); transform:translateY(-1px); }
+  .hb:active:not(:disabled){ transform:scale(.95); }
+  .hb:disabled{ opacity:.32; cursor:default; box-shadow:none; }
+  .hb:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+  @media (max-width:600px){ .hbar{ width:min(100%, calc(34dvh * 1.6129)); } .hb span{ display:none; } .hb{ padding:9px 12px; } }
+  @media (prefers-reduced-motion:reduce){ .hb{ transition:none; } }
   .sw{ display:flex; gap:10px; flex-wrap:wrap; }
   .sw button{ width:40px; height:40px; border-radius:50%; border:2px solid var(--border); cursor:pointer; padding:0; }
   .sw button.on{ border-color:var(--gold); box-shadow:0 0 12px rgba(217,195,131,.5); }
@@ -84,7 +91,7 @@
   .moon{ display:none; }
   #cardPanel, #ctrl{ background:none; border:none; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; border-radius:0; }
   #cardPanel{ padding:0; gap:10px; }
-  #card{ width:min(100%, calc((100dvh - 120px) * 1.6129)); border-radius:14px; box-shadow:0 0 0 1px rgba(217,195,131,.22), 0 24px 70px rgba(0,0,0,.6), 0 0 90px rgba(217,195,131,.07); }
+  #card{ width:min(100%, calc((100dvh - 170px) * 1.6129)); border-radius:14px; box-shadow:0 0 0 1px rgba(217,195,131,.22), 0 24px 70px rgba(0,0,0,.6), 0 0 90px rgba(217,195,131,.07); }
   #cardPanel .cc-note{ margin:0; text-align:center; font-style:italic; opacity:.75; }
   #ctrl{ padding:4px 0 0 22px; border-left:1px solid rgba(197,209,255,.14); }
   .tabs{ gap:2px; border-bottom:1px solid rgba(197,209,255,.14); margin-bottom:16px; }
@@ -145,6 +152,10 @@
 
   <div class="main">
     <section class="panel" id="cardPanel">
+      <div class="hbar" role="toolbar" aria-label="Deshacer y rehacer">
+        <button class="hb" id="bUndo" type="button" disabled title="Deshacer (Ctrl+Z)" aria-label="Deshacer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span>Deshacer</span></button>
+        <button class="hb" id="bRedo" type="button" disabled title="Rehacer (Ctrl+Y)" aria-label="Rehacer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg><span>Rehacer</span></button>
+      </div>
       <canvas id="card" width="1000" height="620" aria-label="Vista previa de tu MoonCard"></canvas>
       <p class="cc-note">Arrastra con el dedo o el ratón: adornos, tu imagen o la foto de fondo.</p>
     </section>
@@ -220,8 +231,6 @@
 
       <div class="foot">
         <div class="acts">
-          <button class="mini" id="bUndo" type="button" disabled title="Deshacer (Ctrl+Z)" aria-label="Deshacer">↶ Deshacer</button>
-          <button class="mini" id="bRedo" type="button" disabled title="Rehacer (Ctrl+Y)" aria-label="Rehacer">↷ Rehacer</button>
           <button class="btn-primary" id="bDown" type="button">Descargar imagen</button>
           <button class="btn-ghost" id="bReset" type="button">Empezar de nuevo</button>
         </div>
