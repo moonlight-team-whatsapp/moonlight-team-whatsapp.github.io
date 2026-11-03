@@ -489,7 +489,7 @@
   function histCommit(){
     clearTimeout(htm); htm = 0; if (!cur) return;
     var n = snap(); if (same(cur, n)) return;
-    UNDO.push(cur); if (UNDO.length > 60) UNDO.shift(); REDO = []; cur = n; histBtns();
+    UNDO.push(cur); if (UNDO.length > 60) UNDO.shift(); REDO = []; cur = n; histBtns(); saveSoon();
   }
   function histTick(){ if (restoring || !cur) return; clearTimeout(htm); htm = setTimeout(histCommit, 350); }
   function syncUI(){
@@ -503,7 +503,7 @@
   function histGo(from, to){
     histCommit(); if (!from.length) return;
     to.push(cur); cur = from.pop(); restoring = true; S = Object.assign({}, cur); S.stickers = cur.stickers.map(function(t){ return Object.assign({}, t); }); S.sel = -1;
-    syncUI(); restoring = false; histBtns();
+    syncUI(); restoring = false; histBtns(); saveSoon();
   }
   $('bUndo').onclick = function(){ histGo(UNDO, REDO); };
   $('bRedo').onclick = function(){ histGo(REDO, UNDO); };
@@ -515,7 +515,31 @@
     if (k === 'z' && !e.shiftKey){ e.preventDefault(); histGo(UNDO, REDO); }
     else if (k === 'y' || (k === 'z' && e.shiftKey)){ e.preventDefault(); histGo(REDO, UNDO); }
   });
-  cur = snap(); histBtns();
+
+  // ---------- Guardado automático (solo en este navegador) ----------
+  var ready = false, stm = 0;
+  function idb(){ return new Promise(function(res, rej){ var r = indexedDB.open('mooncard', 1); r.onupgradeneeded = function(){ r.result.createObjectStore('s'); }; r.onsuccess = function(){ res(r.result); }; r.onerror = function(){ rej(); }; }); }
+  function toBlob(b){ return new Promise(function(res){ if (!b) return res(null); var c = document.createElement('canvas'); c.width = b.width; c.height = b.height; c.getContext('2d').drawImage(b, 0, 0); c.toBlob(res, 'image/png'); }); }
+  function saveNow(){
+    if (!ready) return; var o = snap(); o.sel = -1;
+    Promise.all([toBlob(o.img), toBlob(o.bg)].concat(o.stickers.map(function(t){ return toBlob(t.img); }))).then(function(bl){
+      o.img = bl[0]; o.bg = bl[1]; o.stickers.forEach(function(t, i){ if (t.img) t.img = bl[2 + i]; });
+      return idb().then(function(db){ db.transaction('s', 'readwrite').objectStore('s').put(o, 'cur'); });
+    }).catch(function(){});
+  }
+  function saveSoon(){ clearTimeout(stm); stm = setTimeout(saveNow, 700); }
+  function loadSaved(){
+    return idb().then(function(db){ return new Promise(function(res){ var q = db.transaction('s').objectStore('s').get('cur'); q.onsuccess = function(){ res(q.result); }; q.onerror = function(){ res(null); }; }); })
+    .then(function(o){
+      if (!o) return;
+      var bm = function(b){ return b ? createImageBitmap(b) : Promise.resolve(null); };
+      return Promise.all([bm(o.img), bm(o.bg)].concat(o.stickers.map(function(t){ return t.img ? createImageBitmap(t.img) : Promise.resolve(null); }))).then(function(r){
+        o.img = r[0]; o.bg = r[1]; o.stickers.forEach(function(t, i){ if (t.img) t.img = r[2 + i]; });
+        restoring = true; S = o; S.sel = -1; syncUI(); restoring = false; cur = snap(); UNDO = []; REDO = []; histBtns();
+      });
+    }).catch(function(){}).then(function(){ ready = true; });
+  }
+  cur = snap(); histBtns(); loadSaved();
 
   // arrastrar adornos sobre la tarjeta
   var drag = null;
