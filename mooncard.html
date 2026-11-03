@@ -67,7 +67,9 @@
   .pubdlg{ max-width:min(440px,92vw); background:#141b37; color:var(--ink); border:1px solid var(--border); border-radius:8px; padding:20px; }
   .pubdlg::backdrop{ background:rgba(0,0,0,.6); }
   .pubdlg h3{ margin:0 0 8px; font-family:'Cormorant',serif; font-style:italic; color:var(--gold); font-size:1.5rem; }
+  .pubdlg select{ width:100%; margin:4px 0 8px; padding:8px; background:#141b37; border:1px solid var(--border); color:var(--ink); border-radius:3px; font-family:inherit; font-size:1rem; }
   .pubdlg input{ width:100%; margin:4px 0 8px; padding:8px; background:rgba(255,255,255,.05); border:1px solid var(--border); color:var(--ink); border-radius:3px; font-family:inherit; }
+  select option{ background:#141b37; color:#eef0fb; }
   .hbar{ display:flex; gap:8px; align-self:center; width:min(100%, calc((100dvh - 170px) * 1.6129)); margin:0 0 10px; }
   .hb{ display:inline-flex; align-items:center; gap:8px; padding:8px 16px 8px 12px; border-radius:999px; cursor:pointer; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.05rem; color:var(--gold); background:linear-gradient(180deg,rgba(217,195,131,.16),rgba(217,195,131,.06)); border:1px solid rgba(217,195,131,.5); box-shadow:0 2px 10px rgba(0,0,0,.35); transition:transform .15s, background .2s, box-shadow .2s, opacity .2s; }
   .hb:hover:not(:disabled){ background:linear-gradient(180deg,rgba(217,195,131,.3),rgba(217,195,131,.12)); box-shadow:0 4px 16px rgba(217,195,131,.22); transform:translateY(-1px); }
@@ -274,6 +276,7 @@
 
 <dialog id="pubDlg" class="pubdlg"><h3>Publicar en la galería</h3>
   <p>Se subirán la imagen de tu tarjeta y su <b>diseño editable</b> (con tus fotos), para que otros puedan usarlo como plantilla. Un admin la revisa antes de mostrarla. Máximo 3 tarjetas por personaje.</p>
+  <label for="pubPer">Personaje al que pertenece</label><select id="pubPer"><option value="">Cargando personajes…</option></select>
   <label for="pubName">Tu nombre (opcional)</label><input id="pubName" type="text" maxlength="24" autocomplete="off">
   <p id="pubMsg" class="cc-note" role="status"></p>
   <div class="acts"><button class="btn-primary" id="pubOk" type="button">Publicar</button><button class="btn-ghost" id="pubNo" type="button">Cancelar</button></div>
@@ -664,11 +667,21 @@
       if (!r.data) { $('msg').textContent = 'No se encontró esa tarjeta.'; return; }
       fetch(sbp().storage.from('mooncards').getPublicUrl(r.data.diseno_path).data.publicUrl).then(function(x){ return x.text(); }).then(applyDesign).then(function(){ $('msg').textContent = 'Plantilla de la galería cargada. Cambia lo que quieras.'; histCommit(); }).catch(function(){ $('msg').textContent = 'No se pudo cargar esa plantilla.'; });
     }); })(); }, 600);
-  $('bPub').onclick = function(){ $('pubMsg').textContent = ''; $('pubOk').disabled = false; $('pubName').value = S.nombre || ''; $('pubDlg').showModal(); };
+  function fillPer(){
+    var sel = $('pubPer'), sb = sbp(); if (!sb){ return; }
+    sb.from('ocupados').select('data').then(function(r){
+      var names = (r.data || []).map(function(x){ return x.data && x.data.nombre; }).filter(Boolean).sort(function(a, b){ return a.localeCompare(b); });
+      names = names.filter(function(n, i){ return names.indexOf(n) === i; });
+      var want = (S.sub || '').trim().toLowerCase();
+      sel.innerHTML = '<option value="">— Elige tu personaje —</option>' + names.map(function(n){ return '<option>' + n.replace(/[&<>"]/g, '') + '</option>'; }).join('');
+      var m = names.filter(function(n){ return n.toLowerCase() === want; })[0]; if (m) sel.value = m;
+    });
+  }
+  $('bPub').onclick = function(){ fillPer(); $('pubMsg').textContent = ''; $('pubOk').disabled = false; $('pubName').value = S.nombre || ''; $('pubDlg').showModal(); };
   $('pubNo').onclick = function(){ $('pubDlg').close(); };
   $('pubOk').onclick = function(){
     var sb = sbp(), pm = $('pubMsg'); if (!sb){ pm.textContent = 'No se pudo conectar. Prueba otra vez en un momento.'; return; }
-    var per = (S.sub || '').trim(); if (!per){ pm.textContent = 'Escribe primero el nombre de tu personaje (pestaña Texto).'; return; }
+    var per = $('pubPer').value; if (!per){ pm.textContent = 'Elige a qué personaje pertenece la tarjeta.'; return; }
     $('pubOk').disabled = true; pm.textContent = 'Subiendo…';
     var id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2)), pi = 'mc/' + id + '.jpg', pd = 'mc/' + id + '.json';
     ensureFont().then(function(){

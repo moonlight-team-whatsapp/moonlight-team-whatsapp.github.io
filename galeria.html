@@ -23,6 +23,8 @@
   .gc small{ color:var(--ink-soft); }
   .gc .row{ display:flex; gap:8px; flex-wrap:wrap; }
   .gc.pend{ border-style:dashed; }
+  select option{ background:#141b37; color:#eef0fb; }
+  .gsel{ padding:6px 8px; font-family:'Crimson Pro',serif; color:var(--ink); background:#141b37; border:1px solid var(--border); border-radius:4px; max-width:100%; }
   .gbtn{ padding:6px 12px; border-radius:999px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1rem; cursor:pointer; color:var(--gold); border:1px solid rgba(217,195,131,.5); background:rgba(217,195,131,.08); text-decoration:none; transition:background .2s, transform .15s; }
   .gbtn:hover{ background:rgba(217,195,131,.22); transform:translateY(-1px); }
   .gbtn.red{ color:#ff9b9b; border-color:rgba(255,155,155,.5); background:rgba(255,155,155,.06); }
@@ -70,15 +72,16 @@ import { sb } from './supabase-sesion.js';
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 (function(){ const l = $('starsLayer'), fr = document.createDocumentFragment(); for (let i = 0; i < 36; i++){ const s = document.createElement('span'); s.className = 'star'; const z = (Math.random()*1.6+.8).toFixed(2); s.style.cssText = `top:${Math.random()*100}%;left:${Math.random()*100}%;width:${z}px;height:${z}px`; s.style.setProperty('--dur', (Math.random()*3+2).toFixed(2)+'s'); s.style.setProperty('--delay', (Math.random()*5).toFixed(2)+'s'); s.style.setProperty('--o-min', '.2'); s.style.setProperty('--o-max', '.85'); fr.appendChild(s); } l.appendChild(fr); })();
-let isAdmin = false, rows = [];
+let isAdmin = false, rows = [], names = [];
 const url = p => sb.storage.from('mooncards').getPublicUrl(p).data.publicUrl;
 async function load(){
   const { data } = await sb.from('mooncards').select('*').order('creada', { ascending: false });
   rows = data || []; paint();
+  const o = await sb.from('ocupados').select('data'); names = [...new Set((o.data || []).map(x => x.data && x.data.nombre).filter(Boolean))].sort((a, b) => a.localeCompare(b)); if (isAdmin) paint();
 }
 function card(r, pend){
   const d = new Date(r.creada).toLocaleDateString('es-ES');
-  return `<article class="gc${pend ? ' pend' : ''}" style="--i:IDX"><img src="${url(r.img_path)}" alt="MoonCard de ${esc(r.personaje)}" loading="lazy" data-zoom="${esc(url(r.img_path))}"><div class="meta"><b>${esc(r.personaje)}</b><small>${r.autor ? 'por ' + esc(r.autor) + ' · ' : ''}${d}</small><div class="row"><a class="gbtn" href="mooncard.html?plantilla=${r.id}">Usar como plantilla</a>${isAdmin ? (pend ? `<button class="gbtn" data-ok="${r.id}" type="button">Aprobar</button>` : '') + `<button class="gbtn red" data-del="${r.id}" type="button">Borrar</button>` : ''}</div></div></article>`;
+  return `<article class="gc${pend ? ' pend' : ''}" style="--i:IDX"><img src="${url(r.img_path)}" alt="MoonCard de ${esc(r.personaje)}" loading="lazy" data-zoom="${esc(url(r.img_path))}"><div class="meta"><b>${esc(r.personaje)}</b><small>${r.autor ? 'por ' + esc(r.autor) + ' · ' : ''}${d}</small><div class="row"><a class="gbtn" href="mooncard.html?plantilla=${r.id}">Usar como plantilla</a>${isAdmin ? `<select class="gsel" data-per="${r.id}" aria-label="Cambiar personaje">${names.map(n => `<option${n === r.personaje ? ' selected' : ''}>${esc(n)}</option>`).join('')}${names.includes(r.personaje) ? '' : `<option selected>${esc(r.personaje)}</option>`}</select>` : ''}${isAdmin ? (pend ? `<button class="gbtn" data-ok="${r.id}" type="button">Aprobar</button>` : '') + `<button class="gbtn red" data-del="${r.id}" type="button">Borrar</button>` : ''}</div></div></article>`;
 }
 function paint(){
   const ap = rows.filter(r => r.aprobada), pe = rows.filter(r => !r.aprobada);
@@ -92,6 +95,11 @@ function paint(){
   $('pendGrid').innerHTML = pe.map((r, i) => card(r, true).replace('IDX', i)).join('');
 }
 $('fPer').onchange = paint;
+document.addEventListener('change', async e => {
+  const s = e.target.closest('[data-per]'); if (!s) return;
+  const { error } = await sb.from('mooncards').update({ personaje: s.value }).eq('id', s.dataset.per);
+  if (error){ s.style.borderColor = '#ff9b9b'; s.title = /limite/.test(error.message) ? 'Ese personaje ya tiene 3 tarjetas' : 'No se pudo cambiar'; setTimeout(load, 1800); } else load();
+});
 document.addEventListener('click', async e => {
   const z = e.target.closest('[data-zoom]'); if (z){ $('zoomImg').src = z.dataset.zoom; $('zoomDlg').showModal(); return; }
   if (e.target === $('zoomDlg') || e.target === $('zoomImg')) $('zoomDlg').close();
