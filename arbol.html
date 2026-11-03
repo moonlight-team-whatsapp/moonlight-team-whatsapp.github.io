@@ -357,6 +357,28 @@
       });
       place(rows[i]);
     }
+    // Quitar huecos: acercar a la izquierda lo que deje más de un hueco de separación y recentrar padres sin solapar
+    const setX = u => u.ids.forEach((id, k) => X[id] = u.c + (k - (u.ids.length - 1) / 2) * PX);
+    for (let pass = 0; pass < 2; pass++){
+      rows.forEach(us => {
+        us.sort((a, b) => a.c - b.c);
+        for (let k = 1; k < us.length; k++){
+          const min = us[k - 1].c + us[k - 1].ids.length * PX / 2 + us[k].ids.length * PX / 2;
+          if (us[k].c - min > PX * 0.75){ us[k].c = min + PX * 0.75; setX(us[k]); }
+        }
+      });
+      for (let i = max - 1; i >= 0; i--){
+        const us = rows[i];
+        us.forEach((u, k) => {
+          const d = u.ids.flatMap(id => P.filter(c => c.parents.includes(id)).map(c => X[c.id]));
+          if (!d.length) return;
+          let c = avg(d);
+          if (k > 0) c = Math.max(c, us[k - 1].c + us[k - 1].ids.length * PX / 2 + u.ids.length * PX / 2);
+          if (k < us.length - 1) c = Math.min(c, us[k + 1].c - us[k + 1].ids.length * PX / 2 - u.ids.length * PX / 2);
+          u.c = c; setX(u);
+        });
+      }
+    }
     return { X, rows };
   }
 
@@ -718,8 +740,8 @@
     $('shX').onclick = () => { sel = null; closeSheet(); render(); };
     sh.querySelectorAll('[data-go]').forEach(a => a.addEventListener('click', () => { sel = a.dataset.go; render(); }));
     if (isAdmin) $('editBtn').onclick = () => openEdit(P);
-    if (canL) $('moveL').onclick = () => moveEnUnidad(-1);
-    if (canR) $('moveR').onclick = () => moveEnUnidad(1);
+    if (isAdmin && canL) $('moveL').onclick = () => moveEnUnidad(-1);
+    if (isAdmin && canR) $('moveR').onclick = () => moveEnUnidad(1);
     if (famIds.size > 1){
       $('famPng').onclick = () => exportImage(famIds, famTit, famBase);
       $('famPdf').onclick = () => exportPdf(famIds, famTit, famBase);
