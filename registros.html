@@ -72,6 +72,47 @@
   .st-v{ fill: var(--ink); font: 600 11px 'Crimson Pro', serif; }
   .st-leg{ display:flex; gap:14px; font-size:.85rem; color:var(--ink-soft); margin-top:6px; }
   .st-leg i{ display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+
+  /* ===== Botones ===== */
+  .wrap .icon-btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:9px 16px; border-radius:999px; font-family:'Crimson Pro',serif; font-size:.95rem; letter-spacing:.01em;
+    border:1px solid color-mix(in srgb, currentColor 38%, transparent); background:color-mix(in srgb, currentColor 9%, transparent); cursor:pointer;
+    transition:transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .25s, background .25s, border-color .25s; }
+  .wrap .icon-btn:hover{ transform:translateY(-2px); background:color-mix(in srgb, currentColor 18%, transparent); border-color:currentColor; box-shadow:0 8px 20px -8px currentColor; }
+  .wrap .icon-btn:active{ transform:translateY(0) scale(.97); box-shadow:none; }
+  .wrap .icon-btn:focus-visible, .wrap .submit-btn:focus-visible, .wrap .admin-toggle:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+  .wrap .icon-btn svg{ width:16px; height:16px; flex:none; transition:transform .25s; }
+  .wrap .icon-btn:hover svg{ transform:translateY(2px); }
+  .wrap .icon-btn[disabled]{ opacity:.35; transform:none; box-shadow:none; pointer-events:none; }
+  .month-nav .icon-btn{ color:var(--gold); width:40px; height:40px; padding:0; border-radius:50%; }
+  .month-nav .icon-btn:hover svg{ transform:none; }
+  #olderBtn:hover svg{ transform:translateX(-3px); } #newerBtn:hover svg{ transform:translateX(3px); }
+  #delMonthBtn:hover svg{ transform:rotate(-12deg) scale(1.1); }
+  .wrap .submit-btn, .wrap .admin-toggle{ transition:transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .25s, background .25s, border-color .25s, color .25s; }
+  .wrap .submit-btn:hover{ transform:translateY(-2px); box-shadow:0 10px 24px -10px var(--gold); }
+  .wrap .submit-btn:active{ transform:scale(.97); }
+  .wrap .admin-toggle:hover{ transform:translateY(-1px); box-shadow:0 6px 18px -8px currentColor; }
+  .wrap .admin-toggle:active{ transform:scale(.97); }
+
+  /* ===== Animaciones ===== */
+  @keyframes panelIn{ from{ opacity:0; transform:translateY(22px); } }
+  @keyframes rowIn{ from{ opacity:0; transform:translateX(-14px); } }
+  @keyframes barGrow{ from{ transform:scaleX(0); } }
+  @keyframes barUp{ from{ transform:scaleY(0); } }
+  @keyframes fadeIn{ from{ opacity:0; } }
+  .wrap > section.panel{ animation:panelIn .75s cubic-bezier(.2,.8,.2,1) both; }
+  .wrap > section.panel:nth-of-type(1){ animation-delay:.05s } .wrap > section.panel:nth-of-type(2){ animation-delay:.12s }
+  .wrap > section.panel:nth-of-type(3){ animation-delay:.19s } .wrap > section.panel:nth-of-type(4){ animation-delay:.26s }
+  #topList > li, #fullList > li{ animation:rowIn .55s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i, 0) * 55ms); transition:transform .2s, background .2s, border-color .2s; }
+  #topList > li:hover, #fullList > li:hover{ transform:translateY(-2px); border-color:var(--gold-dim); }
+  #topList .bar i, #fullList .bar i{ transform-origin:left center; animation:barGrow 1s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i, 0) * 55ms + .25s); }
+  .st-bar{ transform-box:fill-box; transform-origin:50% 100%; animation:barUp .9s cubic-bezier(.2,.8,.2,1) both; animation-delay:var(--d, 0s); }
+  .st-v, .st-t{ animation:fadeIn .6s ease both; animation-delay:calc(var(--d, 0s) + .45s); }
+  .dropzone .dz-icon{ display:inline-block; animation:moonBob 4s ease-in-out infinite; }
+  @keyframes moonBob{ 50%{ transform:translateY(-4px) rotate(-6deg); } }
+  @media (prefers-reduced-motion: reduce){
+    .wrap > section.panel, #topList > li, #fullList > li, #topList .bar i, #fullList .bar i, .st-bar, .st-v, .st-t, .dropzone .dz-icon{ animation:none !important; }
+    .wrap .icon-btn, .wrap .submit-btn, .wrap .admin-toggle{ transition:none; }
+  }
 </style>
 </head>
 <body>
@@ -91,37 +132,6 @@
     <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
   </header>
 
-  <section class="panel">
-    <h2>Top 10 del mes</h2>
-    <div class="month-nav">
-      <button class="icon-btn" id="olderBtn" type="button" title="Mes anterior">←</button>
-      <select id="mesSel" aria-label="Mes"></select>
-      <button class="icon-btn" id="newerBtn" type="button" title="Mes siguiente">→</button>
-    </div>
-    <p class="summary" id="summary"></p>
-    <ul class="simple-list" id="topList"></ul>
-    <p class="empty-note" id="emptyNote" hidden>Todavía no hay registros guardados.</p>
-    <div class="li-actions" style="margin-top:12px"><button class="icon-btn icon-btn-confirm" id="pngBtn" type="button" hidden>Descargar top 10 como imagen</button></div>
-  </section>
-
-  <section class="panel" id="fullPanel" hidden>
-    <h2>Lista completa</h2>
-    <p class="panel-desc">Solo admin: todas las personas del mes, con su contacto real. <span class="ch-a">a.</span> = ocupa · <span class="ch-aba">aba.</span> = ocupaba.</p>
-    <ul class="simple-list" id="fullList"></ul>
-    <div class="li-actions" style="margin-top:12px"><button class="icon-btn icon-btn-confirm" id="pngFullBtn" type="button">Descargar lista completa como imagen</button> <button class="icon-btn" id="delMonthBtn" type="button">Borrar este mes</button></div>
-  </section>
-
-  <section class="panel" id="statsPanel" hidden>
-    <h2>Estadísticas</h2>
-    <p class="panel-desc">Solo admin: cómo evoluciona la actividad mes a mes y qué personajes se piden más.</p>
-    <h3 class="st-h">Evolución mensual</h3>
-    <div id="evoChart" class="st-scroll"></div>
-    <p class="summary" id="evoNote"></p>
-    <h3 class="st-h">Personajes más buscados</h3>
-    <ul class="simple-list" id="topBuscados"></ul>
-    <p class="empty-note" id="buscadosVacio" hidden>No hay personajes buscados ahora mismo.</p>
-  </section>
-
   <section class="panel" id="importPanel" hidden>
     <h2>Importar registro</h2>
     <p class="panel-desc">Sube el chat exportado de WhatsApp (.txt) o el Excel con columnas <i>Mes · Nombre en el chat · Mensajes · Multimedia</i>. El archivo se lee en tu navegador; no se sube a ningún sitio. Cada nombre se asigna a un miembro de Contactos y la próxima vez se recordará solo.</p>
@@ -133,6 +143,36 @@
     </label>
     <div id="importOut"></div>
   </section>
+
+  <section class="panel">
+    <h2>Top 10 del mes</h2>
+    <div class="month-nav">
+      <button class="icon-btn" id="olderBtn" type="button" title="Mes anterior" aria-label="Mes anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg></button>
+      <select id="mesSel" aria-label="Mes"></select>
+      <button class="icon-btn" id="newerBtn" type="button" title="Mes siguiente" aria-label="Mes siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></button>
+    </div>
+    <p class="summary" id="summary"></p>
+    <ul class="simple-list" id="topList"></ul>
+    <p class="empty-note" id="emptyNote" hidden>Todavía no hay registros guardados.</p>
+    <div class="li-actions" style="margin-top:12px"><button class="icon-btn icon-btn-confirm" id="pngBtn" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>Descargar top 10 como imagen</button></div>
+  </section>
+
+  <section class="panel" id="fullPanel" hidden>
+    <h2>Lista completa</h2>
+    <p class="panel-desc">Solo admin: todas las personas del mes, con su contacto real. <span class="ch-a">a.</span> = ocupa · <span class="ch-aba">aba.</span> = ocupaba.</p>
+    <ul class="simple-list" id="fullList"></ul>
+    <div class="li-actions" style="margin-top:12px"><button class="icon-btn icon-btn-confirm" id="pngFullBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>Descargar lista completa como imagen</button> <button class="icon-btn" id="delMonthBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg>Borrar este mes</button></div>
+  </section>
+
+  <section class="panel" id="statsPanel" hidden>
+    <h2>Estadísticas</h2>
+    <p class="panel-desc">Solo admin: cómo evoluciona la actividad mes a mes.</p>
+    <h3 class="st-h">Evolución mensual</h3>
+    <div id="evoChart" class="st-scroll"></div>
+    <p class="summary" id="evoNote"></p>
+    <div class="li-actions" style="margin-top:12px"><button class="icon-btn icon-btn-confirm" id="pngEvoBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>Descargar gráfico</button></div>
+  </section>
+
 
   <footer class="status" id="statusLine"></footer>
 </div>
@@ -271,8 +311,7 @@
 
   // ---------- Datos ----------
   let isAdmin = false, registros = [], miembros = [], ocupados = [], current = null, pending = {};
-  let unsubM = null, unsubO = null, buscados = [];
-  onSnapshot(collection(db, 'buscados'), (s) => { buscados = s.docs.map(d => ({ id: d.id, ...d.data() })); renderStats(); });
+  let unsubM = null, unsubO = null;
 
   // ---------- Estadísticas (solo admin) ----------
   function renderStats(){
@@ -286,12 +325,12 @@
       let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Mensajes y multimedia por mes"><line x1="10" y1="${base}" x2="${W - 10}" y2="${base}" stroke="currentColor" opacity=".25"/>`;
       meses.forEach((m, i) => {
         const cx = 10 + GW * i + GW / 2, a = m.total || 0, b = m.totalMedia || 0;
-        svg += `<rect x="${cx - 30}" y="${base - hh(a)}" width="28" height="${hh(a)}" rx="3" fill="var(--gold)"/>`
-             + `<rect x="${cx + 2}" y="${base - hh(b)}" width="28" height="${hh(b)}" rx="3" fill="var(--ink-soft)" opacity=".7"/>`
-             + `<text class="st-v" x="${cx - 16}" y="${base - hh(a) - 5}" text-anchor="middle">${fmt(a)}</text>`
-             + `<text class="st-v" x="${cx + 16}" y="${base - hh(b) - 5}" text-anchor="middle">${fmt(b)}</text>`
-             + `<text class="st-t" x="${cx}" y="${base + 18}" text-anchor="middle">${esc(MESES[+m.id.split('-')[1] - 1].slice(0, 3) + ' ' + m.id.split('-')[0])}</text>`
-             + `<text class="st-t" x="${cx}" y="${base + 32}" text-anchor="middle">${(m.entradas || []).length} pers.</text>`;
+        svg += `<rect class="st-bar" style="--d:${i * .12}s" x="${cx - 30}" y="${base - hh(a)}" width="28" height="${hh(a)}" rx="3" fill="var(--gold)"/>`
+             + `<rect class="st-bar" style="--d:${i * .12 + .08}s" x="${cx + 2}" y="${base - hh(b)}" width="28" height="${hh(b)}" rx="3" fill="var(--ink-soft)" opacity=".7"/>`
+             + `<text class="st-v" style="--d:${i * .12}s" x="${cx - 16}" y="${base - hh(a) - 5}" text-anchor="middle">${fmt(a)}</text>`
+             + `<text class="st-v" style="--d:${i * .12 + .08}s" x="${cx + 16}" y="${base - hh(b) - 5}" text-anchor="middle">${fmt(b)}</text>`
+             + `<text class="st-t" style="--d:${i * .12}s" x="${cx}" y="${base + 18}" text-anchor="middle">${esc(MESES[+m.id.split('-')[1] - 1].slice(0, 3) + ' ' + m.id.split('-')[0])}</text>`
+             + `<text class="st-t" style="--d:${i * .12}s" x="${cx}" y="${base + 32}" text-anchor="middle">${(m.entradas || []).length} pers.</text>`;
       });
       box.innerHTML = svg + '</svg><div class="st-leg"><span><i style="background:var(--gold)"></i>Mensajes</span><span><i style="background:var(--ink-soft)"></i>Multimedia</span></div>';
       if (meses.length > 1){
@@ -299,15 +338,6 @@
         if (v.total){ const d = (u.total - v.total) / v.total * 100; $('evoNote').textContent = `${mesLabel(u.id).replace(/^./, c => c.toUpperCase())} lleva ${d >= 0 ? '+' : ''}${d.toLocaleString('es-ES', { maximumFractionDigits: 1 })} % de mensajes respecto a ${mesLabel(v.id)} (${fmt(u.total)} frente a ${fmt(v.total)}).`; }
       }
     } else box.innerHTML = '<p class="empty-note">Todavía no hay registros guardados.</p>';
-    // Más buscados: cuántas peticiones tiene cada personaje
-    const g = new Map();
-    buscados.forEach(b => { const k = simp(b.nombre); if (!k) return; const e = g.get(k) || { nombre: b.nombre, n: 0, quien: new Set(), motivos: new Set() }; e.n++; if (b.pedidoPor) e.quien.add(b.pedidoPor); if (b.motivo) e.motivos.add(b.motivo); g.set(k, e); });
-    const rank = [...g.values()].sort((a, b) => b.n - a.n || a.nombre.localeCompare(b.nombre, 'es')).slice(0, 10), mx = rank[0]?.n || 1;
-    $('buscadosVacio').hidden = rank.length > 0;
-    $('topBuscados').innerHTML = rank.map((e, i) => `<li style="display:flex;gap:10px;align-items:flex-start"><span class="rank">${i + 1}</span><div style="flex:1;min-width:0">
-      <div class="li-name">${esc(e.nombre)}</div>
-      <div class="li-meta"><b>${e.n}</b> ${e.n === 1 ? 'petición' : 'peticiones'} · ${esc([...e.motivos].join(' / '))} · ${esc([...e.quien].join(', '))}</div>
-      <div class="bar"><i style="width:${e.n / mx * 100}%"></i></div></div></li>`).join('');
   }
 
   // Los ocupados son públicos: se leen siempre para ordenar los personajes (el principal primero) también a los visitantes
@@ -329,7 +359,7 @@
   function rowLi(e, rank, total, max){
     const m = isAdmin && e.miembroId ? miembros.find(x => x.id === e.miembroId) : null;
     const li = document.createElement('li');
-    li.style.cssText = 'display:flex;gap:10px;align-items:flex-start';
+    li.style.cssText = 'display:flex;gap:10px;align-items:flex-start'; li.style.setProperty('--i', rank);
     li.innerHTML = `<span class="rank">${rank}</span><div style="flex:1;min-width:0">
       <div class="li-name">${m ? esc(lbl(m)) + (charParts(m).length ? ' - ' + charsHtml(m) : ` <span class="li-admin-only">· ${esc(pubLabel(e))}</span>`) : esc(pubLabel(e))}</div>
       ${isAdmin && e.unido ? `<div class="li-meta"><span class="li-admin-only">🆕 Se unió el día ${e.unido}: lleva ${diasEn(current, e.unido)} de ${diasMes(current)} días del mes</span></div>` : ''}
@@ -425,6 +455,43 @@
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     }, 'image/png');
   }
+  // Gráfico de evolución mensual como imagen
+  async function exportEvoPng(){
+    const meses = [...registros].sort((a, b) => a.id.localeCompare(b.id));
+    if (!meses.length){ status('No hay registros para dibujar.'); return; }
+    try { await Promise.all([document.fonts.load("600 40px 'Cormorant'"), document.fonts.load("400 26px 'Crimson Pro'")]); } catch (e) {}
+    const W = 1080, H = 820, S = 2, SERIF = "'Crimson Pro', Georgia, serif", DISP = "'Cormorant', Georgia, serif";
+    const cv = document.createElement('canvas'); cv.width = W * S; cv.height = H * S;
+    const x = cv.getContext('2d'); x.scale(S, S);
+    const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#151b34'); g.addColorStop(1, '#090c1a'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.fillStyle = '#d9c383'; x.font = `600 62px ${DISP}`; x.fillText('Moonlight Team', 70, 100);
+    x.fillStyle = '#eef0fb'; x.font = `500 38px ${DISP}`; x.fillText('Actividad por mes', 70, 152);
+    const u = meses[meses.length - 1], v = meses[meses.length - 2];
+    x.fillStyle = '#a3adce'; x.font = `400 26px ${SERIF}`;
+    const cap = (t) => t.replace(/^./, c => c.toUpperCase());
+    x.fillText(v && v.total ? `${cap(mesLabel(u.id))}: ${((u.total - v.total) / v.total * 100 >= 0 ? '+' : '')}${((u.total - v.total) / v.total * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 })} % de mensajes respecto a ${mesLabel(v.id)}` : `${fmt(u.total)} mensajes en ${mesLabel(u.id)}`, 70, 194);
+    const base = H - 170, top = 270, maxV = Math.max(...meses.map(m => m.total || 0), 1), n = meses.length, area = W - 140, gw = Math.min(260, area / n);
+    const hh = (val) => Math.max(val ? 3 : 0, val / maxV * (base - top));
+    x.strokeStyle = 'rgba(255,255,255,0.18)'; x.lineWidth = 2; x.beginPath(); x.moveTo(70, base); x.lineTo(W - 70, base); x.stroke();
+    const rr = (px, py, w, h, r, col) => { x.fillStyle = col; x.beginPath(); x.moveTo(px, py + h); x.lineTo(px, py + r); x.quadraticCurveTo(px, py, px + r, py); x.lineTo(px + w - r, py); x.quadraticCurveTo(px + w, py, px + w, py + r); x.lineTo(px + w, py + h); x.closePath(); x.fill(); };
+    x.textAlign = 'center';
+    meses.forEach((m, i) => {
+      const cx = 70 + (area - gw * n) / 2 + gw * i + gw / 2, a = m.total || 0, b = m.totalMedia || 0, bw = Math.min(80, gw / 2 - 10);
+      const ga = x.createLinearGradient(0, base - hh(a), 0, base); ga.addColorStop(0, '#e8d49c'); ga.addColorStop(1, '#8f8256');
+      rr(cx - bw - 4, base - hh(a), bw, hh(a), 10, ga); rr(cx + 4, base - hh(b), bw, hh(b), 10, '#7f89ad');
+      x.fillStyle = '#eef0fb'; x.font = `600 26px ${SERIF}`; x.fillText(fmt(a), cx - bw / 2 - 4, base - hh(a) - 12); x.fillText(fmt(b), cx + bw / 2 + 4, base - hh(b) - 12);
+      x.fillStyle = '#d9c383'; x.font = `600 30px ${DISP}`; x.fillText(cap(MESES[+m.id.split('-')[1] - 1]) + ' ' + m.id.split('-')[0], cx, base + 44);
+      x.fillStyle = '#a3adce'; x.font = `400 22px ${SERIF}`; x.fillText((m.entradas || []).length + ' personas', cx, base + 76);
+    });
+    x.textAlign = 'left'; x.fillStyle = '#d9c383'; x.fillRect(70, H - 50, 18, 18); x.fillStyle = '#a3adce'; x.font = `400 24px ${SERIF}`; x.fillText('Mensajes', 98, H - 35);
+    x.fillStyle = '#7f89ad'; x.fillRect(230, H - 50, 18, 18); x.fillStyle = '#a3adce'; x.fillText('Multimedia', 258, H - 35);
+    cv.toBlob((blob) => {
+      if (!blob){ status('No se pudo crear la imagen.'); return; }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'grafico-actividad.png';
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }, 'image/png');
+  }
+  $('pngEvoBtn').addEventListener('click', exportEvoPng);
   $('pngBtn').addEventListener('click', () => exportPng(false));
   $('pngFullBtn').addEventListener('click', () => exportPng(true));
 
