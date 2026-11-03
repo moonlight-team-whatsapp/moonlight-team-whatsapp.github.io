@@ -177,6 +177,7 @@
       <div class="tabbody">
         <div class="tabpane" id="t1">
           <div class="f"><label for="iSub">Personaje</label><input id="iSub" type="text" maxlength="40" value="Tu personaje" autocomplete="off"></div>
+          <div class="f"><label for="iRol">Rol o edad (opcional)</label><input id="iRol" type="text" maxlength="30" value="" placeholder="Ej: Jefe · 24 años" autocomplete="off"></div>
           <div class="f"><label for="iNombre">Tu nombre (opcional)</label><input id="iNombre" type="text" maxlength="24" value="" placeholder="Si lo dejas vacío, se verá tu personaje en grande" autocomplete="off"></div>
           <div class="f"><label for="iBio">Sobre ti</label><textarea id="iBio" maxlength="160">Cuéntanos un poco de ti bajo la luna…</textarea></div>
           <div class="f chk"><input id="iTag" type="checkbox" checked><label for="iTag" style="margin:0">Mostrar «Moonlight Team» en la tarjeta</label></div>
@@ -198,6 +199,8 @@
 
         <div class="tabpane" id="t3" hidden>
           <div class="f"><label for="iFont">Tipografía del nombre</label><select id="iFont"></select></div>
+          <div class="f"><label>Posición del texto</label><div class="seg" id="sAlign"><button type="button" data-v="left" class="on">Izquierda</button><button type="button" data-v="center">Centro</button><button type="button" data-v="right">Derecha</button></div></div>
+          <div class="f"><label>Efecto del texto</label><div class="seg" id="sFx"><button type="button" data-v="none" class="on">Ninguno</button><button type="button" data-v="sombra">Sombra</button><button type="button" data-v="contorno">Contorno</button></div></div>
           <div class="f"><label for="iSize">Tamaño del nombre</label><input id="iSize" type="range" min="24" max="110" value="76"></div>
           <div class="row2">
             <div class="f"><label for="iCName">Color del nombre</label><input id="iCName" type="color" value="#eef0fb"></div>
@@ -309,7 +312,7 @@
     { n:'Cryo', a:'#12283a', b:'#0a1522', glow:'#a8e8ff', star:'230,248,255', name:'#effaff', acc:'#b5ecff', ink:'#cfe4ee' }
   ];
   var ICONS = ['🌙','✦','⭐','🌸','❄️','🔥','⚡','🍃','💧','☁️','🦋','👑'];
-  var DEF = function(){ return { nombre:'', sub:'Tu personaje', bg:null, dim:.4, ix:0, iy:0, bx:0, by:0, bz:1, bio:'Cuéntanos un poco de ti bajo la luna…', font:0, size:76, nameColor:THEMES[0].name, accent:THEMES[0].acc, theme:0, shape:'circle', zoom:1, tag:true, img:null, stickers:[], sel:-1 }; };
+  var DEF = function(){ return { nombre:'', sub:'Tu personaje', bg:null, dim:.4, ix:0, iy:0, bx:0, by:0, bz:1, bio:'Cuéntanos un poco de ti bajo la luna…', font:0, size:76, nameColor:THEMES[0].name, accent:THEMES[0].acc, theme:0, shape:'circle', zoom:1, tag:true, align:'left', tfx:'none', rol:'', img:null, stickers:[], sel:-1 }; };
   var S = DEF();
 
   // ---------- Estrellas del fondo de la página ----------
@@ -403,13 +406,19 @@
     c.stroke();
     // textos
     var tx = 450, maxW = W - tx - 70;
-    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    c.textBaseline = 'alphabetic';
+    var AL = S.align || 'left', ax = AL === 'center' ? tx + maxW / 2 : AL === 'right' ? tx + maxW : tx; c.textAlign = AL;
+    var put = function(t, x, y, mw){
+      if (S.tfx === 'contorno'){ c.save(); c.lineJoin = 'round'; c.strokeStyle = th.b; c.lineWidth = 7; c.strokeText(t, x, y, mw); c.restore(); c.fillText(t, x, y, mw); }
+      else if (S.tfx === 'sombra'){ c.save(); c.shadowColor = 'rgba(0,0,0,.8)'; c.shadowBlur = 12; c.shadowOffsetY = 3; c.fillText(t, x, y, mw); c.restore(); }
+      else c.fillText(t, x, y, mw);
+    };
     var nom = (S.nombre || '').trim(), per = (S.sub || '').trim();
-    var big = nom || per || ' ', small = nom ? per : '';
+    var rol = (S.rol || '').trim(), big = nom || per || ' ', small = nom ? per : ''; if (rol) small = small ? small + ' · ' + rol : rol;
     var sz = S.size; c.font = F.s + ' ' + sz + 'px "' + F.f + '", serif';
     while (sz > 24 && c.measureText(big).width > maxW){ sz -= 2; c.font = F.s + ' ' + sz + 'px "' + F.f + '", serif'; }
-    c.fillStyle = S.nameColor; c.fillText(big, tx, 235, maxW);
-    if (small){ c.font = 'italic 500 30px "Cormorant", serif'; c.fillStyle = acc; c.fillText(small, tx, 282, maxW); }
+    c.fillStyle = S.nameColor; put(big, ax, 235, maxW);
+    if (small){ c.font = 'italic 500 30px "Cormorant", serif'; c.fillStyle = acc; put(small, ax, 282, maxW); }
     // adorno divisor
     c.strokeStyle = acc; c.globalAlpha = .6; c.lineWidth = 1.4;
     c.beginPath(); c.moveTo(tx, 316); c.lineTo(tx + maxW * .42, 316); c.stroke();
@@ -417,7 +426,8 @@
     c.fillStyle = acc; c.beginPath(); c.moveTo(tx + maxW * .5, 307); c.lineTo(tx + maxW * .5 + 9, 316); c.lineTo(tx + maxW * .5, 325); c.lineTo(tx + maxW * .5 - 9, 316); c.closePath(); c.fill();
     var fb = fitBio(c, S.bio, maxW, 372, S.tag ? 535 : 560);
     c.font = '400 ' + fb.size + 'px "Crimson Pro", serif'; c.fillStyle = th.ink;
-    for (var j = 0; j < fb.ls.length; j++) c.fillText(fb.ls[j], tx, 372 + j * fb.lh);
+    for (var j = 0; j < fb.ls.length; j++) put(fb.ls[j], ax, 372 + j * fb.lh, maxW);
+    c.textAlign = 'left';
     if (S.tag){ c.textAlign = 'right'; c.font = 'italic 500 24px "Cormorant", serif'; c.fillStyle = acc; c.globalAlpha = .85; c.fillText('Moonlight Team 🌙', W - 56, H - 50); c.globalAlpha = 1; c.textAlign = 'left'; }
     // adornos
     for (var k = 0; k < S.stickers.length; k++){
@@ -444,6 +454,9 @@
   var sel = $('iFont'); FONTS.forEach(function(f, i){ var o = document.createElement('option'); o.value = i; o.textContent = f.n; o.style.fontFamily = '"' + f.f + '", serif'; sel.appendChild(o); });
   sel.onchange = function(){ S.font = +sel.value; ensureFont().then(function(){ limitSize(); redraw(); }); };
   $('iNombre').oninput = function(){ S.nombre = this.value; limitSize(); redraw(); };
+  $('iRol').oninput = function(){ S.rol = this.value; redraw(); };
+  function segs(id, key){ document.querySelectorAll('#' + id + ' button').forEach(function(b){ b.onclick = function(){ S[key] = b.dataset.v; document.querySelectorAll('#' + id + ' button').forEach(function(x){ x.classList.toggle('on', x === b); }); redraw(); }; }); }
+  segs('sAlign', 'align'); segs('sFx', 'tfx');
   $('iSub').oninput = function(){ S.sub = this.value; limitSize(); redraw(); };
   $('iBio').oninput = function(){ S.bio = this.value; redraw(); };
   $('iSize').oninput = function(){ S.size = +this.value; redraw(); };
@@ -491,7 +504,7 @@
   $('bStDel').onclick = function(){ if (S.sel >= 0){ S.stickers.splice(S.sel, 1); S.sel = -1; if (!S.stickers.length) cv.style.touchAction = 'none'; redraw(); } };
   $('bStClr').onclick = function(){ S.stickers = []; S.sel = -1; cv.style.touchAction = 'none'; redraw(); };
   $('bReset').onclick = function(){ S = DEF();
-    $('iNombre').value = S.nombre; $('iSub').value = S.sub; $('iBio').value = S.bio; $('iSize').value = S.size; $('iZoom').value = 1; $('iDim').value = 40; $('iBgZoom').value = 1; $('iStSize').value = 70; $('iFont').value = 0; $('iCName').value = S.nameColor; $('iCAcc').value = S.accent; $('iTag').checked = true;
+    $('iNombre').value = S.nombre; $('iRol').value = S.rol || ''; document.querySelectorAll('#sAlign button').forEach(function(x){ x.classList.toggle('on', x.dataset.v === (S.align || 'left')); }); document.querySelectorAll('#sFx button').forEach(function(x){ x.classList.toggle('on', x.dataset.v === (S.tfx || 'none')); }); $('iSub').value = S.sub; $('iBio').value = S.bio; $('iSize').value = S.size; $('iZoom').value = 1; $('iDim').value = 40; $('iBgZoom').value = 1; $('iStSize').value = 70; $('iFont').value = 0; $('iCName').value = S.nameColor; $('iCAcc').value = S.accent; $('iTag').checked = true;
     document.querySelectorAll('#sShape button').forEach(function(x, i){ x.classList.toggle('on', !i); }); sw.querySelectorAll('button').forEach(function(x, i){ x.classList.toggle('on', !i); }); cv.style.touchAction = 'none'; ensureFont().then(function(){ limitSize(); redraw(); }); };
 
   // ---------- Plantillas por elemento ----------
@@ -528,7 +541,7 @@
   }
   function histTick(){ if (restoring || !cur) return; clearTimeout(htm); htm = setTimeout(histCommit, 350); }
   function syncUI(){
-    $('iNombre').value = S.nombre; $('iSub').value = S.sub; $('iBio').value = S.bio; $('iZoom').value = S.zoom; $('iDim').value = Math.round(S.dim * 100); $('iBgZoom').value = S.bz;
+    $('iNombre').value = S.nombre; $('iRol').value = S.rol || ''; document.querySelectorAll('#sAlign button').forEach(function(x){ x.classList.toggle('on', x.dataset.v === (S.align || 'left')); }); document.querySelectorAll('#sFx button').forEach(function(x){ x.classList.toggle('on', x.dataset.v === (S.tfx || 'none')); }); $('iSub').value = S.sub; $('iBio').value = S.bio; $('iZoom').value = S.zoom; $('iDim').value = Math.round(S.dim * 100); $('iBgZoom').value = S.bz;
     $('iFont').value = S.font; $('iCName').value = S.nameColor; $('iCAcc').value = S.accent; $('iTag').checked = S.tag;
     $('iStSize').value = S.sel >= 0 && S.stickers[S.sel] ? S.stickers[S.sel].size : 70;
     document.querySelectorAll('#sShape button').forEach(function(x){ x.classList.toggle('on', x.dataset.v === S.shape); });
@@ -570,7 +583,7 @@
       var bm = function(b){ return b ? createImageBitmap(b) : Promise.resolve(null); };
       return Promise.all([bm(o.img), bm(o.bg)].concat(o.stickers.map(function(t){ return t.img ? createImageBitmap(t.img) : Promise.resolve(null); }))).then(function(r){
         o.img = r[0]; o.bg = r[1]; o.stickers.forEach(function(t, i){ if (t.img) t.img = r[2 + i]; });
-        restoring = true; S = o; S.sel = -1; syncUI(); restoring = false; cur = snap(); UNDO = []; REDO = []; histBtns();
+        restoring = true; S = Object.assign(DEF(), o); S.sel = -1; syncUI(); restoring = false; cur = snap(); UNDO = []; REDO = []; histBtns();
       });
     }).catch(function(){}).then(function(){ ready = true; });
   }
