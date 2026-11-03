@@ -65,6 +65,13 @@
   .dz-icon{ font-size:1.7rem; line-height:1; }
   .dz-title{ font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.3rem; color:var(--gold); }
   .dz-sub{ font-size:.92rem; color:var(--ink-soft); }
+  .st-h{ font-family:'Cormorant', serif; font-style:italic; font-size:1.15rem; color:var(--gold); margin:18px 0 8px; }
+  .st-scroll{ overflow-x:auto; }
+  .st-scroll svg{ display:block; min-width:100%; height:auto; }
+  .st-t{ fill: var(--ink-soft); font: 11px 'Crimson Pro', serif; }
+  .st-v{ fill: var(--ink); font: 600 11px 'Crimson Pro', serif; }
+  .st-leg{ display:flex; gap:14px; font-size:.85rem; color:var(--ink-soft); margin-top:6px; }
+  .st-leg i{ display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
 </style>
 </head>
 <body>
@@ -102,6 +109,17 @@
     <p class="panel-desc">Solo admin: todas las personas del mes, con su contacto real. <span class="ch-a">a.</span> = ocupa · <span class="ch-aba">aba.</span> = ocupaba.</p>
     <ul class="simple-list" id="fullList"></ul>
     <div class="li-actions" style="margin-top:12px"><button class="icon-btn icon-btn-confirm" id="pngFullBtn" type="button">Descargar lista completa como imagen</button> <button class="icon-btn" id="delMonthBtn" type="button">Borrar este mes</button></div>
+  </section>
+
+  <section class="panel" id="statsPanel" hidden>
+    <h2>Estadísticas</h2>
+    <p class="panel-desc">Solo admin: cómo evoluciona la actividad mes a mes y qué personajes se piden más.</p>
+    <h3 class="st-h">Evolución mensual</h3>
+    <div id="evoChart" class="st-scroll"></div>
+    <p class="summary" id="evoNote"></p>
+    <h3 class="st-h">Personajes más buscados</h3>
+    <ul class="simple-list" id="topBuscados"></ul>
+    <p class="empty-note" id="buscadosVacio" hidden>No hay personajes buscados ahora mismo.</p>
   </section>
 
   <section class="panel" id="importPanel" hidden>
@@ -253,7 +271,44 @@
 
   // ---------- Datos ----------
   let isAdmin = false, registros = [], miembros = [], ocupados = [], current = null, pending = {};
-  let unsubM = null, unsubO = null;
+  let unsubM = null, unsubO = null, buscados = [];
+  onSnapshot(collection(db, 'buscados'), (s) => { buscados = s.docs.map(d => ({ id: d.id, ...d.data() })); renderStats(); });
+
+  // ---------- Estadísticas (solo admin) ----------
+  function renderStats(){
+    if (!isAdmin) return;
+    // Evolución: un grupo de barras por mes (mensajes y multimedia), de más antiguo a más reciente
+    const meses = [...registros].sort((a, b) => a.id.localeCompare(b.id));
+    const box = $('evoChart'); box.innerHTML = ''; $('evoNote').textContent = '';
+    if (meses.length){
+      const GW = 96, W = Math.max(340, meses.length * GW + 20), H = 190, base = 150, top = 22, maxV = Math.max(...meses.map(m => m.total || 0), 1);
+      const hh = (v) => Math.max(v ? 2 : 0, (v / maxV) * (base - top));
+      let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Mensajes y multimedia por mes"><line x1="10" y1="${base}" x2="${W - 10}" y2="${base}" stroke="currentColor" opacity=".25"/>`;
+      meses.forEach((m, i) => {
+        const cx = 10 + GW * i + GW / 2, a = m.total || 0, b = m.totalMedia || 0;
+        svg += `<rect x="${cx - 30}" y="${base - hh(a)}" width="28" height="${hh(a)}" rx="3" fill="var(--gold)"/>`
+             + `<rect x="${cx + 2}" y="${base - hh(b)}" width="28" height="${hh(b)}" rx="3" fill="var(--ink-soft)" opacity=".7"/>`
+             + `<text class="st-v" x="${cx - 16}" y="${base - hh(a) - 5}" text-anchor="middle">${fmt(a)}</text>`
+             + `<text class="st-v" x="${cx + 16}" y="${base - hh(b) - 5}" text-anchor="middle">${fmt(b)}</text>`
+             + `<text class="st-t" x="${cx}" y="${base + 18}" text-anchor="middle">${esc(MESES[+m.id.split('-')[1] - 1].slice(0, 3) + ' ' + m.id.split('-')[0])}</text>`
+             + `<text class="st-t" x="${cx}" y="${base + 32}" text-anchor="middle">${(m.entradas || []).length} pers.</text>`;
+      });
+      box.innerHTML = svg + '</svg><div class="st-leg"><span><i style="background:var(--gold)"></i>Mensajes</span><span><i style="background:var(--ink-soft)"></i>Multimedia</span></div>';
+      if (meses.length > 1){
+        const u = meses[meses.length - 1], v = meses[meses.length - 2];
+        if (v.total){ const d = (u.total - v.total) / v.total * 100; $('evoNote').textContent = `${mesLabel(u.id).replace(/^./, c => c.toUpperCase())} lleva ${d >= 0 ? '+' : ''}${d.toLocaleString('es-ES', { maximumFractionDigits: 1 })} % de mensajes respecto a ${mesLabel(v.id)} (${fmt(u.total)} frente a ${fmt(v.total)}).`; }
+      }
+    } else box.innerHTML = '<p class="empty-note">Todavía no hay registros guardados.</p>';
+    // Más buscados: cuántas peticiones tiene cada personaje
+    const g = new Map();
+    buscados.forEach(b => { const k = simp(b.nombre); if (!k) return; const e = g.get(k) || { nombre: b.nombre, n: 0, quien: new Set(), motivos: new Set() }; e.n++; if (b.pedidoPor) e.quien.add(b.pedidoPor); if (b.motivo) e.motivos.add(b.motivo); g.set(k, e); });
+    const rank = [...g.values()].sort((a, b) => b.n - a.n || a.nombre.localeCompare(b.nombre, 'es')).slice(0, 10), mx = rank[0]?.n || 1;
+    $('buscadosVacio').hidden = rank.length > 0;
+    $('topBuscados').innerHTML = rank.map((e, i) => `<li style="display:flex;gap:10px;align-items:flex-start"><span class="rank">${i + 1}</span><div style="flex:1;min-width:0">
+      <div class="li-name">${esc(e.nombre)}</div>
+      <div class="li-meta"><b>${e.n}</b> ${e.n === 1 ? 'petición' : 'peticiones'} · ${esc([...e.motivos].join(' / '))} · ${esc([...e.quien].join(', '))}</div>
+      <div class="bar"><i style="width:${e.n / mx * 100}%"></i></div></div></li>`).join('');
+  }
 
   // Los ocupados son públicos: se leen siempre para ordenar los personajes (el principal primero) también a los visitantes
   onSnapshot(collection(db, 'ocupados'), (s) => { ocupados = s.docs.map(d => ({ id: d.id, ...d.data() })); render(); });
@@ -284,6 +339,7 @@
   }
 
   function render(){
+    renderStats();
     const sel = $('mesSel');
     sel.innerHTML = registros.map(r => `<option value="${r.id}">${mesLabel(r.id)}</option>`).join('');
     if (current) sel.value = current;
@@ -513,7 +569,7 @@
     isAdmin = !!user;
     $('adminToggleBtn').textContent = isAdmin ? 'Salir del modo admin' : 'Acceso admin';
     $('adminToggleBtn').classList.toggle('is-admin', isAdmin);
-    $('fullPanel').hidden = $('importPanel').hidden = !isAdmin;
+    $('fullPanel').hidden = $('importPanel').hidden = $('statsPanel').hidden = !isAdmin;
     if (isAdmin && !unsubM){
       unsubM = onSnapshot(collection(db, 'miembros'), (s) => { miembros = s.docs.map(d => ({ id: d.id, ...d.data() })); render(); });
     } else if (!isAdmin && unsubM){
