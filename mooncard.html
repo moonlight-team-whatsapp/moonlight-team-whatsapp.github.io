@@ -59,6 +59,8 @@
   .seg button:hover, .mini:hover{ border-color:var(--gold-dim); }
   .seg button.on{ border-color:var(--gold); color:var(--gold); background:rgba(217,195,131,.12); }
   .mini{ flex:0 0 auto; }
+  .fmtrow{ display:flex; gap:8px; width:100%; margin-bottom:8px; }
+  .fmtrow select{ flex:1; min-width:0; padding:8px; font-family:'Crimson Pro',serif; font-size:.98rem; color:var(--ink); background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:3px; }
   .hbar{ display:flex; gap:8px; align-self:center; width:min(100%, calc((100dvh - 170px) * 1.6129)); margin:0 0 10px; }
   .hb{ display:inline-flex; align-items:center; gap:8px; padding:8px 16px 8px 12px; border-radius:999px; cursor:pointer; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.05rem; color:var(--gold); background:linear-gradient(180deg,rgba(217,195,131,.16),rgba(217,195,131,.06)); border:1px solid rgba(217,195,131,.5); box-shadow:0 2px 10px rgba(0,0,0,.35); transition:transform .15s, background .2s, box-shadow .2s, opacity .2s; }
   .hb:hover:not(:disabled){ background:linear-gradient(180deg,rgba(217,195,131,.3),rgba(217,195,131,.12)); box-shadow:0 4px 16px rgba(217,195,131,.22); transform:translateY(-1px); }
@@ -231,7 +233,9 @@
 
       <div class="foot">
         <div class="acts">
+          <div class="fmtrow"><select id="iFmt" aria-label="Formato"><option value="card">Tarjeta (horizontal)</option><option value="sq">Cuadrado 1:1</option><option value="vert">Vertical 4:5</option><option value="story">Estado / historia 9:16</option></select><select id="iFmtT" aria-label="Tipo de archivo"><option value="png">PNG</option><option value="jpg">JPG ligero</option></select></div>
           <button class="btn-primary" id="bDown" type="button">Descargar imagen</button>
+          <button class="btn-ghost" id="bShare" type="button" hidden>Compartir</button>
           <button class="btn-ghost" id="bReset" type="button">Empezar de nuevo</button>
         </div>
         <p class="cc-note" id="msg"></p>
@@ -566,18 +570,38 @@
   ['pointerup', 'pointercancel'].forEach(function(t){ cv.addEventListener(t, function(){ drag = null; }); });
 
   // ---------- Descargar ----------
-  $('bDown').onclick = function(){
+  var FMT = { card:[0,0], sq:[1080,1080], vert:[1080,1350], story:[1080,1920] };
+  function compose(card, f){
+    var d = FMT[f]; if (!d || !d[0]) return card;
+    var o = document.createElement('canvas'); o.width = d[0]; o.height = d[1]; var c = o.getContext('2d'), T = THEMES[S.theme];
+    var g = c.createLinearGradient(0, 0, 0, d[1]); g.addColorStop(0, T.a); g.addColorStop(1, T.b); c.fillStyle = g; c.fillRect(0, 0, d[0], d[1]);
+    try { c.filter = 'blur(28px) brightness(.8)'; var k = Math.max(d[0] / card.width, d[1] / card.height) * 1.15; c.drawImage(card, (d[0] - card.width * k) / 2, (d[1] - card.height * k) / 2, card.width * k, card.height * k); c.filter = 'none'; } catch (e) {}
+    var w = d[0] * .94, h = w * card.height / card.width; c.drawImage(card, (d[0] - w) / 2, (d[1] - h) / 2, w, h);
+    return o;
+  }
+  function makeBlob(done){
     ensureFont().then(function(){
       var k = 2, out = document.createElement('canvas'); out.width = W * k; out.height = H * k;
       var c = out.getContext('2d'); c.scale(k, k); draw(c, false);
-      out.toBlob(function(b){
+      var jpg = $('iFmtT').value === 'jpg', fin = compose(out, $('iFmt').value);
+      if (jpg){ var t = document.createElement('canvas'); t.width = fin.width; t.height = fin.height; var tc = t.getContext('2d'); tc.fillStyle = THEMES[S.theme].b; tc.fillRect(0, 0, t.width, t.height); tc.drawImage(fin, 0, 0); fin = t; }
+      fin.toBlob(function(b){
         if (!b){ $('msg').textContent = 'No se pudo generar la imagen.'; return; }
-        var a = document.createElement('a'), nm = (S.nombre || S.sub || 'tarjeta').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'tarjeta';
-        a.href = URL.createObjectURL(b); a.download = 'mooncard-' + nm + '.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
-        $('msg').textContent = 'Listo. Si la mandas por WhatsApp, envíala como Documento para que no se comprima.';
-      }, 'image/png');
+        var nm = (S.nombre || S.sub || 'tarjeta').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'tarjeta';
+        done(b, 'mooncard-' + nm + (jpg ? '.jpg' : '.png'));
+      }, jpg ? 'image/jpeg' : 'image/png', .93);
+    });
+  }
+  $('bDown').onclick = function(){
+    makeBlob(function(b, name){
+      var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+      $('msg').textContent = 'Listo. Si la mandas por WhatsApp, envíala como Documento para que no se comprima.';
     });
   };
+  if (navigator.canShare && navigator.canShare({ files: [new File([''], 'a.png', { type: 'image/png' })] })){
+    $('bShare').hidden = false;
+    $('bShare').onclick = function(){ makeBlob(function(b, name){ var f = new File([b], name, { type: b.type }); navigator.share({ files: [f], title: 'Mi MoonCard' }).catch(function(){}); }); };
+  }
 
   ensureFont().then(function(){ limitSize(); redraw(); }); redraw();
   if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', function(){ limitSize(); redraw(); });
