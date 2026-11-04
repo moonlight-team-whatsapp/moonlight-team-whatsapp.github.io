@@ -900,3 +900,13 @@
     .admin-add.cols-2{ grid-template-columns: 1fr; }
     .moon{ top: 20px; right: 20px; width: 34px; height: 34px; }
   }
+
+/* ---------- Navidad (la activa navidad.js entre el 1 de dic y el 6 de ene) ---------- */
+html.navidad .moon{ background-image:url('luna-navidad.jpg'); background-size:108%; background-position:center; width:60px; height:60px; box-shadow:0 0 24px 4px rgba(255,236,170,.45), 0 0 56px 16px rgba(255,220,140,.16); }
+html.navidad .page-index .moon, html.navidad.page-index .moon{ width:150px; height:150px; }
+@media (max-width:600px){ html.navidad .moon{ width:44px; height:44px; } html.navidad .page-index .moon, html.navidad.page-index .moon{ width:120px; height:120px; } }
+.nieve{ position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:1; }
+.nieve span{ position:absolute; top:-10px; border-radius:50%; background:#fff; box-shadow:0 0 6px rgba(255,255,255,.7); animation:nieveCae linear infinite, nieveMece ease-in-out infinite alternate; }
+@keyframes nieveCae{ to{ transform:translateY(108vh); } }
+@keyframes nieveMece{ from{ margin-left:-14px; } to{ margin-left:14px; } }
+@media (prefers-reduced-motion:reduce){ .nieve{ display:none; } }
