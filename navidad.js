@@ -41,6 +41,7 @@
     document.body.appendChild(svg);
   }
   function gorro(){
+    if (document.querySelector('.app > .bar')){ document.documentElement.classList.add('navidad-barra'); return; }
     var h = document.querySelector('.title-wrap') || document.querySelector('h1'); if (!h || h.querySelector('.gorro')) return;
     h.classList.add('con-gorro');
     var s = document.createElement('span'); s.className = 'gorro'; s.setAttribute('aria-hidden', 'true');
