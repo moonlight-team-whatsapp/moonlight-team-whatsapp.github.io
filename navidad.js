@@ -1,7 +1,7 @@
-// Decoración de Navidad: del 1 de diciembre al 6 de enero (o con ?navidad=1 para verla fuera de fechas)
+// Decoración de Navidad: del 1 de noviembre al 6 de enero (o con ?navidad=1 para verla fuera de fechas)
 (function(){
   var d = new Date(), m = d.getMonth(), day = d.getDate();
-  var on = m === 11 || (m === 0 && day <= 6) || /[?&]navidad=1\b/.test(location.search);
+  var on = m >= 10 || (m === 0 && day <= 6) || /[?&]navidad=1\b/.test(location.search);
   if (/[?&]navidad=0\b/.test(location.search)) on = false;
   if (!on) return;
   document.documentElement.classList.add('navidad');
