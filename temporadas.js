@@ -13,7 +13,12 @@
     if (modo === 'on') return true; if (modo === 'off') return false;
     return enRango(md(new Date()), (c && c.desde) || T.d, (c && c.hasta) || T.h);
   }
-  window.MoonTemas.activa = activa;
+  // Solo una temporada a la vez: gana la que está en «siempre activa»; si no, la primera cuyas fechas coincidan
+  function ganadora(cfg){
+    var id; for (id in TEMAS) if (cfg && cfg[id] && cfg[id].modo === 'on') return id;
+    for (id in TEMAS) if (activa(id, cfg)) return id; return '';
+  }
+  window.MoonTemas.activa = activa; window.MoonTemas.ganadora = ganadora;
   var q = location.search, forzado = (q.match(/[?&]tema=([a-z0-9_-]+)/) || [])[1] || (/[?&]navidad=1\b/.test(q) ? 'navidad' : '');
   var cache = null; try { cache = JSON.parse(localStorage.getItem('mc_temporadas') || 'null'); } catch (e) {}
   function pedir(){
@@ -22,7 +27,7 @@
       try { localStorage.setItem('mc_temporadas', JSON.stringify(o)); } catch (e) {} return o;
     }).catch(function(){ return null; });
   }
-  function elegir(cfg){ if (forzado === 'off') return []; if (forzado && TEMAS[forzado]) return [forzado]; var r = []; for (var id in TEMAS) if (activa(id, cfg)) r.push(id); return r; }
+  function elegir(cfg){ if (forzado === 'off') return []; if (forzado && TEMAS[forzado]) return [forzado]; var g = ganadora(cfg); return g ? [g] : []; }
   function arrancar(cfg){
     var ids = elegir(cfg); if (!ids.length) return;
     var off = false; try { off = localStorage.getItem('mc_deco') === 'off'; } catch (e) {}

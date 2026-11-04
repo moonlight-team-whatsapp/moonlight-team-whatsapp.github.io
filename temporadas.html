@@ -44,7 +44,7 @@
   <header class="top">
     <div>
       <div class="title-wrap"><h1>Temporadas</h1></div>
-      <p class="subtitle">Activa o apaga la decoración de fechas especiales de toda la web, sin tocar código. Puedes dejar varias activas a la vez y se combinan. Cada visitante además puede apagar la decoración con el botón de abajo a la izquierda.</p>
+      <p class="subtitle">Activa o apaga la decoración de fechas especiales de toda la web, sin tocar código. Solo se ve una temporada a la vez: al poner una en «Siempre activa», las demás se pausan. Cada visitante además puede apagar la decoración con el botón de abajo a la izquierda.</p>
     </div>
     <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
   </header>
@@ -85,8 +85,8 @@ function paint(){
   if (!isAdmin){ $('tgrid').innerHTML = ''; return; }
   const M = window.MoonTemas; let i = 0;
   $('tgrid').innerHTML = Object.entries(M.TEMAS).map(([id, t]) => {
-    const c = cfg[id] || {}, modo = c.modo || 'auto', d = c.desde || t.d, h = c.hasta || t.h, act = M.activa(id, cfg);
-    return `<section class="tc" data-id="${id}" style="--i:${i++}"><h2>${t.ico} ${esc(t.n)} <span class="chip ${act ? 'on' : ''}">${act ? 'Activa ahora' : 'Inactiva ahora'}</span></h2>
+    const c = cfg[id] || {}, modo = c.modo || 'auto', d = c.desde || t.d, h = c.hasta || t.h, gana = M.ganadora(cfg), act = id === gana, pausada = !act && M.activa(id, cfg) && gana;
+    return `<section class="tc" data-id="${id}" style="--i:${i++}"><h2>${t.ico} ${esc(t.n)} <span class="chip ${act ? 'on' : ''}">${act ? 'Activa ahora' : pausada ? 'Pausada por ' + esc(M.TEMAS[gana].n) : 'Inactiva ahora'}</span></h2>
       <div class="tseg" role="group" aria-label="Modo de ${esc(t.n)}">
         <button type="button" data-modo="auto" class="${modo === 'auto' ? 'on' : ''}">Automática por fechas</button>
         <button type="button" data-modo="on" class="${modo === 'on' ? 'on' : ''}">Siempre activa</button>
@@ -101,9 +101,11 @@ function paint(){
 }
 async function guardar(id, patch){
   const t = T()[id], c = Object.assign({ id, modo: 'auto', desde: t.d, hasta: t.h }, cfg[id] || {}, patch);
-  const { error } = await sb.from('temporadas').upsert({ id, modo: c.modo, desde: c.desde, hasta: c.hasta, actualizado: new Date().toISOString() });
+  const filas = [{ id, modo: c.modo, desde: c.desde, hasta: c.hasta, actualizado: new Date().toISOString() }];
+  if (c.modo === 'on') Object.keys(T()).forEach(o => { if (o !== id && cfg[o] && cfg[o].modo === 'on') filas.push({ id: o, modo: 'auto', desde: cfg[o].desde || T()[o].d, hasta: cfg[o].hasta || T()[o].h, actualizado: new Date().toISOString() }); });
+  const { error } = await sb.from('temporadas').upsert(filas);
   if (error){ toast('No se pudo guardar.'); return; }
-  cfg[id] = c; try { localStorage.removeItem('mc_temporadas'); } catch (e) {} paint(); toast('Guardado. Se verá en la próxima carga de cada visitante.');
+  filas.forEach(f => { cfg[f.id] = Object.assign({}, cfg[f.id] || {}, f); }); cfg[id] = c; try { localStorage.removeItem('mc_temporadas'); } catch (e) {} paint(); toast('Guardado. Se verá en la próxima carga de cada visitante.');
 }
 document.addEventListener('click', e => {
   const sec = e.target.closest('.tc'); if (!sec) return; const id = sec.dataset.id;
