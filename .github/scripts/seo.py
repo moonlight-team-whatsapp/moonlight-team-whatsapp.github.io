@@ -9,7 +9,6 @@
 """
 import glob, json, os, re, subprocess, sys, urllib.request
 
-PROJECT = os.environ.get('FIREBASE_PROJECT', 'moonlight-teamm-947ee')
 REPO = os.environ.get('GITHUB_REPOSITORY', '')
 IGNORE = re.compile(r'^(google[0-9a-f]+\.html|404\.html)$', re.I)
 AUTO_RE = re.compile(r'[ \t]*<meta name="robots" content="[^"]*" data-auto>[ \t]*\n?', re.I)
@@ -26,23 +25,17 @@ def site_url():
 
 
 def private_pages():
-    """Páginas ocultas para el público según el índice (colección 'paginas'). None si no se pudo leer."""
+    """Páginas ocultas para el público según el índice (tabla 'paginas' de Supabase). None si no se pudo leer."""
     if 'SEO_PRIVATE' in os.environ:  # para pruebas
         return {x for x in os.environ['SEO_PRIVATE'].split(',') if x}
-    url = f'https://firestore.googleapis.com/v1/projects/{PROJECT}/databases/(default)/documents/paginas?pageSize=300'
-    out, token = set(), None
+    url = 'https://stedlptzaukqewtkzotg.supabase.co/rest/v1/paginas?select=id,data&limit=1000'
+    req = urllib.request.Request(url, headers={'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWRscHR6YXVrcWV3dGt6b3RnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzY3NzQsImV4cCI6MjEwODMxMjc3NH0.XArszBzP49sWHka1xIXJVTQQiC-QEHczafQ8G3mF7qc'})
     try:
-        while True:
-            with urllib.request.urlopen(url + (f'&pageToken={token}' if token else ''), timeout=30) as r:
-                data = json.load(r)
-            for d in data.get('documents', []):
-                if d.get('fields', {}).get('private', {}).get('booleanValue') is True:
-                    out.add(d['name'].rsplit('/', 1)[-1])
-            token = data.get('nextPageToken')
-            if not token:
-                return out
+        with urllib.request.urlopen(req, timeout=30) as r:
+            rows = json.load(r)
+        return {x['id'] for x in rows if (x.get('data') or {}).get('private') is True}
     except Exception as e:
-        print('No se pudo leer Firestore, no se tocan los noindex:', e)
+        print('No se pudo leer Supabase, no se tocan los noindex:', e)
         return None
 
 
