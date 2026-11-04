@@ -58,6 +58,11 @@
   .rules-foot{ margin-top:18px; font-style:italic; color:var(--ink-soft); text-align:center; font-size:.95rem; }
   .rules-sign{ margin-top:4px; text-align:center; font-size:.9rem; color:var(--gold-dim); }
   @media (max-width:520px){ .rules-limits{ grid-template-columns:1fr; } .rules-head{ padding:16px 16px 10px; } .rules-body{ padding:12px 16px 18px; } }
+  .nav-sections{ display:grid; gap:26px; }
+  .nav-sec-h{ margin:0 0 10px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1.25rem; color:var(--ink); display:flex; align-items:baseline; gap:12px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+  .nav-sec-h small{ font-family:'Crimson Pro',serif; font-style:normal; font-weight:400; font-size:.85rem; color:var(--ink-soft); }
+  .nav-sec .nav-card{ padding:16px 20px; }
+  .is-admin-sec .nav-sec-h{ color:var(--gold-dim); }
 </style>
 </head>
 <body class="page-index">
@@ -93,7 +98,7 @@
     <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
   </header>
 
-  <div class="nav-grid" id="navGrid"></div>
+  <div class="nav-sections" id="navGrid"></div>
 
 </div>
 
@@ -351,9 +356,33 @@
   const EYE_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
   const EYE_OFF_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.8 21.8 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
 
-  const TITULOS = { 'temporadas.html': 'Temporadas', 'carnets.html': 'Carnets', 'galeria.html': 'Galería MoonCard', 'anonimos.html': 'Anónimos', 'respaldo.html': 'Respaldo' };
+  // Cada página conocida: título, descripción corta y sección. Las nuevas sin ficha caen en «Más».
+  const PAGINAS = {
+    'lista.html':      { t: 'Lista',            d: 'Ocupados, reservados y buscados',      s: 'roleplay' },
+    'arbol.html':      { t: 'Árbol',            d: 'Familias y relaciones del team',       s: 'roleplay' },
+    'mooncard.html':   { t: 'MoonCard',         d: 'Crea la tarjeta de tu personaje',      s: 'moon' },
+    'galeria.html':    { t: 'Galería MoonCard', d: 'Las tarjetas de todo el team',         s: 'moon' },
+    'anonimos.html':   { t: 'Anónimos',         d: 'Envía un mensaje sin dar tu nombre',   s: 'team' },
+    'registros.html':  { t: 'Registros',        d: 'Historial del team',                   s: 'team' },
+    'adviento.html':   { t: 'Adviento',         d: 'Una puerta cada día hasta Navidad',    s: 'eventos' },
+    'votaciones.html': { t: 'Votaciones',       d: 'Vota con tu carnet, en secreto',       s: 'eventos' },
+    'amigo-invisible.html': { t: 'Amigo invisible', d: 'Regalos sorpresa entre miembros', s: 'eventos' },
+    'carnets.html':    { t: 'Carnets',          d: 'Enlaces personales de cada miembro',   s: 'admin' },
+    'contactos.html':  { t: 'Contactos',        d: 'Datos de contacto de los miembros',    s: 'admin' },
+    'sanciones.html':  { t: 'Sanciones',        d: 'Penalizaciones y expulsiones',         s: 'admin' },
+    'respaldo.html':   { t: 'Respaldo',         d: 'Copia de seguridad de los datos',      s: 'admin' },
+    'temporadas.html': { t: 'Temporadas',       d: 'Decoración de fechas especiales',      s: 'admin' }
+  };
+  const SECCIONES = [
+    ['roleplay', 'Roleplay', 'Personajes y familias'],
+    ['moon',     'MoonCard', 'Tarjetas de personaje'],
+    ['eventos',  'Eventos',  'Actividades del team'],
+    ['team',     'El team',  'Buzón y registros'],
+    ['admin',    'Administración', 'Solo para admins'],
+    ['otras',    'Más',      '']
+  ];
   function guessTitle(filename){
-    if (TITULOS[filename]) return TITULOS[filename];
+    if (PAGINAS[filename]) return PAGINAS[filename].t;
     const base = filename.replace(/\.html?$/i, '').replace(/[-_]+/g, ' ');
     return base.replace(/\b\w/g, c => c.toUpperCase());
   }
@@ -407,18 +436,29 @@
     const visible = pages.filter(p => !p.private || isAdmin);
 
     navGrid.innerHTML = '';
-    visible.forEach((p, i) => {
+    let i = 0;
+    SECCIONES.forEach(([sid, stit, sdesc]) => {
+    const items = visible.filter(p => (PAGINAS[p.filename]?.s || 'otras') === sid);
+    const ord = f => { const k = Object.keys(PAGINAS).indexOf(f); return k < 0 ? 999 : k; };
+    items.sort((x, y) => ord(x.filename) - ord(y.filename));
+    if (!items.length) return;
+    const sec = document.createElement('section');
+    sec.className = 'nav-sec' + (sid === 'admin' ? ' is-admin-sec' : '');
+    sec.innerHTML = `<h2 class="nav-sec-h">${escapeHtml(stit)}${sdesc ? `<small>${escapeHtml(sdesc)}</small>` : ''}</h2>`;
+    const grid = document.createElement('div'); grid.className = 'nav-grid'; sec.appendChild(grid);
+    items.forEach((p) => {
+      i++;
       const wrap = document.createElement('div');
       wrap.className = 'nav-card-wrap';
       if (!hasRevealed && !prefersReducedMotion){
         wrap.classList.add('reveal');
-        wrap.style.setProperty('--card-delay', (1.6 + i * 0.12) + 's');
+        wrap.style.setProperty('--card-delay', (1.6 + i * 0.09) + 's');
       }
 
       const a = document.createElement('a');
       a.className = 'nav-card' + (p.private ? ' is-private' : '');
       a.href = p.filename;
-      a.innerHTML = `<div class="nav-title">${escapeHtml(p.title)}</div><p class="nav-desc">${escapeHtml(p.filename)}</p>`;
+      a.innerHTML = `<div class="nav-title">${escapeHtml(p.title)}</div><p class="nav-desc">${escapeHtml(PAGINAS[p.filename]?.d || p.filename)}</p>`;
       wrap.appendChild(a);
 
       if (isAdmin){
@@ -437,7 +477,9 @@
         wrap.appendChild(eyeBtn);
       }
 
-      navGrid.appendChild(wrap);
+      grid.appendChild(wrap);
+    });
+    navGrid.appendChild(sec);
     });
     hasRevealed = true;
   }
