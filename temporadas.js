@@ -22,21 +22,20 @@
       try { localStorage.setItem('mc_temporadas', JSON.stringify(o)); } catch (e) {} return o;
     }).catch(function(){ return null; });
   }
-  function elegir(cfg){ if (forzado === 'off') return ''; if (forzado && TEMAS[forzado]) return forzado; for (var id in TEMAS) if (activa(id, cfg)) return id; return ''; }
+  function elegir(cfg){ if (forzado === 'off') return []; if (forzado && TEMAS[forzado]) return [forzado]; var r = []; for (var id in TEMAS) if (activa(id, cfg)) r.push(id); return r; }
   function arrancar(cfg){
-    var id = elegir(cfg); if (!id) return;
+    var ids = elegir(cfg); if (!ids.length) return;
     var off = false; try { off = localStorage.getItem('mc_deco') === 'off'; } catch (e) {}
     if (forzado) off = false;
-    boton(id, off);
+    boton(ids, off);
     if (off) return;
-    document.documentElement.classList.add(id);
-    var s = document.createElement('script'); s.src = 'tema-' + id + '.js'; document.head.appendChild(s);
+    ids.forEach(function(id){ document.documentElement.classList.add(id); var s = document.createElement('script'); s.src = 'tema-' + id + '.js'; document.head.appendChild(s); });
   }
-  function boton(id, off){
+  function boton(ids, off){
     function crear(){
       var b = document.createElement('button'); b.type = 'button'; b.id = 'decoBtn'; b.className = 'deco-btn';
-      b.setAttribute('aria-pressed', String(!off)); b.title = (off ? 'Activar' : 'Apagar') + ' la decoración de ' + TEMAS[id].n;
-      b.innerHTML = '<span aria-hidden="true">' + TEMAS[id].ico + '</span> ' + (off ? 'Decoración: no' : 'Decoración: sí');
+      b.setAttribute('aria-pressed', String(!off)); b.title = (off ? 'Activar' : 'Apagar') + ' la decoración de ' + ids.map(function(i){ return TEMAS[i].n; }).join(' y ');
+      b.innerHTML = '<span aria-hidden="true">' + ids.map(function(i){ return TEMAS[i].ico; }).join('') + '</span> ' + (off ? 'Decoración: no' : 'Decoración: sí');
       b.onclick = function(){ try { localStorage.setItem('mc_deco', off ? 'on' : 'off'); } catch (e) {} location.reload(); };
       document.body.appendChild(b);
     }
