@@ -14,6 +14,15 @@
 - Deshacer / rehacer (botones sobre la tarjeta, Ctrl+Z / Ctrl+Y)
 - Guardado automático en el navegador (IndexedDB)
 
+## Navidad / temporadas
+- [x] Botón «Decoración: sí/no» para cada visitante
+- [x] Página de admin `temporadas.html` (modo automática por fechas / siempre / apagada) + tabla `temporadas`; temas: Navidad y Halloween
+- [ ] Mensajes por fecha (cuenta atrás, 24-25 dic, Nochevieja con fuegos, Reyes)
+- [ ] Adornos y plantilla navideña en MoonCard
+- [ ] Detalles interactivos (pulsar el trineo, nieve acumulada en tarjetas), escarcha, títulos con brillo
+- [ ] Calendario de adviento: 24 puertas (1-24 dic), una sorpresa por día
+- [ ] Nuevos temas a futuro (San Valentín, verano, cumpleaños del team…): se añaden en `temporadas.js` (lista TEMAS) + `tema-<id>.js` + CSS
+
 ## Resto de la web
 - Encuestas / votaciones (Supabase)
 - Calendario de eventos del team (no cumpleaños; avisos push)

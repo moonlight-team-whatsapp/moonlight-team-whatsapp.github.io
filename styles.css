@@ -926,3 +926,22 @@ html.navidad .nav-card:hover{ border-color:rgba(255,210,120,.8); }
 @keyframes gorroIn{ from{ opacity:0; transform:rotate(-16deg) translateY(-14px); } to{ opacity:1; transform:rotate(-16deg); } }
 html.navidad-barra .app > .bar{ margin-top:26px; }
 @media (prefers-reduced-motion:reduce){ .page-index .gorro{ opacity:1; animation:none; } }
+
+/* ---------- Botón para apagar la decoración de temporada ---------- */
+.deco-btn{ position:fixed; left:12px; bottom:12px; z-index:9; padding:6px 12px; border-radius:999px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:.95rem; color:var(--gold,#d9c383); background:rgba(14,19,38,.82); border:1px solid rgba(217,195,131,.45); cursor:pointer; backdrop-filter:blur(4px); opacity:.75; transition:opacity .2s, transform .15s; }
+.deco-btn:hover, .deco-btn:focus-visible{ opacity:1; transform:translateY(-1px); }
+.deco-btn[aria-pressed="false"]{ opacity:.55; }
+
+/* ---------- Halloween ---------- */
+html.halloween .moon{ filter:sepia(.9) saturate(3.2) hue-rotate(-14deg) brightness(1.05); box-shadow:0 0 28px 6px rgba(255,140,40,.5), 0 0 64px 18px rgba(255,110,20,.22); }
+.tela{ position:fixed; top:0; z-index:5; pointer-events:none; }
+.tela.izq{ left:0; } .tela.der{ right:0; transform:scaleX(-1); }
+.tela .ara{ position:absolute; left:84px; top:96px; font-size:18px; transform-origin:50% -80px; animation:colgar 4s ease-in-out infinite alternate; }
+@keyframes colgar{ from{ transform:rotate(-8deg); } to{ transform:rotate(8deg); } }
+.murci{ position:fixed; left:-60px; z-index:1; pointer-events:none; opacity:.85; animation:murciVuela linear infinite, murciAletea ease-in-out infinite alternate; }
+@keyframes murciVuela{ from{ transform:translateX(0); } to{ transform:translateX(calc(100vw + 120px)); } }
+@keyframes murciAletea{ from{ margin-top:-8px; } to{ margin-top:10px; } }
+.calabazas{ position:fixed; right:10px; bottom:6px; z-index:4; pointer-events:none; font-size:34px; display:flex; gap:2px; filter:drop-shadow(0 0 10px rgba(255,140,30,.6)); }
+.calabazas span:nth-child(2){ font-size:24px; align-self:flex-end; }
+@media (max-width:600px){ .tela svg{ width:80px; height:80px; } .tela .ara{ left:50px; top:58px; } .calabazas{ font-size:26px; } }
+@media (prefers-reduced-motion:reduce){ .tela .ara, .murci{ animation:none; } }

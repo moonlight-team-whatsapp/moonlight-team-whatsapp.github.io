@@ -1,10 +1,5 @@
-// Decoración de Navidad: del 1 de noviembre al 6 de enero (o con ?navidad=1 para verla fuera de fechas)
+// Tema de Navidad. Lo carga temporadas.js cuando la temporada está activa.
 (function(){
-  var d = new Date(), m = d.getMonth(), day = d.getDate();
-  var on = m >= 10 || (m === 0 && day <= 6) || /[?&]navidad=1\b/.test(location.search);
-  if (/[?&]navidad=0\b/.test(location.search)) on = false;
-  if (!on) return;
-  document.documentElement.classList.add('navidad');
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   function nieve(){
     var box = document.createElement('div'); box.className = 'nieve'; box.setAttribute('aria-hidden', 'true');
