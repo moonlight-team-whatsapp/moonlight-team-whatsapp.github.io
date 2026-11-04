@@ -62,6 +62,14 @@
   .imgmenu-list button{ display:block; width:100%; text-align:left; background:none; border:none; color:var(--ink); font-family:'Crimson Pro',serif; font-size:1rem; padding:9px 14px; cursor:pointer; white-space:nowrap; }
   .imgmenu-list button:hover{ background:rgba(217,195,131,.12); color:var(--gold); }
   .grupo-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .li-av{ flex:none; border-radius:50%; border:1.5px solid var(--gold); margin:0 10px 0 2px; cursor:pointer; box-shadow:0 0 10px rgba(217,195,131,.3); transition:transform .15s; }
+  .li-av:hover{ transform:scale(1.12); }
+  li.has-card{ border-color:rgba(217,195,131,.55) !important; }
+  .mc-pop{ position:fixed; z-index:60; border:1px solid var(--gold); border-radius:12px; overflow:hidden; background:#141b37; box-shadow:0 18px 50px rgba(0,0,0,.7); animation:mcin .2s both; }
+  .mc-pop img{ display:block; width:100%; }
+  .mc-cap{ display:flex; justify-content:space-between; gap:10px; padding:8px 12px; font-style:italic; color:var(--ink-soft); font-size:.95rem; }
+  .mc-cap a{ color:var(--gold); text-decoration:none; white-space:nowrap; }
+  @keyframes mcin{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
 </style>
 </head>
 <body>
@@ -235,6 +243,7 @@
 </dialog>
 
 <script type="module">
+  import { cargarPrincipales, clave, avatarCss } from './mooncard-principal.js';
   import { initializeApp } from "./supa-compat.js";
   import {
     getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, setDoc, getDoc, getDocs, writeBatch,
@@ -489,6 +498,20 @@
     });
   }
 
+  let PRIN = new Map(); const repaints = [];
+  cargarPrincipales().then(m => { PRIN = m; repaints.forEach(f => f()); });
+  let pop = null;
+  function hidePop(){ if (pop){ pop.remove(); pop = null; } }
+  function showPop(anchor, p){
+    hidePop(); pop = document.createElement('div'); pop.className = 'mc-pop';
+    pop.innerHTML = `<img src="${p.url}" alt="MoonCard de ${p.personaje.replace(/[<>"&]/g, '')}"><div class="mc-cap"><span>MoonCard de ${p.personaje.replace(/[<>"&]/g, '')}${p.autor ? ' · por ' + p.autor.replace(/[<>"&]/g, '') : ''}</span><a href="galeria.html">Galería →</a></div>`;
+    document.body.appendChild(pop);
+    const r = anchor.getBoundingClientRect(), w = Math.min(460, innerWidth - 20); pop.style.width = w + 'px';
+    let top = r.bottom + 8; const h = pop.offsetHeight; if (top + h > innerHeight - 8) top = Math.max(8, r.top - h - 8);
+    pop.style.left = Math.max(10, Math.min(innerWidth - w - 10, r.left)) + 'px'; pop.style.top = top + 'px';
+  }
+  document.addEventListener('click', e => { if (!e.target.closest('.li-av, .mc-pop')) hidePop(); });
+  addEventListener('scroll', hidePop, { passive: true });
   function makeHandle(){
     const h = document.createElement('span');
     h.className = 'handle' + (isAdmin && !searchTerm ? ' draggable' : '');
@@ -523,6 +546,7 @@
   function setupSimpleList(collectionName, listEl, emptyEl, emptyText){
     let cache = [];
     let editingId = null;
+    repaints.push(() => paint());
     onSnapshot(query(collection(db, collectionName), orderBy('createdAt', 'asc')),
       (snap) => {
         cache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -648,6 +672,15 @@
         const left = document.createElement('span');
         left.className = 'li-left';
         left.appendChild(makeHandle());
+        const prin = collectionName === 'ocupados' ? PRIN.get(clave(item.nombre)) : null;
+        if (prin){
+          li.classList.add('has-card');
+          const av = document.createElement('span'); av.className = 'li-av'; av.setAttribute('style', avatarCss(prin.url, 34)); av.title = 'Ver MoonCard';
+          av.addEventListener('mouseenter', () => { if (matchMedia('(hover:hover)').matches) showPop(li, prin); });
+          av.addEventListener('mouseleave', () => { if (matchMedia('(hover:hover)').matches) setTimeout(() => { if (pop && !pop.matches(':hover')) hidePop(); }, 120); });
+          av.addEventListener('click', e => { e.stopPropagation(); pop ? hidePop() : showPop(li, prin); });
+          left.appendChild(av);
+        }
         const span = document.createElement('span');
         span.className = 'li-name';
         span.textContent = item.nombre;

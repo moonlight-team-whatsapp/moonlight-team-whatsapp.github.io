@@ -3,6 +3,7 @@
 ## MoonCard (en este orden)
 
 ## Hecho en MoonCard
+- MoonCard principal por personaje (admin: «Hacer principal» en la galería): miniatura y tarjeta en la lista y el árbol
 - Detalles: guías de centrado al arrastrar adornos, vista previa mayor en móvil, línea de rol que se encoge si es larga
 - Galería (galeria.html): publicar con aprobación admin, máx. 3 por personaje, filtro por personaje y «Usar como plantilla». Tabla `mooncards` + bucket `mooncards` en Supabase
 - 36 adornos, giro y delante/detrás; marcos de foto hexágono, corazón, estrella y rombo

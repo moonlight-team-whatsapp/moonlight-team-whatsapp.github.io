@@ -57,6 +57,10 @@
   .n i{ margin-top:2px; font-family:'Cormorant',serif; font-size:.78rem; letter-spacing:1px; color:var(--ink-soft); }
   .n.sel{ border-color:var(--gold); box-shadow:0 0 18px rgba(217,195,131,.38); }
   .n.dim{ opacity:.28; }
+  .n.hascard{ padding-left:calc(var(--av, 40px) + 14px); padding-right:8px; border-color:var(--gold-dim); }
+  .n .nav{ position:absolute; left:6px; top:50%; transform:translateY(-50%); border-radius:50%; border:1.5px solid var(--gold); box-shadow:0 0 8px rgba(217,195,131,.35); }
+  .n.hascard b{ font-size:.95rem; }
+  .mcbox{ margin:2px 0 12px; } .mcbox img{ display:block; width:100%; border-radius:10px; border:1px solid var(--gold-dim); box-shadow:0 8px 24px rgba(0,0,0,.5); } .mcbox div{ display:flex; justify-content:space-between; margin:6px 2px 0; font-size:.9rem; color:var(--ink-soft); font-style:italic; } .mcbox a{ color:var(--gold); text-decoration:none; }
   .n.gone{ border-style:dashed; opacity:.55; }
   .n.gone b{ font-style:italic; }
   #sheet{
@@ -219,6 +223,7 @@
 </script>
 
 <script type="module">
+  import { cargarPrincipales, clave, avatarCss } from './mooncard-principal.js';
   import { initializeApp } from "./supa-compat.js";
   import {
     getFirestore, collection, doc, onSnapshot, writeBatch, arrayUnion, arrayRemove, serverTimestamp
@@ -258,7 +263,8 @@
 
   // ---------- Estado ----------
   let isAdmin = false, sel = null, syncing = false, SC = 1, editing = false, LAY = null, DR = null, SUP = 0;
-  let ocupados = [], arbol = [];
+  let ocupados = [], arbol = [], PRIN = new Map();
+  cargarPrincipales().then(m => { PRIN = m; if (loaded.o && loaded.a) render(); });
   const loaded = { o: false, a: false };
   const ROM = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
 
@@ -522,7 +528,8 @@
     TP.forEach(p => {
       const cls = p.id === sel ? ' sel' : me && !nb.has(p.id) ? ' dim' : '';
       const sym = p.g === 'f' ? ' ♀' : p.g === 'm' ? ' ♂' : '';
-      ns += `<div class="n${cls}" data-id="${esc(p.id)}" style="width:${W}px;height:${H}px;left:${X[p.id] + sh - W / 2}px;top:${RY(g[p.id]) - H / 2}px"><b>${esc(p.name)}</b><i>Gen. ${ROM[g[p.id]] || g[p.id] + 1}${sym}</i></div>`;
+      const pr = PRIN.get(clave(p.name)), av = pr ? `<span class="nav" style="${avatarCss(pr.url, H - 14)}"></span>` : '';
+      ns += `<div class="n${cls}${pr ? ' hascard' : ''}" data-id="${esc(p.id)}" style="width:${W}px;height:${H}px;left:${X[p.id] + sh - W / 2}px;top:${RY(g[p.id]) - H / 2}px">${av}<b>${esc(p.name)}</b><i>Gen. ${ROM[g[p.id]] || g[p.id] + 1}${sym}</i></div>`;
     });
     if (sl.length){
       gl += `<div class="gl" style="top:${soloHead.y}px"><span>Sin familia</span></div>`;
@@ -731,7 +738,9 @@
     const famBase = 'familia-' + (normalize(famTit).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'moonlight');
     const rows = rs.map(x => x.raw ? `<p class="rel">${a(x.q.id)}: <small>${esc(x.t)}</small></p>` : `<p class="rel">${esc(x.t)} de ${a(x.q.id)}</p>`).join('')
       || '<p class="rel"><small>Aún no tiene parentescos registrados.</small></p>';
+    const mc = PRIN.get(clave(me.name));
     sh.innerHTML = `<div class="sh-head"><h2>${esc(me.name)}</h2><button class="x" id="shX" type="button" aria-label="Cerrar">✕</button></div>` +
+      (mc ? `<div class="mcbox"><img src="${esc(mc.url)}" alt="MoonCard de ${esc(me.name)}"><div><span>MoonCard${mc.autor ? ' · por ' + esc(mc.autor) : ''}</span><a href="galeria.html">Ver galería →</a></div></div>` : '') +
       (isAdmin ? '<div class="row-btns" style="margin:0 0 10px"><button class="btn-primary" id="editBtn" type="button">Editar</button>' + (canL ? '<button class="btn-ghost" id="moveL" type="button">← A la izquierda</button>' : '') + (canR ? '<button class="btn-ghost" id="moveR" type="button">A la derecha →</button>' : '') + '</div>' : '') +
       (famNombre ? `<p class="rel"><b>Familia:</b> ${esc(famNombre)}</p>` : '') +
       rows +

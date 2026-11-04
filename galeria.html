@@ -81,7 +81,7 @@ async function load(){
 }
 function card(r, pend){
   const d = new Date(r.creada).toLocaleDateString('es-ES');
-  return `<article class="gc${pend ? ' pend' : ''}" style="--i:IDX"><img src="${url(r.img_path)}" alt="MoonCard de ${esc(r.personaje)}" loading="lazy" data-zoom="${esc(url(r.img_path))}"><div class="meta"><b>${esc(r.personaje)}</b><small>${r.autor ? 'por ' + esc(r.autor) + ' · ' : ''}${d}</small><div class="row"><a class="gbtn" href="mooncard.html?plantilla=${r.id}">Usar como plantilla</a>${isAdmin ? `<select class="gsel" data-per="${r.id}" aria-label="Cambiar personaje">${names.map(n => `<option${n === r.personaje ? ' selected' : ''}>${esc(n)}</option>`).join('')}${names.includes(r.personaje) ? '' : `<option selected>${esc(r.personaje)}</option>`}</select>` : ''}${isAdmin ? (pend ? `<button class="gbtn" data-ok="${r.id}" type="button">Aprobar</button>` : '') + `<button class="gbtn red" data-del="${r.id}" type="button">Borrar</button>` : ''}</div></div></article>`;
+  return `<article class="gc${pend ? ' pend' : ''}" style="--i:IDX"><img src="${url(r.img_path)}" alt="MoonCard de ${esc(r.personaje)}" loading="lazy" data-zoom="${esc(url(r.img_path))}"><div class="meta"><b>${esc(r.personaje)}</b><small>${r.principal ? '★ Principal · ' : ''}${r.autor ? 'por ' + esc(r.autor) + ' · ' : ''}${d}</small><div class="row"><a class="gbtn" href="mooncard.html?plantilla=${r.id}">Usar como plantilla</a>${isAdmin ? `<select class="gsel" data-per="${r.id}" aria-label="Cambiar personaje">${names.map(n => `<option${n === r.personaje ? ' selected' : ''}>${esc(n)}</option>`).join('')}${names.includes(r.personaje) ? '' : `<option selected>${esc(r.personaje)}</option>`}</select>` : ''}${isAdmin ? (pend ? `<button class="gbtn" data-ok="${r.id}" type="button">Aprobar</button>` : (r.principal ? '' : `<button class="gbtn" data-main="${r.id}" type="button">Hacer principal</button>`)) + `<button class="gbtn red" data-del="${r.id}" type="button">Borrar</button>` : ''}</div></div></article>`;
 }
 function paint(){
   const ap = rows.filter(r => r.aprobada), pe = rows.filter(r => !r.aprobada);
@@ -103,6 +103,8 @@ document.addEventListener('change', async e => {
 document.addEventListener('click', async e => {
   const z = e.target.closest('[data-zoom]'); if (z){ $('zoomImg').src = z.dataset.zoom; $('zoomDlg').showModal(); return; }
   if (e.target === $('zoomDlg') || e.target === $('zoomImg')) $('zoomDlg').close();
+  const mn = e.target.closest('[data-main]');
+  if (mn){ mn.disabled = true; const r = rows.find(x => x.id === mn.dataset.main); await sb.from('mooncards').update({ principal: false }).eq('personaje_key', r.personaje_key); await sb.from('mooncards').update({ principal: true }).eq('id', r.id); load(); return; }
   const ok = e.target.closest('[data-ok]'), del = e.target.closest('[data-del]');
   if (ok){ ok.disabled = true; await sb.from('mooncards').update({ aprobada: true }).eq('id', ok.dataset.ok); load(); }
   if (del){
