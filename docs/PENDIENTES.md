@@ -31,3 +31,9 @@
 - Manual: desactivar "Allow new users to sign up" en Supabase → Authentication
 - Opcional: borrar Firestore antiguo
 - Árbol: probar con datos reales las familias por separado y la sección "Sin familia"
+
+
+## Calendario de adviento (adviento.html)
+- Hechas: puertas 1-5 (mensaje, memoria, ordenar frase, imagen, sopa de letras) y editor admin.
+- Por construir: sudoku (7, 16), quiz (8, 22), puzle deslizante (10), wordle (11, 23), adivina el personaje (17), laberinto (20), reto galería (14). Ya se pueden preparar su mensaje y sorpresa desde el editor.
+- Idea: guardar el progreso en la cuenta del carnet en vez de localStorage.

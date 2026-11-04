@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendario de adviento · Moonlight Team</title>
+<meta name="description" content="Calendario de adviento de Moonlight Team: una puerta cada día del 1 al 24 de diciembre, con minijuegos y sorpresas.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500;1,600&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .wrap{ max-width:900px; }
+  .top h1{ font-size:clamp(1.9rem,8vw,3rem); line-height:1.1; }
+  .adv-info{ color:var(--ink-soft); margin:4px 0 14px; }
+  .adv-info b{ color:var(--gold); }
+  .puertas{ display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin:14px 0 30px; }
+  @media (max-width:640px){ .puertas{ grid-template-columns:repeat(4,1fr); gap:9px; } }
+  @media (max-width:380px){ .puertas{ grid-template-columns:repeat(3,1fr); } }
+  .pt{ position:relative; aspect-ratio:3/4; border-radius:8px; cursor:pointer; border:1px solid var(--border); color:var(--gold); font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:2rem; display:flex; align-items:center; justify-content:center; padding:0;
+       background:linear-gradient(160deg, rgba(120,32,48,.85), rgba(60,16,36,.9)); box-shadow:inset 0 0 0 3px rgba(217,195,131,.14), 0 8px 18px -12px rgba(0,0,0,.7); transition:transform .18s, border-color .18s, box-shadow .18s; animation:ptin .5s both; animation-delay:calc(var(--i,0) * 28ms); }
+  .pt:nth-child(3n+2){ background:linear-gradient(160deg, rgba(24,84,60,.85), rgba(14,44,40,.92)); }
+  .pt:nth-child(3n){ background:linear-gradient(160deg, rgba(34,48,110,.88), rgba(18,24,66,.92)); }
+  .pt:hover{ transform:translateY(-3px) rotate(-1deg); border-color:var(--gold-dim); }
+  .pt::after{ content:''; position:absolute; right:12%; top:50%; width:7px; height:7px; border-radius:50%; background:var(--gold); opacity:.7; }
+  .pt small{ position:absolute; bottom:7px; left:0; right:0; text-align:center; font-family:'Crimson Pro',serif; font-style:normal; font-weight:400; font-size:.68rem; color:rgba(238,240,251,.7); letter-spacing:.02em; }
+  .pt.cerrada{ filter:saturate(.45) brightness(.6); }
+  .pt.cerrada::before{ content:'🔒'; position:absolute; top:6px; left:7px; font-size:.8rem; }
+  .pt.hoy{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(217,195,131,.5), 0 0 26px rgba(217,195,131,.35); }
+  .pt.hecha{ background:rgba(217,195,131,.1); border-color:rgba(217,195,131,.5); }
+  .pt.hecha::after{ content:'✓'; background:none; width:auto; height:auto; right:8px; top:6px; font-size:.95rem; color:#7dffb0; font-family:'Crimson Pro',serif; font-style:normal; }
+  .pt.vacia small::before{ content:'sin contenido · '; }
+  .pt.shake{ animation:sacud .4s; }
+  @keyframes ptin{ from{ opacity:0; transform:translateY(10px) scale(.96); } to{ opacity:1; transform:none; } }
+  @keyframes sacud{ 0%,100%{ transform:none; } 25%{ transform:translateX(-5px); } 75%{ transform:translateX(5px); } }
+  @media (prefers-reduced-motion:reduce){ .pt, .pt.shake{ animation:none; } }
+
+  dialog.adv{ width:min(560px, calc(100vw - 24px)); max-height:calc(100dvh - 24px); padding:0; border:1px solid var(--gold-dim); border-radius:12px; background:#101630; color:var(--ink); overflow:auto; }
+  dialog.adv::backdrop{ background:rgba(4,6,18,.72); backdrop-filter:blur(3px); }
+  .ad-h{ display:flex; align-items:flex-start; gap:12px; padding:16px 18px 6px; }
+  .ad-h .n{ font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:2.6rem; line-height:1; color:var(--gold); }
+  .ad-h h3{ margin:0; font-family:'Cormorant',serif; font-style:italic; font-size:1.5rem; color:var(--ink); }
+  .ad-h small{ color:var(--ink-soft); }
+  .ad-x{ margin-left:auto; background:none; border:none; color:var(--ink-soft); font-size:1.6rem; cursor:pointer; line-height:1; }
+  .ad-b{ padding:8px 18px 18px; }
+  .ad-b p{ margin:8px 0; line-height:1.5; white-space:pre-wrap; }
+  .ad-b img.prem{ display:block; max-width:100%; border-radius:8px; margin:10px auto; }
+  .premio{ border:1px dashed var(--gold-dim); border-radius:10px; padding:10px 14px; margin-top:12px; animation:ptin .5s both; }
+  .premio[hidden]{ display:none; }
+  .pend{ color:var(--ink-soft); font-style:italic; }
+  .gbtn{ padding:6px 14px; border-radius:999px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1rem; cursor:pointer; color:var(--gold); border:1px solid rgba(217,195,131,.5); background:rgba(217,195,131,.08); text-decoration:none; display:inline-block; }
+  .gbtn:hover{ background:rgba(217,195,131,.22); }
+  .gbtn.suave{ color:var(--ink-soft); border-color:var(--border); background:none; font-size:.92rem; }
+  .fila{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; align-items:center; }
+  /* ordenar la frase */
+  .fr-out{ min-height:56px; border:1px solid var(--border); border-radius:8px; padding:8px; display:flex; flex-wrap:wrap; gap:6px; background:rgba(255,255,255,.03); }
+  .fr-bank{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  .w{ padding:6px 12px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.06); color:var(--ink); font-family:'Crimson Pro',serif; font-size:1.05rem; cursor:pointer; }
+  .w:hover{ border-color:var(--gold-dim); }
+  .w.puesta{ border-color:var(--gold); color:var(--gold); }
+  .w.usada{ visibility:hidden; }
+  .fr-out.mal{ animation:sacud .4s; border-color:#ff8a8a; }
+  /* memoria */
+  .mem{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:8px; }
+  .mc{ aspect-ratio:1; border-radius:8px; border:1px solid var(--border); background:linear-gradient(160deg,#25305f,#171d42); color:var(--gold); font-size:1.4rem; cursor:pointer; position:relative; padding:2px; font-family:'Crimson Pro',serif; }
+  .mc span{ display:none; font-size:.85rem; line-height:1.1; word-break:break-word; color:var(--ink); }
+  .mc::before{ content:'🌙'; }
+  .mc.up{ background:rgba(217,195,131,.14); border-color:var(--gold); }
+  .mc.up::before, .mc.ok::before{ content:''; }
+  .mc.up span, .mc.ok span{ display:block; }
+  .mc.ok{ background:rgba(125,255,176,.1); border-color:rgba(125,255,176,.5); cursor:default; }
+  /* sopa de letras */
+  .sp{ display:grid; gap:2px; user-select:none; -webkit-user-select:none; touch-action:none; margin:8px auto; max-width:420px; }
+  .sp div{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:4px; background:rgba(255,255,255,.05); font-family:'Crimson Pro',serif; font-weight:600; font-size:clamp(.8rem,3.6vw,1.15rem); color:var(--ink); }
+  .sp div.sel{ background:rgba(217,195,131,.4); color:#fff; }
+  .sp div.hall{ background:rgba(125,255,176,.22); color:#c8ffe0; }
+  .sp-l{ display:flex; flex-wrap:wrap; gap:6px 12px; justify-content:center; margin-top:8px; color:var(--ink-soft); }
+  .sp-l .f{ text-decoration:line-through; color:#7dffb0; }
+  /* editor */
+  .ed label{ display:flex; flex-direction:column; gap:4px; margin:10px 0; color:var(--ink-soft); font-size:.92rem; }
+  .ed input, .ed select, .ed textarea{ padding:8px 10px; font-family:inherit; font-size:1rem; color:var(--ink); background:#141b37; border:1px solid var(--border); border-radius:6px; color-scheme:dark; }
+  .ed textarea{ min-height:90px; resize:vertical; }
+  .ed .nota{ font-size:.85rem; color:var(--ink-soft); margin:2px 0; }
+  .ed-plan{ color:var(--gold); }
+  #toast{ position:fixed; left:50%; bottom:20px; transform:translate(-50%,20px); background:#141b37; border:1px solid var(--gold-dim); color:var(--ink); padding:9px 16px; border-radius:8px; opacity:0; transition:all .3s; z-index:30; pointer-events:none; max-width:90vw; text-align:center; }
+  #toast.show{ opacity:1; transform:translate(-50%,0); }
+</style>
+</head>
+<body>
+<div class="stars" id="starsLayer" aria-hidden="true"></div>
+<div class="mist m1" aria-hidden="true"></div>
+<div class="mist m2" aria-hidden="true"></div>
+<div class="moon" aria-hidden="true"></div>
+<div class="wrap">
+  <a class="back-link" href="index.html">← Volver al índice</a>
+  <header class="top">
+    <div>
+      <div class="title-wrap"><h1>Calendario de adviento</h1></div>
+      <p class="subtitle">Una puerta cada día, del 1 al 24 de diciembre. Cada una esconde un juego o una sorpresa.</p>
+    </div>
+    <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
+  </header>
+  <p class="adv-info" id="info"></p>
+  <div class="puertas" id="puertas"></div>
+</div>
+
+<dialog class="adv" id="dlg">
+  <div class="ad-h"><span class="n" id="dN"></span><div><h3 id="dT"></h3><small id="dS"></small></div><button class="ad-x" id="dX" type="button" aria-label="Cerrar">×</button></div>
+  <div class="ad-b" id="dB"></div>
+</dialog>
+
+<dialog class="adv" id="edDlg">
+  <div class="ad-h"><span class="n" id="eN"></span><div><h3>Editar puerta</h3><small class="ed-plan" id="ePlan"></small></div><button class="ad-x" id="eX" type="button" aria-label="Cerrar">×</button></div>
+  <div class="ad-b ed" id="eB"></div>
+</dialog>
+
+<dialog id="loginDialog">
+  <div class="dialog-inner">
+    <h3>Acceso admin</h3>
+    <div class="dialog-field"><label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username"></div>
+    <div class="dialog-field"><label for="loginPass">Contraseña</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+    <p class="dialog-error" id="loginError"></p>
+    <div class="dialog-actions">
+      <button class="btn-primary" id="loginSubmit" type="button">Entrar</button>
+      <button class="btn-ghost" id="loginCancel" type="button">Cancelar</button>
+    </div>
+  </div>
+</dialog>
+<div id="toast" role="status"></div>
+<script src="js/temporadas.js" defer></script>
+<script type="module">
+import { sb } from './js/supabase-sesion.js';
+import { tokenActual } from './js/carnet.js';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+(function(){ const l = $('starsLayer'), fr = document.createDocumentFragment(); for (let i = 0; i < 30; i++){ const s = document.createElement('span'); s.className = 'star'; const z = (Math.random()*1.6+.8).toFixed(2); s.style.cssText = `top:${Math.random()*100}%;left:${Math.random()*100}%;width:${z}px;height:${z}px`; s.style.setProperty('--dur', (Math.random()*3+2).toFixed(2)+'s'); s.style.setProperty('--delay', (Math.random()*5).toFixed(2)+'s'); s.style.setProperty('--o-min', '.2'); s.style.setProperty('--o-max', '.85'); fr.appendChild(s); } l.appendChild(fr); })();
+const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), 3800); };
+
+// Plan del calendario (lo que se sugiere por día) y qué tipos ya están construidos
+const PLAN = ['mensaje','memoria','frase','imagen','sopa','mensaje','sudoku','quiz','frase','puzle','wordle','mensaje','sopa','reto','memoria','sudoku','adivina','frase','imagen','laberinto','mensaje','quiz','wordle','mensaje'];
+const TIPOS = { mensaje:'Mensaje', imagen:'Imagen', frase:'Ordenar la frase', memoria:'Memoria de parejas', sopa:'Sopa de letras', sudoku:'Sudoku', quiz:'Quiz', puzle:'Puzle deslizante', wordle:'Wordle', adivina:'Adivina el personaje', laberinto:'Laberinto', reto:'Reto de la galería' };
+const HECHOS = ['mensaje','imagen','frase','memoria','sopa'];
+const PROG = 'mc_adv';
+const prog = () => { try { return JSON.parse(localStorage.getItem(PROG) || '{}'); } catch (e) { return {}; } };
+const marcar = (d, k) => { try { const p = prog(); p[d] = Object.assign(p[d] || {}, { [k]: 1 }); localStorage.setItem(PROG, JSON.stringify(p)); } catch (e) {} paint(); };
+
+let isAdmin = false, hoy = 0, filas = {}, resumen = {}, ocup = [];
+const imgUrl = p => p ? sb.storage.from('mooncards').getPublicUrl(p).data.publicUrl : '';
+
+async function load(){
+  const r = await sb.rpc('adviento_hoy'); hoy = r.data || 0;
+  filas = {}; resumen = {};
+  if (isAdmin){
+    const { data } = await sb.from('adviento').select('*'); (data || []).forEach(x => filas[x.dia] = x);
+    const oc = await sb.from('ocupados').select('id,data'); ocup = (oc.data || []).map(o => ({ n: (o.data || {}).nombre, m: (o.data || {}).miembroId })).filter(o => o.n && o.m);
+  } else {
+    const { data } = await sb.rpc('adviento_resumen'); (data || []).forEach(x => resumen[x.dia] = x);
+  }
+  paint();
+}
+function paint(){
+  const P = prog(), mesOk = hoy > 0;
+  $('info').innerHTML = isAdmin ? '<b>Modo admin:</b> puedes abrir cualquier puerta para probarla y editarla desde dentro. Los visitantes solo abren las puertas ya llegadas.'
+    : !mesOk ? 'El calendario se abre el <b>1 de diciembre</b>. ¡Vuelve entonces!' : `Hoy toca la puerta <b>${hoy}</b>. Las anteriores siguen abiertas para jugar cuando quieras.`;
+  $('puertas').innerHTML = Array.from({ length: 24 }, (_, i) => { const d = i + 1, abierta = isAdmin || d <= hoy, hay = isAdmin ? !!filas[d] : !!resumen[d];
+    const t = isAdmin ? (filas[d] ? filas[d].tipo : null) : (resumen[d] ? resumen[d].tipo : null);
+    return `<button type="button" class="pt ${abierta ? '' : 'cerrada'} ${d === hoy ? 'hoy' : ''} ${P[d] && P[d].h ? 'hecha' : ''} ${abierta && !hay ? 'vacia' : ''}" data-d="${d}" style="--i:${i}" aria-label="Puerta ${d}">${d}<small>${isAdmin ? esc(TIPOS[t || PLAN[i]]) : abierta && t ? esc(TIPOS[t]) : ''}</small></button>`; }).join('');
+}
+$('puertas').addEventListener('click', e => { const b = e.target.closest('.pt'); if (!b) return; const d = +b.dataset.d;
+  if (!isAdmin && d > hoy){ b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); toast(hoy ? `La puerta ${d} se abre el ${d} de diciembre.` : 'Se abre el 1 de diciembre.'); return; }
+  abrir(d); });
+
+async function datosPuerta(d){
+  if (isAdmin){ const r = filas[d]; return r ? { dia: d, tipo: r.tipo, titulo: r.titulo, texto: r.texto, enlace: r.enlace, imagen_path: r.imagen_path, datos: Object.assign({}, r.datos, { personales: undefined }) } : null; }
+  const { data } = await sb.rpc('adviento_puerta', { p_dia: d, p_token: tokenActual() }); return data;
+}
+async function abrir(d){
+  const r = await datosPuerta(d); $('dN').textContent = d; $('dS').textContent = 'Puerta del ' + d + ' de diciembre';
+  const B = $('dB'); B.innerHTML = '';
+  if (!r){ $('dT').textContent = 'Puerta sin contenido'; B.innerHTML = `<p class="pend">Esta puerta todavía no tiene sorpresa.${isAdmin ? ' Pulsa «Editar» para crearla.' : ''}</p>`; adminBar(B, d); $('dlg').showModal(); return; }
+  $('dT').textContent = r.titulo || TIPOS[r.tipo];
+  const premio = document.createElement('div'); premio.className = 'premio'; premio.innerHTML = premioHtml(r);
+  const esJuego = ['frase','memoria','sopa'].includes(r.tipo);
+  const fin = () => { premio.hidden = false; const sk = B.querySelector('.gbtn.suave'); if (sk) sk.remove(); marcar(d, 'h'); };
+  if (esJuego){
+    const g = document.createElement('div'); B.appendChild(g);
+    const intro = document.createElement('p'); intro.textContent = { frase: 'Ordena las palabras para formar la frase.', memoria: 'Encuentra todas las parejas.', sopa: 'Encuentra las palabras: arrastra el dedo o el ratón sobre las letras.' }[r.tipo]; g.appendChild(intro);
+    const area = document.createElement('div'); g.appendChild(area);
+    ({ frase: juegoFrase, memoria: juegoMemoria, sopa: juegoSopa })[r.tipo](area, r.datos || {}, fin, d);
+    premio.hidden = true; B.appendChild(premio);
+    if (!(prog()[d] || {}).h){ const s = document.createElement('button'); s.type = 'button'; s.className = 'gbtn suave'; s.textContent = 'Ver la sorpresa sin jugar'; s.onclick = () => fin(); B.appendChild(s); }
+    else premio.hidden = false;
+  } else {
+    if (!HECHOS.includes(r.tipo)){ const p = document.createElement('p'); p.className = 'pend'; p.textContent = `El juego «${TIPOS[r.tipo]}» llega pronto. Mientras tanto, aquí tienes la sorpresa:`; B.appendChild(p); }
+    premio.style.border = 'none'; premio.style.padding = '0'; B.appendChild(premio); marcar(d, 'h');
+  }
+  adminBar(B, d); $('dlg').showModal();
+}
+function premioHtml(r){
+  let h = r.texto ? `<p>${esc(r.texto)}</p>` : '';
+  if (r.imagen_path) h += `<img class="prem" src="${esc(imgUrl(r.imagen_path))}" alt="${esc(r.titulo || 'Sorpresa')}">`;
+  if (r.enlace && /^https?:\/\//i.test(r.enlace)) h += `<p><a class="gbtn" href="${esc(r.enlace)}" target="_blank" rel="noopener">Abrir enlace</a></p>`;
+  return h || '<p class="pend">Sorpresa pendiente de añadir.</p>';
+}
+function adminBar(B, d){ if (!isAdmin) return; const f = document.createElement('div'); f.className = 'fila'; f.innerHTML = '<button type="button" class="gbtn">Editar esta puerta</button>'; f.firstChild.onclick = () => { $('dlg').close(); editar(d); }; B.appendChild(f); }
+$('dX').onclick = () => $('dlg').close();
+
+/* ---------- Juego: ordenar la frase ---------- */
+function barajar(a, rnd = Math.random){ a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function juegoFrase(box, dat, fin){
+  const meta = String(dat.frase || '').trim().split(/\s+/).filter(Boolean);
+  if (meta.length < 2){ box.innerHTML = '<p class="pend">Esta frase aún no está preparada.</p>'; return; }
+  let ord = barajar(meta.map((w, i) => i)); if (meta.length > 2) for (let k = 0; k < 5 && ord.every((x, i) => meta[x] === meta[i]); k++) ord = barajar(ord);
+  const out = document.createElement('div'); out.className = 'fr-out'; const bank = document.createElement('div'); bank.className = 'fr-bank'; box.append(out, bank);
+  let puestas = [];
+  const botones = ord.map(i => { const b = document.createElement('button'); b.type = 'button'; b.className = 'w'; b.textContent = meta[i]; b.onclick = () => poner(i, b); bank.appendChild(b); return [i, b]; });
+  function pintar(){ out.innerHTML = ''; puestas.forEach(([i, b], k) => { const c = document.createElement('button'); c.type = 'button'; c.className = 'w puesta'; c.textContent = meta[i]; c.onclick = () => { puestas.splice(k, 1); b.classList.remove('usada'); pintar(); }; out.appendChild(c); }); }
+  function poner(i, b){ b.classList.add('usada'); puestas.push([i, b]); pintar();
+    if (puestas.length === meta.length){ if (puestas.every(([x], k) => meta[x] === meta[k])){ out.querySelectorAll('.w').forEach(w => w.disabled = true); bank.remove(); hint.remove(); if (dat.autor){ const a = document.createElement('p'); a.className = 'pend'; a.textContent = '— ' + dat.autor; box.appendChild(a); } fin(); }
+      else { out.classList.add('mal'); setTimeout(() => { out.classList.remove('mal'); puestas.forEach(([, bb]) => bb.classList.remove('usada')); puestas = []; pintar(); }, 700); } } }
+  const hint = document.createElement('button'); hint.type = 'button'; hint.className = 'gbtn suave'; hint.textContent = 'Pista: poner la siguiente palabra';
+  hint.onclick = () => { while (puestas.length && meta[puestas[puestas.length - 1][0]] !== meta[puestas.length - 1]){ const [, b] = puestas.pop(); b.classList.remove('usada'); }
+    const k = puestas.length; const c = botones.find(([i, b]) => !b.classList.contains('usada') && meta[i] === meta[k]); if (c) poner(c[0], c[1]); pintar(); };
+  box.appendChild(hint);
+}
+
+/* ---------- Juego: memoria de parejas ---------- */
+function juegoMemoria(box, dat, fin){
+  const par = (dat.parejas || []).map(s => String(s).trim()).filter(Boolean).slice(0, 12);
+  if (par.length < 3){ box.innerHTML = '<p class="pend">Este juego aún no está preparado.</p>'; return; }
+  const cartas = barajar(par.concat(par)); const g = document.createElement('div'); g.className = 'mem'; box.appendChild(g);
+  const info = document.createElement('p'); info.className = 'pend'; box.appendChild(info);
+  let abiertas = [], bloq = false, mov = 0, hechas = 0; info.textContent = 'Movimientos: 0';
+  cartas.forEach(t => { const b = document.createElement('button'); b.type = 'button'; b.className = 'mc'; b.innerHTML = `<span>${esc(t)}</span>`; b.dataset.t = t;
+    b.onclick = () => { if (bloq || b.classList.contains('up') || b.classList.contains('ok')) return; b.classList.add('up'); abiertas.push(b);
+      if (abiertas.length === 2){ mov++; info.textContent = 'Movimientos: ' + mov; const [x, y] = abiertas;
+        if (x.dataset.t === y.dataset.t){ x.className = y.className = 'mc ok'; abiertas = []; if (++hechas === par.length) fin(); }
+        else { bloq = true; setTimeout(() => { x.classList.remove('up'); y.classList.remove('up'); abiertas = []; bloq = false; }, 800); } } };
+    g.appendChild(b); });
+  g.style.gridTemplateColumns = `repeat(${cartas.length > 12 ? 5 : 4},1fr)`;
+}
+
+/* ---------- Juego: sopa de letras ---------- */
+const sinAc = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z]/g, '').toUpperCase();
+function semilla(n){ return () => { n |= 0; n = n + 0x6D2B79F5 | 0; let t = Math.imul(n ^ n >>> 15, 1 | n); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function juegoSopa(box, dat, fin, dia){
+  const pal = (dat.palabras || []).map(sinAc).filter(w => w.length >= 3).slice(0, 12);
+  if (pal.length < 2){ box.innerHTML = '<p class="pend">Esta sopa aún no está preparada.</p>'; return; }
+  const N = Math.min(15, Math.max(10, ...pal.map(w => w.length + 1))), rnd = semilla(dia * 7919 + pal.join('').length), G = Array.from({ length: N }, () => Array(N).fill(''));
+  const DIR = [[1,0],[0,1],[1,1],[1,-1]]; const colocadas = [];
+  pal.slice().sort((a, b) => b.length - a.length).forEach(w => { for (let t = 0; t < 300; t++){ const [dx, dy] = DIR[Math.floor(rnd() * DIR.length)], x = Math.floor(rnd() * N), y = Math.floor(rnd() * N), ex = x + dx * (w.length - 1), ey = y + dy * (w.length - 1);
+    if (ex < 0 || ex >= N || ey < 0 || ey >= N) continue; let ok = true; for (let k = 0; k < w.length; k++){ const c = G[y + dy * k][x + dx * k]; if (c && c !== w[k]){ ok = false; break; } }
+    if (!ok) continue; for (let k = 0; k < w.length; k++) G[y + dy * k][x + dx * k] = w[k]; colocadas.push(w); break; } });
+  const ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (!G[y][x]) G[y][x] = ABC[Math.floor(rnd() * 26)];
+  const grid = document.createElement('div'); grid.className = 'sp'; grid.style.gridTemplateColumns = `repeat(${N},1fr)`; const cel = [];
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++){ const c = document.createElement('div'); c.textContent = G[y][x]; c.dataset.x = x; c.dataset.y = y; grid.appendChild(c); cel.push(c); }
+  const lista = document.createElement('div'); lista.className = 'sp-l'; const mapa = {}; colocadas.slice().sort().forEach(w => { const s = document.createElement('span'); s.textContent = w; lista.appendChild(s); mapa[w] = s; });
+  box.append(grid, lista); let ini = null, sel = [], encontradas = 0;
+  const at = (x, y) => cel[y * N + x];
+  const linea = (a, b) => { const dx = b.x - a.x, dy = b.y - a.y, n = Math.max(Math.abs(dx), Math.abs(dy)); if (!(dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy))) return [a]; const sx = Math.sign(dx), sy = Math.sign(dy); return Array.from({ length: n + 1 }, (_, k) => ({ x: a.x + sx * k, y: a.y + sy * k })); };
+  const pos = e => { const el = document.elementFromPoint(e.clientX, e.clientY); return el && el.parentNode === grid ? { x: +el.dataset.x, y: +el.dataset.y } : null; };
+  function marca(L){ sel.forEach(c => c.classList.remove('sel')); sel = L.map(p => at(p.x, p.y)); sel.forEach(c => c.classList.add('sel')); }
+  grid.addEventListener('pointerdown', e => { const p = pos(e); if (!p) return; e.preventDefault(); ini = p; marca([p]); });
+  grid.addEventListener('pointermove', e => { if (!ini) return; const p = pos(e); if (p) marca(linea(ini, p)); });
+  const soltar = () => { if (!ini) return; const s = sel.map(c => c.textContent).join(''), r = s.split('').reverse().join(''), w = [s, r].find(x => mapa[x] && !mapa[x].classList.contains('f'));
+    if (w){ sel.forEach(c => c.classList.add('hall')); mapa[w].classList.add('f'); if (++encontradas === colocadas.length) setTimeout(fin, 300); }
+    sel.forEach(c => c.classList.remove('sel')); sel = []; ini = null; };
+  grid.addEventListener('pointerup', soltar); grid.addEventListener('pointercancel', soltar); grid.addEventListener('pointerleave', soltar);
+}
+
+/* ---------- Editor (admin) ---------- */
+const lineas = s => String(s || '').split('\n').map(x => x.trim()).filter(Boolean);
+const norm = s => sinAc(String(s));
+function editar(d){
+  const r = filas[d] || { dia: d, tipo: PLAN[d - 1], titulo: '', texto: '', enlace: '', imagen_path: null, datos: {} }, dat = r.datos || {};
+  $('eN').textContent = d; $('ePlan').textContent = 'Plan: ' + TIPOS[PLAN[d - 1]];
+  const pers = (dat.personales || []).map(p => `${p.nombre}: ${p.texto}`).join('\n');
+  $('eB').innerHTML = `
+    <label>Tipo de puerta<select id="fTipo">${Object.entries(TIPOS).map(([k, v]) => `<option value="${k}" ${k === r.tipo ? 'selected' : ''}>${esc(v)}${HECHOS.includes(k) ? '' : ' (próximamente)'}</option>`).join('')}</select></label>
+    <label>Título<input id="fTit" maxlength="80" value="${esc(r.titulo)}"></label>
+    <div id="fEsp"></div>
+    <label>Mensaje o sorpresa (se muestra al abrir, o al ganar el juego)<textarea id="fTxt" maxlength="1500">${esc(r.texto)}</textarea></label>
+    <label>Enlace (opcional)<input id="fEnl" maxlength="300" placeholder="https://…" value="${esc(r.enlace)}"></label>
+    <label>Imagen (opcional)<input id="fImg" type="file" accept="image/png,image/jpeg"></label>
+    <p class="nota" id="fImgN">${r.imagen_path ? 'Ya tiene imagen. Si subes otra, la sustituye. <a href="#" id="fImgQ">Quitar imagen</a>' : 'Sin imagen.'}</p>
+    <div class="fila"><button class="gbtn" id="fSave" type="button">Guardar</button><button class="gbtn suave" id="fDel" type="button">Vaciar puerta</button><button class="gbtn suave" id="fCancel" type="button">Cancelar</button></div>`;
+  let quitar = false;
+  const esp = () => { const t = $('fTipo').value, e = $('fEsp');
+    e.innerHTML = t === 'frase' ? `<label>Frase completa<input id="fFrase" maxlength="200" value="${esc(dat.frase)}" placeholder="Bajo la luna brillamos juntos"></label>
+        <label>Quién la dice (opcional)<input id="fAut" maxlength="60" value="${esc(dat.autor)}"></label>
+        <label>Frases personalizadas por personaje (una por línea: «Personaje: frase»)<textarea id="fPers" placeholder="Kaeya: Bajo la luna nadie bebe solo">${esc(pers)}</textarea></label>
+        <p class="nota">Quien entre con su carnet verá la frase de su personaje; el resto, la frase completa de arriba.</p>`
+      : t === 'memoria' ? `<label>Parejas (una por línea, de 3 a 12)<textarea id="fPar" placeholder="Diluc&#10;Kaeya&#10;Kazuha">${esc((dat.parejas || []).join('\n'))}</textarea></label>`
+      : t === 'sopa' ? `<label>Palabras (una por línea, de 2 a 12; sin tildes en la sopa)<textarea id="fPal" placeholder="MONDSTADT&#10;ANEMO&#10;LUNA">${esc((dat.palabras || []).join('\n'))}</textarea></label>`
+      : HECHOS.includes(t) ? '' : '<p class="nota">Este juego aún no está construido. Puedes dejar preparada la sorpresa y se mostrará tal cual hasta entonces.</p>'; };
+  $('fTipo').onchange = esp; esp();
+  const q = $('fImgQ'); if (q) q.onclick = e => { e.preventDefault(); quitar = true; $('fImgN').textContent = 'La imagen se quitará al guardar.'; };
+  $('fCancel').onclick = () => $('edDlg').close();
+  $('fDel').onclick = async () => { if (!confirm('¿Vaciar la puerta ' + d + '?')) return; const { error } = await sb.from('adviento').delete().eq('dia', d); if (error) return toast('No se pudo vaciar.'); delete filas[d]; $('edDlg').close(); paint(); toast('Puerta vaciada.'); };
+  $('fSave').onclick = async () => {
+    const t = $('fTipo').value; const datos = {}; const avisos = [];
+    if (t === 'frase'){ datos.frase = $('fFrase').value.trim(); if ($('fAut').value.trim()) datos.autor = $('fAut').value.trim();
+      const per = []; lineas($('fPers').value).forEach(l => { const i = l.indexOf(':'); if (i < 1) return avisos.push(l); const n = l.slice(0, i).trim(), tx = l.slice(i + 1).trim(), o = ocup.find(x => norm(x.n) === norm(n)); if (!o || !tx) return avisos.push(n); per.push({ miembro: o.m, nombre: o.n, texto: tx }); });
+      if (per.length) datos.personales = per; if (datos.frase.split(/\s+/).length < 2) return toast('Escribe la frase completa (mínimo 2 palabras).'); }
+    if (t === 'memoria'){ datos.parejas = lineas($('fPar').value).slice(0, 12); if (datos.parejas.length < 3) return toast('Pon al menos 3 parejas.'); }
+    if (t === 'sopa'){ datos.palabras = lineas($('fPal').value).slice(0, 12); if (datos.palabras.length < 2) return toast('Pon al menos 2 palabras.'); }
+    let path = quitar ? null : r.imagen_path; const f = $('fImg').files[0];
+    if (f){ if (f.size > 12 * 1024 * 1024) return toast('La imagen pesa demasiado (máx. 12 MB).'); path = `adv/d${d}-${Date.now()}.${f.type === 'image/png' ? 'png' : 'jpg'}`; const up = await sb.storage.from('mooncards').upload(path, f, { contentType: f.type, upsert: true }); if (up.error) return toast('No se pudo subir la imagen.'); }
+    const fila = { dia: d, tipo: t, titulo: $('fTit').value.trim() || null, texto: $('fTxt').value.trim() || null, enlace: $('fEnl').value.trim() || null, imagen_path: path, datos, actualizado: new Date().toISOString() };
+    const { error } = await sb.from('adviento').upsert(fila); if (error) return toast('No se pudo guardar: ' + error.message);
+    filas[d] = fila; $('edDlg').close(); paint(); toast(avisos.length ? 'Guardado. No encontré estos personajes: ' + avisos.join(', ') : 'Puerta guardada.'); };
+  $('edDlg').showModal();
+}
+$('eX').onclick = () => $('edDlg').close();
+
+$('adminToggleBtn').addEventListener('click', () => {
+  if (isAdmin) sb.auth.signOut();
+  else { $('loginError').textContent = ''; $('loginEmail').value = ''; $('loginPass').value = ''; $('loginDialog').showModal(); }
+});
+$('loginCancel').addEventListener('click', () => $('loginDialog').close());
+$('loginSubmit').addEventListener('click', async () => {
+  const { error } = await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPass').value });
+  if (error) $('loginError').textContent = 'Email o contraseña incorrectos.'; else $('loginDialog').close();
+});
+sb.auth.onAuthStateChange((_e, session) => { isAdmin = !!session; $('adminToggleBtn').textContent = isAdmin ? 'Cerrar sesión admin' : 'Acceso admin'; load(); });
+</script>
+</body>
+</html>
