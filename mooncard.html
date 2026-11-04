@@ -277,7 +277,7 @@
 <dialog id="pubDlg" class="pubdlg"><h3>Publicar en la galería</h3>
   <p>Se subirán la imagen de tu tarjeta y su <b>diseño editable</b> (con tus fotos), para que otros puedan usarlo como plantilla. Un admin la revisa antes de mostrarla. Máximo 3 tarjetas por personaje.</p>
   <label for="pubPer">Personaje al que pertenece</label><select id="pubPer"><option value="">Cargando personajes…</option></select>
-  <label for="pubName">Tu nombre (opcional)</label><input id="pubName" type="text" maxlength="24" autocomplete="off">
+  <label for="pubName">Nombre de la tarjeta (opcional)</label><input id="pubName" type="text" maxlength="40" placeholder="Ej: Kazu navideño" autocomplete="off">
   <p id="pubMsg" class="cc-note" role="status"></p>
   <div class="acts"><button class="btn-primary" id="pubOk" type="button">Publicar</button><button class="btn-ghost" id="pubNo" type="button">Cancelar</button></div>
 </dialog>
@@ -679,7 +679,7 @@
       var m = names.filter(function(n){ return n.toLowerCase() === want; })[0]; if (m) sel.value = m;
     });
   }
-  $('bPub').onclick = function(){ fillPer(); $('pubMsg').textContent = ''; $('pubOk').disabled = false; $('pubName').value = S.nombre || ''; $('pubDlg').showModal(); };
+  $('bPub').onclick = function(){ fillPer(); $('pubMsg').textContent = ''; $('pubOk').disabled = false; $('pubName').value = ''; $('pubDlg').showModal(); };
   $('pubNo').onclick = function(){ $('pubDlg').close(); };
   $('pubOk').onclick = function(){
     var sb = sbp(), pm = $('pubMsg'); if (!sb){ pm.textContent = 'No se pudo conectar. Prueba otra vez en un momento.'; return; }
@@ -697,7 +697,7 @@
       });
     }).then(function(e2){
       if (e2.error) throw e2.error;
-      return sb.from('mooncards').insert({ id: id, personaje: per, autor: $('pubName').value.trim().slice(0, 24) || null, img_path: pi, diseno_path: pd });
+      return sb.from('mooncards').insert({ id: id, personaje: per, titulo: $('pubName').value.trim().slice(0, 40) || null, img_path: pi, diseno_path: pd });
     }).then(function(r){
       if (r.error){ sb.storage.from('mooncards').remove([pi, pd]); throw r.error; }
       pm.textContent = '¡Enviada! Aparecerá en la galería cuando la apruebe un admin.'; $('pubOk').hidden = true; $('pubNo').textContent = 'Cerrar';

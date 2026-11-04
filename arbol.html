@@ -740,7 +740,7 @@
       || '<p class="rel"><small>Aún no tiene parentescos registrados.</small></p>';
     const mc = PRIN.get(clave(me.name));
     sh.innerHTML = `<div class="sh-head"><h2>${esc(me.name)}</h2><button class="x" id="shX" type="button" aria-label="Cerrar">✕</button></div>` +
-      (mc ? `<div class="mcbox"><img src="${esc(mc.url)}" alt="MoonCard de ${esc(me.name)}"><div><span>MoonCard${mc.autor ? ' · por ' + esc(mc.autor) : ''}</span><a href="galeria.html">Ver galería →</a></div></div>` : '') +
+      (mc ? `<div class="mcbox"><img src="${esc(mc.url)}" alt="MoonCard de ${esc(me.name)}"><div><span>${esc(mc.titulo || 'MoonCard')}</span><a href="galeria.html">Ver galería →</a></div></div>` : '') +
       (isAdmin ? '<div class="row-btns" style="margin:0 0 10px"><button class="btn-primary" id="editBtn" type="button">Editar</button>' + (canL ? '<button class="btn-ghost" id="moveL" type="button">← A la izquierda</button>' : '') + (canR ? '<button class="btn-ghost" id="moveR" type="button">A la derecha →</button>' : '') + '</div>' : '') +
       (famNombre ? `<p class="rel"><b>Familia:</b> ${esc(famNombre)}</p>` : '') +
       rows +

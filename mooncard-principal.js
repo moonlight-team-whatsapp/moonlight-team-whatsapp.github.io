@@ -3,7 +3,7 @@ import { sb } from './supabase-sesion.js';
 export const clave = n => String(n || '').trim().replace(/\s+/g, ' ').toLowerCase();
 export async function cargarPrincipales(){
   try {
-    const { data } = await sb.from('mooncards').select('id,personaje,personaje_key,autor,img_path').eq('principal', true).eq('aprobada', true);
+    const { data } = await sb.from('mooncards').select('id,personaje,personaje_key,titulo,img_path').eq('principal', true).eq('aprobada', true);
     const m = new Map();
     (data || []).forEach(r => m.set(r.personaje_key, { ...r, url: sb.storage.from('mooncards').getPublicUrl(r.img_path).data.publicUrl }));
     return m;

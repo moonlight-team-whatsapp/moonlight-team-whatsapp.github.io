@@ -504,7 +504,7 @@
   function hidePop(){ if (pop){ pop.remove(); pop = null; } }
   function showPop(anchor, p){
     hidePop(); pop = document.createElement('div'); pop.className = 'mc-pop';
-    pop.innerHTML = `<img src="${p.url}" alt="MoonCard de ${p.personaje.replace(/[<>"&]/g, '')}"><div class="mc-cap"><span>MoonCard de ${p.personaje.replace(/[<>"&]/g, '')}${p.autor ? ' · por ' + p.autor.replace(/[<>"&]/g, '') : ''}</span><a href="galeria.html">Galería →</a></div>`;
+    pop.innerHTML = `<img src="${p.url}" alt="MoonCard de ${p.personaje.replace(/[<>"&]/g, '')}"><div class="mc-cap"><span>${(p.titulo || 'MoonCard de ' + p.personaje).replace(/[<>"&]/g, '')}</span><a href="galeria.html">Galería →</a></div>`;
     document.body.appendChild(pop);
     const r = anchor.getBoundingClientRect(), w = Math.min(460, innerWidth - 20); pop.style.width = w + 'px';
     let top = r.bottom + 8; const h = pop.offsetHeight; if (top + h > innerHeight - 8) top = Math.max(8, r.top - h - 8);
