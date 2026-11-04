@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500;1,600&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Cinzel:wght@600&family=Playfair+Display:ital,wght@1,600&family=Dancing+Script:wght@700&family=Great+Vibes&family=Pinyon+Script&family=Italianno&family=Allura&family=Parisienne&family=Satisfy&family=Cinzel+Decorative:wght@700&family=Uncial+Antiqua&family=Almendra:ital,wght@1,400&family=Marcellus&family=Cormorant+Unicase:wght@600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="css/styles.css">
 <style>
   html, body{ height:100%; overflow:hidden; }
   .app{ position:relative; z-index:2; height:100dvh; max-width:1180px; margin:0 auto; padding:10px 14px; display:flex; flex-direction:column; gap:8px; }
@@ -771,7 +771,7 @@
   if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', function(){ limitSize(); redraw(); });
 })();
 </script>
-<script type="module">import { sb } from './supabase-sesion.js'; window.mcSb = sb;</script>
-<script src="temporadas.js" defer></script>
+<script type="module">import { sb } from './js/supabase-sesion.js'; window.mcSb = sb;</script>
+<script src="js/temporadas.js" defer></script>
 </body>
 </html>

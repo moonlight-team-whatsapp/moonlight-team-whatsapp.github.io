@@ -34,7 +34,7 @@
     if (forzado) off = false;
     boton(ids, off);
     if (off) return;
-    ids.forEach(function(id){ document.documentElement.classList.add(id); var s = document.createElement('script'); s.src = 'tema-' + id + '.js'; document.head.appendChild(s); });
+    ids.forEach(function(id){ document.documentElement.classList.add(id); var s = document.createElement('script'); s.src = 'js/temas/' + id + '.js'; document.head.appendChild(s); });
   }
   function boton(ids, off){
     function crear(){

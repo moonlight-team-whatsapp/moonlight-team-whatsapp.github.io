@@ -24,9 +24,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap"></noscript>
-<link rel="modulepreload" href="./supa-compat.js">
-<link rel="modulepreload" href="./supa-compat.js">
-<link rel="stylesheet" href="styles.css">
+<link rel="modulepreload" href="./js/supa-compat.js">
+<link rel="modulepreload" href="./js/supa-compat.js">
+<link rel="stylesheet" href="css/styles.css">
 <style>
   select{width:100%;font-family:'Crimson Pro',serif;font-size:1rem;padding:8px 10px;border:1px solid var(--border);border-radius:3px;background:rgba(255,255,255,0.04);color:var(--ink)}
   select option{background:#151b34}
@@ -243,18 +243,18 @@
 </dialog>
 
 <script type="module">
-  import { cargarPrincipales, clave, avatarCss } from './mooncard-principal.js';
-  import { initializeApp } from "./supa-compat.js";
+  import { cargarPrincipales, clave, avatarCss } from './js/mooncard-principal.js';
+  import { initializeApp } from "./js/supa-compat.js";
   import {
     getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, setDoc, getDoc, getDocs, writeBatch,
     onSnapshot, query, orderBy, serverTimestamp
-  } from "./supa-compat.js";
+  } from "./js/supa-compat.js";
 
 
   const app = initializeApp();
   const db = getFirestore(app);
   // El módulo de acceso admin se carga aparte para no retrasar la lista a los visitantes
-  const authP = import("./supa-compat.js").then(m => ({ m, auth: m.getAuth(app) }));
+  const authP = import("./js/supa-compat.js").then(m => ({ m, auth: m.getAuth(app) }));
 
   // ---------- Campo de estrellas ----------
   (function paintStars(){
@@ -1308,6 +1308,6 @@
   });
 </script>
 
-<script src="temporadas.js" defer></script>
+<script src="js/temporadas.js" defer></script>
 </body>
 </html>

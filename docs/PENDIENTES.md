@@ -1,5 +1,7 @@
 # Pendientes de la web (Moonlight Team)
 
+(El calendario de adviento está en marcha: tabla `adviento` creada, falta `adviento.html`.)
+
 ## MoonCard (en este orden)
 
 ## Hecho en MoonCard

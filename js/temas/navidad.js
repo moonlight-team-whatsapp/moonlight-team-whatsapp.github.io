@@ -45,7 +45,7 @@
   }
   function trineo(){
     if (rm || !document.body.classList.contains('page-index')) return;
-    var t = document.createElement('img'); t.src = 'trineo-vuelo.png'; t.alt = ''; t.className = 'trineo-vuelo'; t.setAttribute('aria-hidden', 'true'); document.body.appendChild(t);
+    var t = document.createElement('img'); t.src = 'img/trineo-vuelo.png'; t.alt = ''; t.className = 'trineo-vuelo'; t.setAttribute('aria-hidden', 'true'); document.body.appendChild(t);
   }
   function todo(){ guirnalda(); gorro(); trineo(); var tm; addEventListener('resize', function(){ clearTimeout(tm); tm = setTimeout(guirnalda, 200); }); }
   if (document.body) todo(); else document.addEventListener('DOMContentLoaded', todo);

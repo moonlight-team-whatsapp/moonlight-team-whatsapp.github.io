@@ -105,7 +105,7 @@
     width: 46px;
     height: 46px;
     border-radius: 50%;
-    background-image: url('luna.jpg');
+    background-image: url('../luna.jpg');
     background-size: 190%;
     background-position: 50% 42%;
     background-repeat: no-repeat;
@@ -902,7 +902,7 @@
   }
 
 /* ---------- Navidad (la activa navidad.js: del 1 de nov al 6 de ene) ---------- */
-html.navidad .moon::after{ content:''; position:absolute; inset:0; border-radius:50%; background:url('trineo.png') center/100% 100% no-repeat; opacity:.92; pointer-events:none; }
+html.navidad .moon::after{ content:''; position:absolute; inset:0; border-radius:50%; background:url('../img/trineo.png') center/100% 100% no-repeat; opacity:.92; pointer-events:none; }
 .nieve{ position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:1; }
 .nieve span{ position:absolute; top:-10px; border-radius:50%; background:#fff; box-shadow:0 0 6px rgba(255,255,255,.7); animation:nieveCae linear infinite, nieveMece ease-in-out infinite alternate; }
 @keyframes nieveCae{ to{ transform:translateY(108vh); } }

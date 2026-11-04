@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="css/styles.css">
 <style>
   /* ---- Reglas del team (botón de info + ventana) ---- */
   .rules-btn{ display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; margin-left:8px; padding:0; vertical-align:middle; border-radius:50%; border:1px solid var(--gold-dim); background:rgba(217,195,131,.08); color:var(--gold); cursor:pointer; transition:background .15s, border-color .15s, color .15s, box-shadow .15s; }
@@ -178,13 +178,13 @@
 })();
 </script>
 <script type="module">
-  import { initializeApp } from "./supa-compat.js";
+  import { initializeApp } from "./js/supa-compat.js";
   import {
     getFirestore, collection, doc, setDoc, onSnapshot
-  } from "./supa-compat.js";
+  } from "./js/supa-compat.js";
   import {
     getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
-  } from "./supa-compat.js";
+  } from "./js/supa-compat.js";
 
 
   const app = initializeApp();
@@ -490,6 +490,6 @@
   });
 </script>
 
-<script src="temporadas.js" defer></script>
+<script src="js/temporadas.js" defer></script>
 </body>
 </html>
