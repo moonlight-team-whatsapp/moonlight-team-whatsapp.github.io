@@ -189,6 +189,7 @@
 </script>
 <script type="module">
   import { initializeApp } from "./js/supa-compat.js";
+  import { sb as sbPend } from "./js/supabase-sesion.js";
   import {
     getFirestore, collection, doc, setDoc, onSnapshot
   } from "./js/supa-compat.js";
@@ -370,7 +371,7 @@
     'anonimos.html':   { t: 'Anónimos',         d: 'Envía un mensaje sin dar tu nombre',   s: 'team' },
     'registros.html':  { t: 'Registros',        d: 'Historial del team',                   s: 'team' },
     'adviento.html':   { t: 'Adviento',         d: 'Una puerta cada día hasta Navidad',    s: 'eventos' },
-    'votaciones.html': { t: 'Votaciones',       d: 'Vota con tu carnet, en secreto',       s: 'eventos' },
+    'votaciones.html': { t: 'Votaciones',       d: 'Vota con tu carnet; nadie ve tu voto',       s: 'eventos' },
     'amigo-invisible.html': { t: 'Amigo invisible', d: 'Regalos sorpresa entre miembros', s: 'eventos' },
     'carnets.html':    { t: 'Carnets',          d: 'Enlaces personales de cada miembro',   s: 'admin' },
     'contactos.html':  { t: 'Contactos',        d: 'Datos de contacto de los miembros',    s: 'admin' },
@@ -423,6 +424,22 @@
 
   let hasRevealed = false;
 
+  // ---------- Avisos de pendientes (puntito rojo con número en cada tarjeta) ----------
+  let PEND = {};
+  async function cargarPendientes(){
+    const p = {};
+    try { // Adviento: puertas ya abiertas con contenido que aún no has jugado/visto
+      const r = await sbPend.rpc('adviento_resumen'); const hechas = JSON.parse(localStorage.getItem('mc_adv') || '{}');
+      p['adviento.html'] = (r.data || []).filter(x => !(hechas[x.dia] && hechas[x.dia].h)).length;
+    } catch (e) {}
+    try { // Votaciones abiertas en las que aún no has votado (necesita carnet)
+      const t = localStorage.getItem('mc_carnet');
+      if (t){ const r = await sbPend.rpc('votaciones_pendientes', { p_token: t }); p['votaciones.html'] = r.data || 0; }
+    } catch (e) {}
+    PEND = p; renderNav();
+  }
+  cargarPendientes();
+
   function renderNav(){
     if (discoveredFiles === null){
       navGrid.innerHTML = '<p class="nav-empty-admin">Buscando páginas…</p>';
@@ -465,6 +482,7 @@
       a.href = p.filename;
       a.innerHTML = `<div class="nav-title">${escapeHtml(p.title)}</div><p class="nav-desc">${escapeHtml(PAGINAS[p.filename]?.d || p.filename)}</p>`;
       wrap.appendChild(a);
+      if (PEND[p.filename] > 0){ const bd = document.createElement('span'); bd.className = 'pend-badge'; bd.textContent = PEND[p.filename]; bd.title = PEND[p.filename] === 1 ? 'Tienes 1 cosa pendiente' : 'Tienes ' + PEND[p.filename] + ' cosas pendientes'; wrap.appendChild(bd); }
 
       if (isAdmin){
         const eyeBtn = document.createElement('button');

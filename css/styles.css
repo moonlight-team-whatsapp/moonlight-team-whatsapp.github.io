@@ -945,3 +945,8 @@ html.halloween .moon{ filter:sepia(.9) saturate(3.2) hue-rotate(-14deg) brightne
 .calabazas span:nth-child(2){ font-size:24px; align-self:flex-end; }
 @media (max-width:600px){ .tela svg{ width:80px; height:80px; } .tela .ara{ left:50px; top:58px; } .calabazas{ font-size:26px; } }
 @media (prefers-reduced-motion:reduce){ .tela .ara, .murci{ animation:none; } }
+
+/* Puntito rojo con número: algo pendiente en esa página */
+.pend-badge{ position:absolute; top:-8px; left:-8px; min-width:22px; height:22px; padding:0 6px; box-sizing:border-box; border-radius:999px; background:#e5484d; color:#fff; font:700 .78rem/22px 'Crimson Pro',serif; text-align:center; box-shadow:0 0 0 2px #0b1024, 0 0 12px rgba(229,72,77,.6); pointer-events:none; z-index:3; animation:pendpulse 2.4s ease-in-out infinite; }
+@keyframes pendpulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.12); } }
+@media (prefers-reduced-motion:reduce){ .pend-badge{ animation:none; } }
