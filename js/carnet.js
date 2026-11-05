@@ -23,3 +23,10 @@ export async function miMiembro(){
   return error || !data ? null : data;
 }
 export function olvidarCarnet(){ try { localStorage.removeItem(KEY); } catch (e) {} }
+
+// Perfil público del miembro identificado: su id y los nombres de sus personajes ocupados.
+export async function miPerfil(){
+  const id = await miMiembro(); if (!id) return null;
+  const { data } = await sb.from('ocupados').select('data').eq('data->>miembroId', id);
+  return { id, nombres: (data || []).map(r => r.data && r.data.nombre).filter(Boolean) };
+}

@@ -64,6 +64,11 @@
   .grupo-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
   .li-av{ flex:none; border-radius:50%; border:1.5px solid var(--gold); margin:0 10px 0 2px; cursor:pointer; box-shadow:0 0 10px rgba(217,195,131,.3); transition:transform .15s; }
   .li-av:hover{ transform:scale(1.12); }
+  li.mio{ background:linear-gradient(90deg, rgba(217,195,131,.14), transparent 70%) !important; box-shadow:inset 3px 0 0 var(--gold); }
+  li.mio .li-name::after, li.mio .li-nombre::after{ content:' · tú'; color:var(--gold); font-size:.8em; font-style:italic; }
+  .hola-yo{ margin:0 0 14px; padding:10px 14px; border:1px solid rgba(217,195,131,.45); border-radius:10px; background:rgba(217,195,131,.08); color:var(--ink); animation:holain .6s both; }
+  .hola-yo b{ color:var(--gold); } .hola-yo button{ background:none; border:none; color:var(--ink-soft); text-decoration:underline; cursor:pointer; font:inherit; padding:0 0 0 6px; }
+  @keyframes holain{ from{ opacity:0; transform:translateY(-6px); } to{ opacity:1; transform:none; } }
   li.has-card{ border-color:rgba(217,195,131,.55) !important; }
   .mc-pop{ position:fixed; z-index:60; border:1px solid var(--gold); border-radius:12px; overflow:hidden; background:#141b37; box-shadow:0 18px 50px rgba(0,0,0,.7); animation:mcin .2s both; }
   .mc-pop img{ display:block; width:100%; }
@@ -244,6 +249,7 @@
 
 <script type="module">
   import { cargarPrincipales, clave, avatarCss } from './js/mooncard-principal.js';
+  import { miPerfil, olvidarCarnet } from './js/carnet.js';
   import { initializeApp } from "./js/supa-compat.js";
   import {
     getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, setDoc, getDoc, getDocs, writeBatch,
@@ -500,6 +506,17 @@
 
   let PRIN = new Map(); const repaints = [];
   cargarPrincipales().then(m => { PRIN = m; repaints.forEach(f => f()); });
+  // Si el miembro entró con su carnet: marcamos sus personajes y sus peticiones
+  let YO = null;
+  const esMio = x => !!YO && (x.miembroId === YO.id || x.pedidoPorId === YO.id);
+  miPerfil().then(p => {
+    if (!p) return; YO = p;
+    const b = document.createElement('div'); b.className = 'hola-yo';
+    b.innerHTML = `🌙 Hola${p.nombres.length ? ', <b>' + escapeHtml(p.nombres.join(' y ')) + '</b>' : ''}. Te hemos marcado lo tuyo en las listas. <button type="button">No soy yo</button>`;
+    b.querySelector('button').onclick = () => { olvidarCarnet(); location.reload(); };
+    document.querySelector('.panel').before(b);
+    repaints.forEach(f => f()); paintBuscados();
+  }).catch(() => {});
   let pop = null;
   function hidePop(){ if (pop){ pop.remove(); pop = null; } }
   function showPop(anchor, p){
@@ -578,6 +595,7 @@
       filtered.forEach(item => {
         const li = document.createElement('li');
         li.dataset.id = item.id;
+        if (esMio(item)) li.classList.add('mio');
 
         if (collectionName === 'ocupados' && editingId === item.id){
           const form = document.createElement('div');
@@ -1067,6 +1085,7 @@
       const first = items[0];
       const li = document.createElement('li');
       li.dataset.id = first.id;
+      if (items.some(esMio)) li.classList.add('mio');
 
       if (items.length === 1){
         const r = first;
