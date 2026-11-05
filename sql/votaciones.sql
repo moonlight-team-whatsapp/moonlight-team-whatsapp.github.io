@@ -4,3 +4,4 @@
 --   votar(votacion, token, opciones) -> 'ok' | 'sin_carnet' | 'cerrada' | 'ya_votaste' | ...
 --   mi_voto(votacion, token), votacion_resultados(votacion) (solo totales, según la opción «resultados»),
 --   votacion_quienes(votacion) (solo admin: quién votó, nunca qué), votaciones_pendientes(token).
+-- imagen_path text (portada, ruta vot/…); cada opción puede llevar «img». Políticas de storage vot_subir / vot_actualizar (solo admin).
