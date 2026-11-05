@@ -156,6 +156,8 @@
   .toast.show{ transform:translate(-50%,0); opacity:1; }
   @media (max-width:520px){ .orbs{ gap:7px; } .orb{ padding:14px 4px 10px; } .orb .gem{ width:38px; height:38px; } }
   @media (prefers-reduced-motion:reduce){ *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }
+  .anon-garantia{ margin-top:12px; padding:10px 14px; border:1px solid rgba(125,255,176,.4); border-radius:10px; background:rgba(125,255,176,.07); color:var(--ink); font-size:.95rem; line-height:1.45; max-width:560px; }
+  .anon-garantia b{ color:#9dffc6; }
 </style>
 </head>
 <body>
@@ -173,6 +175,7 @@
     <div>
       <div class="title-wrap"><h1>Anónimos</h1></div>
       <p class="subtitle">Dile a un admin lo que quieras. Nadie sabrá quién eres.</p>
+      <div class="anon-garantia"><b>🔒 100% anónimo.</b> Aquí no se guarda quién eres: el mensaje no lleva tu nombre, tu carnet ni ningún dato que te identifique, y ni los admins pueden saber quién lo envió.</div>
     </div>
     <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
   </header>
