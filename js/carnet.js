@@ -18,6 +18,7 @@ export function tokenActual(){
 }
 export async function miMiembro(){
   const t = tokenActual(); if (!t) return null;
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
   const { data, error } = await sb.rpc('carnet_miembro', { token: t });
   return error || !data ? null : data;
 }

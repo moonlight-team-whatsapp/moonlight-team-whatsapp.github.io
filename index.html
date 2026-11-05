@@ -68,7 +68,7 @@
 <body class="page-index">
 <script>
 /* Carnet: si el enlace trae ?c=TOKEN, se guarda en este navegador y se quita de la barra de direcciones. */
-(function(){ try { var u = new URLSearchParams(location.search), c = u.get('c'); if (c){ localStorage.setItem('mc_carnet', c); u.delete('c'); var q = u.toString(); history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash); } } catch (e) {} })();
+(function(){ try { var u = new URLSearchParams(location.search), c = u.get('c'); if (c){ localStorage.setItem('mc_carnet', c); if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); u.delete('c'); var q = u.toString(); history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash); } } catch (e) {} })();
 </script>
 
 
