@@ -124,6 +124,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 (function(){ const l = $('starsLayer'), fr = document.createDocumentFragment(); for (let i = 0; i < 30; i++){ const s = document.createElement('span'); s.className = 'star'; const z = (Math.random()*1.6+.8).toFixed(2); s.style.cssText = `top:${Math.random()*100}%;left:${Math.random()*100}%;width:${z}px;height:${z}px`; s.style.setProperty('--dur', (Math.random()*3+2).toFixed(2)+'s'); s.style.setProperty('--delay', (Math.random()*5).toFixed(2)+'s'); s.style.setProperty('--o-min', '.2'); s.style.setProperty('--o-max', '.85'); fr.appendChild(s); } l.appendChild(fr); })();
 const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), 3800); };
+const porAlta = (a, b) => String((a.data || {}).createdAt || '').localeCompare(String((b.data || {}).createdAt || '')) || ((a.data || {}).orden || 0) - ((b.data || {}).orden || 0);
 const fmt = d => new Date(d).toLocaleString('es-ES', { timeZone: 'Europe/Madrid', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 const aLocal = d => { const x = new Date(new Date(d).getTime() - new Date(d).getTimezoneOffset() * 60000); return x.toISOString().slice(0, 16); };
 const MSG = { sin_carnet: 'Necesitas tu carnet para votar.', no_existe: 'Esa votación ya no existe.', no_empezada: 'Esta votación aún no ha empezado.', cerrada: 'Esta votación ya está cerrada.', opcion_invalida: 'Elige una opción válida.', demasiadas: 'Has elegido demasiadas opciones.', ya_votaste: 'Ya has votado y no se puede cambiar.' };
@@ -140,7 +141,7 @@ async function load(){
   }));
   if (isAdmin){
     const [m, o, c] = await Promise.all([sb.from('miembros').select('id,data'), sb.from('ocupados').select('id,data'), sb.from('carnets').select('miembro_id')]);
-    const per = {}; (o.data || []).forEach(x => { const d = x.data || {}; if (d.miembroId) (per[d.miembroId] = per[d.miembroId] || []).push(d.nombre); });
+    const per = {}; (o.data || []).slice().sort(porAlta).forEach(x => { const d = x.data || {}; if (d.miembroId) (per[d.miembroId] = per[d.miembroId] || []).push(d.nombre); });
     miembros = (m.data || []).filter(r => !(r.data && (r.data.baneado || r.data.activo === false)) && per[r.id]); nombres = {};
     miembros.forEach(r => nombres[r.id] = (per[r.id] || []).join(', ') || (r.data || {}).apodoInterno || r.id);
     carn = new Set((c.data || []).map(x => x.miembro_id));

@@ -28,5 +28,5 @@ export function olvidarCarnet(){ try { localStorage.removeItem(KEY); } catch (e)
 export async function miPerfil(){
   const id = await miMiembro(); if (!id) return null;
   const { data } = await sb.from('ocupados').select('data').eq('data->>miembroId', id);
-  return { id, nombres: (data || []).map(r => r.data && r.data.nombre).filter(Boolean) };
+  return { id, nombres: (data || []).slice().sort((a, b) => String((a.data || {}).createdAt || '').localeCompare(String((b.data || {}).createdAt || '')) || ((a.data || {}).orden || 0) - ((b.data || {}).orden || 0)).map(r => r.data && r.data.nombre).filter(Boolean) };
 }
