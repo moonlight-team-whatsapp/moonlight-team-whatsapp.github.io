@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Anónimos · Moonlight Team</title>
-<meta name="description" content="Envía un mensaje anónimo a los admins de Moonlight Team: Furina, Neuvillette o Kazuha. Nadie sabrá quién eres.">
+<meta name="description" content="Envía un mensaje anónimo a los admins de Moonlight Team: Furina, Neuvillette o Kazuha. Tu nombre no aparece en el mensaje.">
 <link rel="canonical" href="https://moonlight-team-whatsapp.github.io/anonimos.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Moonlight Team">
 <meta property="og:locale" content="es_ES">
 <meta property="og:title" content="Anónimos · Moonlight Team">
-<meta property="og:description" content="Envía un mensaje anónimo a los admins de Moonlight Team: Furina, Neuvillette o Kazuha. Nadie sabrá quién eres.">
+<meta property="og:description" content="Envía un mensaje anónimo a los admins de Moonlight Team: Furina, Neuvillette o Kazuha. Tu nombre no aparece en el mensaje.">
 <meta property="og:url" content="https://moonlight-team-whatsapp.github.io/anonimos.html">
 <meta property="og:image" content="https://moonlight-team-whatsapp.github.io/luna.jpg">
 <meta name="twitter:card" content="summary">
@@ -172,7 +172,8 @@
   <header class="top">
     <div>
       <div class="title-wrap"><h1>Anónimos</h1></div>
-      <p class="subtitle">Dile a un admin lo que quieras. Nadie sabrá quién eres.</p>
+      <p class="subtitle">Dile a un admin lo que quieras. Tu nombre no aparece en el mensaje.</p>
+      <p class="subtitle" style="font-size:.9rem;opacity:.85">Para poder frenar acosos o amenazas, el sistema guarda de forma privada quién lo envía (si entraste con tu carnet) y solo los admins de moderación pueden consultarlo, y únicamente si hay un problema.</p>
     </div>
     <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
   </header>
@@ -391,7 +392,8 @@
     $('compose').classList.add('sending');
     try {
       if (!sb) throw new Error('sin configurar');
-      const add = sb.from('anonimos').insert({ para, texto }).then(({ error }) => { if (error) throw error; });
+      let tk = null; try { tk = localStorage.getItem('mc_carnet'); } catch (e) {}
+      const add = sb.rpc('enviar_anonimo', { p_para: para, p_texto: texto, p_token: tk }).then(({ error }) => { if (error) throw error; });
       await Promise.all([add, flyAnimation()]);
       $('sentTo').innerHTML = `<span class="avs">${para.map(k => `<img src="${ADMINS[k].img}" alt="">`).join('')}</span>` + para.map(k => `<span class="tag" data-a="${k}">${ADMINS[k].nombre}</span>`).join('');
       $('done').classList.add('show');
