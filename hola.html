@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Hola · Moonlight Team</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="css/styles.css">
+<style>.h{ min-height:100dvh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; padding:20px; position:relative; z-index:2; }
+.h h1{ font-family:'Cormorant',serif; font-style:italic; font-size:clamp(2rem,9vw,3.4rem); color:var(--gold); margin:0; } .h p{ color:var(--ink-soft); margin:0; max-width:420px; }
+.h button{ padding:8px 16px; border-radius:999px; border:1px solid var(--border); background:none; color:var(--ink-soft); cursor:pointer; font:inherit; }</style>
+</head>
+<body>
+<div class="stars" aria-hidden="true"></div>
+<div class="h"><h1 id="t">…</h1><p id="s"></p><button id="o" type="button" hidden>Olvidar mi carnet en este navegador</button></div>
+<script type="module">
+import { sb } from './js/supabase-sesion.js';
+import { tokenActual, olvidarCarnet } from './js/carnet.js';
+const t = document.getElementById('t'), s = document.getElementById('s'), o = document.getElementById('o');
+const tok = tokenActual();
+if (!tok){ t.textContent = 'Hola, visitante'; s.textContent = 'No hay ningún carnet guardado en este navegador.'; }
+else {
+  const { data: m } = await sb.rpc('carnet_miembro', { token: tok });
+  if (!m){ t.textContent = 'Carnet no válido'; s.textContent = 'El enlace es incorrecto o fue regenerado. Pide uno nuevo a un admin.'; o.hidden = false; }
+  else {
+    const { data } = await sb.from('ocupados').select('data').eq('data->>miembroId', m);
+    const n = (data || []).map(r => r.data && r.data.nombre).filter(Boolean);
+    t.textContent = 'Hola, ' + (n.join(' y ') || 'miembro'); s.textContent = 'Tu carnet funciona. Esta página es solo una prueba: puedes navegar por la web y seguirás identificado.'; o.hidden = false;
+  }
+}
+o.onclick = () => { olvidarCarnet(); location.replace('hola.html'); };
+</script>
+</body>
+</html>
