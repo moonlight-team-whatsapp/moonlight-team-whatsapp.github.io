@@ -6,3 +6,8 @@
 --   votacion_quienes(votacion) (solo admin: quién votó, nunca qué), votaciones_pendientes(token).
 -- imagen_path text (portada, ruta vot/…); cada opción puede llevar «img». Políticas de storage vot_subir / vot_actualizar (solo admin).
 -- Migración «votaciones_tipos»: tipo (opciones|galeria|numerica), escala_min/escala_max; votar() valida valores numéricos; votacion_resultados() devuelve media en las numéricas.
+
+-- Migración «votaciones_concurso» (ya aplicada): tipo 'concurso' (cada miembro sube foto durante un plazo y luego se vota sin nombre, sin poder votar la propia).
+--   votaciones: envios_desde, envios_hasta (<= inicio), fotos_por_miembro (1-5). Tabla votacion_fotos(id, votacion_id, miembro_id, titulo, img_path 'con/…', creado), lectura/borrado solo admin.
+--   concurso_enviar(votacion, token, path, titulo), concurso_quitar(votacion, token, foto), concurso_fotos(votacion, token) (en recogida solo las propias; luego todas con «mia»),
+--   concurso_admin(votacion) (solo admin: con autor). votar() excluye la foto propia. Storage: política con_subir para la ruta con/…

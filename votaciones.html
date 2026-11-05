@@ -90,7 +90,9 @@
   .hb i{ width:100%; background:rgba(217,195,131,.35); border-radius:4px 4px 0 0; min-height:2px; display:block; } .hb.tuya i{ background:var(--gold); } .hb b{ font-weight:400; }
   dialog.zoom{ border:none; background:transparent; padding:0; max-width:92vw; max-height:92dvh; color:var(--ink); text-align:center; }
   dialog.zoom::backdrop{ background:rgba(4,6,18,.88); } dialog.zoom img{ max-width:92vw; max-height:80dvh; border-radius:10px; } dialog.zoom p{ margin:8px 0 0; }
-  .seg{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .seg{ display:grid; grid-template-columns:repeat(auto-fit,minmax(125px,1fr)); gap:6px; }
+  .tf{ flex:1; min-width:140px; padding:8px 10px; font-family:inherit; font-size:1rem; color:var(--ink); background:#141b37; border:1px solid var(--border); border-radius:8px; }
+  .gi .odel{ width:26px; height:26px; }
   .seg button{ padding:9px 6px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.04); color:var(--ink-soft); font-family:inherit; font-size:.92rem; cursor:pointer; line-height:1.2; }
   .seg button.on{ border-color:var(--gold); color:var(--gold); background:rgba(217,195,131,.12); }
   .nota{ font-size:.84rem; color:var(--ink-soft); margin:4px 0; }
@@ -144,8 +146,8 @@ const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('s
 const porAlta = (a, b) => String((a.data || {}).createdAt || '').localeCompare(String((b.data || {}).createdAt || '')) || ((a.data || {}).orden || 0) - ((b.data || {}).orden || 0);
 const fmt = d => new Date(d).toLocaleString('es-ES', { timeZone: 'Europe/Madrid', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 const aLocal = d => { const x = new Date(new Date(d).getTime() - new Date(d).getTimezoneOffset() * 60000); return x.toISOString().slice(0, 16); };
-const MSG = { sin_carnet: 'Necesitas tu carnet para votar.', no_existe: 'Esa votación ya no existe.', no_empezada: 'Esta votación aún no ha empezado.', cerrada: 'Esta votación ya está cerrada.', opcion_invalida: 'Elige una opción válida.', demasiadas: 'Has elegido demasiadas opciones.', ya_votaste: 'Ya has votado y no se puede cambiar.' };
-let isAdmin = false, yo = null, V = [], mi = {}, res = {}, nombres = {}, miembros = [], carn = new Set(), quien = {}, abierta = {}, sel = {};
+const MSG = { limite: 'Ya has subido el máximo de fotos.', fuera_de_plazo: 'El plazo de envío ya terminó.', sin_carnet: 'Necesitas tu carnet para votar.', no_existe: 'Esa votación ya no existe.', no_empezada: 'Esta votación aún no ha empezado.', cerrada: 'Esta votación ya está cerrada.', opcion_invalida: 'Elige una opción válida.', demasiadas: 'Has elegido demasiadas opciones.', ya_votaste: 'Ya has votado y no se puede cambiar.' };
+let isAdmin = false, yo = null, V = [], mi = {}, res = {}, nombres = {}, miembros = [], carn = new Set(), quien = {}, abierta = {}, sel = {}, fotos = {}, fotosAdm = {};
 
 async function load(){
   yo = await miMiembro();
@@ -155,6 +157,7 @@ async function load(){
   await Promise.all(V.map(async v => {
     if (yo){ const r = await sb.rpc('mi_voto', { p_votacion: v.id, p_token: tk }); mi[v.id] = r.data || null; }
     const r2 = await sb.rpc('votacion_resultados', { p_votacion: v.id }); res[v.id] = r2.data || null;
+    if (v.tipo === 'concurso'){ const f = await sb.rpc('concurso_fotos', { p_votacion: v.id, p_token: tk }); fotos[v.id] = f.data || []; if (isAdmin){ const a = await sb.rpc('concurso_admin', { p_votacion: v.id }); fotosAdm[v.id] = a.data || []; } }
   }));
   if (isAdmin){
     const [m, o, c] = await Promise.all([sb.from('miembros').select('id,data'), sb.from('ocupados').select('id,data'), sb.from('carnets').select('miembro_id')]);
@@ -165,12 +168,22 @@ async function load(){
   }
   paint();
 }
-const estado = v => { const n = Date.now(); return n < new Date(v.inicio) ? 'pronto' : n > new Date(v.fin) ? 'cerrada' : 'abierta'; };
-const nom = (v, id) => v.tipo === 'numerica' ? id : id === 'blanco' ? 'En blanco' : ((v.opciones.find(o => o.id === id) || {}).texto || id);
+const estado = v => { const n = Date.now();
+  if (v.tipo === 'concurso'){ if (n < new Date(v.envios_desde)) return 'pronto'; if (n <= new Date(v.envios_hasta)) return 'recogida'; if (n < new Date(v.inicio)) return 'espera'; }
+  return n < new Date(v.inicio) ? 'pronto' : n > new Date(v.fin) ? 'cerrada' : 'abierta'; };
+const opsDe = v => v.tipo === 'concurso' ? (fotos[v.id] || []).map(f => ({ id: f.id, texto: f.titulo || '', img: f.img, mia: f.mia })) : v.opciones;
+const nom = (v, id) => v.tipo === 'numerica' ? id : id === 'blanco' ? 'En blanco' : ((opsDe(v).find(o => o.id === id) || {}).texto || (v.tipo === 'concurso' ? 'una foto' : id));
 const BOTON = (propio, editando) => `<div class="fila"><button class="gbtn" data-votar="1" type="button">${propio ? 'Guardar cambio' : 'Votar'}</button>${editando ? '<button class="gbtn suave" data-cancel="1" type="button">Cancelar</button>' : ''}</div>`;
 const nVotan = n => `<p class="vm">${n} ${n === 1 ? 'persona ha votado' : 'personas han votado'}.</p>`;
+function formEnvio(v){
+  const mias = (fotos[v.id] || []).filter(f => f.mia), N = v.fotos_por_miembro;
+  const cab = `<p class="vm">Puedes subir hasta ${N} ${N === 1 ? 'foto' : 'fotos'} hasta el ${esc(fmt(v.envios_hasta))}. Se mostrarán sin tu nombre cuando empiece la votación (${esc(fmt(v.inicio))}) y no podrás votar la tuya.</p>`;
+  if (!yo) return cab + '<p class="pend">Abre tu enlace personal (carnet) para poder subir tu foto.</p>';
+  const grid = mias.length ? `<div class="gal">${mias.map(f => `<figure class="gi"><img src="${esc(imgUrl(f.img))}" alt="" data-zoom="${esc(f.id)}"><figcaption><span>${esc(f.titulo || 'Tu foto')}</span><button type="button" class="odel" data-quitar="${f.id}" title="Quitar mi foto">×</button></figcaption></figure>`).join('')}</div>` : '';
+  return cab + grid + (mias.length < N ? '<div class="fila"><input class="tf" type="text" maxlength="80" placeholder="Título (opcional)"><button class="gbtn" data-subir="1" type="button">📷 Subir mi foto</button></div>' : '<p class="pend">✅ Ya has enviado tus fotos. Puedes quitarlas con la × hasta que termine el plazo.</p>');
+}
 function formVoto(v, ops, s, propio, editando){
-  if (v.tipo === 'galeria') return `<div class="gal">${ops.map(o => `<figure class="gi ${s.includes(o.id) ? 'sel' : ''}">${o.img ? `<img src="${esc(imgUrl(o.img))}" alt="${esc(o.texto)}" data-zoom="${esc(o.id)}">` : ''}<figcaption><span>${esc(o.texto)}</span><button type="button" class="like" data-op="${esc(o.id)}" aria-label="Me gusta" aria-pressed="${s.includes(o.id)}">${s.includes(o.id) ? '♥' : '♡'}</button></figcaption></figure>`).join('')}</div><p class="vm">${v.multiple ? `Toca el corazón de las que te gusten (hasta ${v.max_opciones}).` : 'Toca el corazón de la que más te guste.'}</p>` + BOTON(propio, editando);
+  if (v.tipo === 'galeria' || v.tipo === 'concurso') return `<div class="gal">${ops.map(o => `<figure class="gi ${s.includes(o.id) ? 'sel' : ''}">${o.img ? `<img src="${esc(imgUrl(o.img))}" alt="${esc(o.texto)}" data-zoom="${esc(o.id)}">` : ''}<figcaption><span>${esc(o.mia ? 'Tu foto' : o.texto)}</span>${o.mia ? '' : `<button type="button" class="like" data-op="${esc(o.id)}" aria-label="Me gusta" aria-pressed="${s.includes(o.id)}">${s.includes(o.id) ? '♥' : '♡'}</button>`}</figcaption></figure>`).join('')}</div>${v.tipo === 'concurso' && !ops.length ? '<p class="pend">Nadie ha enviado fotos.</p>' : ''}<p class="vm">${v.multiple ? `Toca el corazón de las que te gusten (hasta ${v.max_opciones}).` : 'Toca el corazón de la que más te guste.'}</p>` + BOTON(propio, editando);
   if (v.tipo === 'numerica'){ const a = [], cur = s[0]; for (let n = v.escala_min; n <= v.escala_max; n++) a.push(n);
     return `<div class="nums">${a.map(n => `<button type="button" class="num ${String(n) === cur ? 'sel' : ''}" data-num="${n}">${n}</button>`).join('')}</div><p class="vm">Elige un valor del ${v.escala_min} al ${v.escala_max}.</p>` + BOTON(propio, editando); }
   return `<div class="ops">${ops.map(o => `<button type="button" class="op ${s.includes(o.id) ? 'sel' : ''}" data-op="${esc(o.id)}">${o.img ? `<img class="th" src="${esc(imgUrl(o.img))}" alt="">` : ''}${esc(o.texto)}</button>`).join('')}</div>` + BOTON(propio, editando);
@@ -179,18 +192,20 @@ function resultadosHtml(v, R, ops, propio){
   const tot = Math.max(1, R.votantes), C = R.conteos || {};
   if (v.tipo === 'numerica'){ const vals = []; for (let n = v.escala_min; n <= v.escala_max; n++) vals.push(n); const mx = Math.max(1, ...vals.map(n => C[n] || 0));
     return `<p class="media">${R.votantes ? R.media : '–'}<small> de media</small></p><div class="histo">${vals.map(n => `<div class="hb ${propio && propio[0] === String(n) ? 'tuya' : ''}"><i style="height:${Math.round((C[n] || 0) * 100 / mx)}%"></i><b>${C[n] || 0}</b><span>${n}</span></div>`).join('')}</div>` + nVotan(R.votantes); }
-  if (v.tipo === 'galeria'){ const L = ops.slice().sort((a, b) => (C[b.id] || 0) - (C[a.id] || 0));
-    return `<div class="gal">${L.map(o => `<figure class="gi ${propio && propio.includes(o.id) ? 'sel' : ''}">${o.img ? `<img src="${esc(imgUrl(o.img))}" alt="${esc(o.texto)}" data-zoom="${esc(o.id)}">` : ''}<figcaption><span>${esc(o.texto)}</span><b class="cnt">♥ ${C[o.id] || 0}</b></figcaption></figure>`).join('')}</div>` + nVotan(R.votantes); }
+  if (v.tipo === 'galeria' || v.tipo === 'concurso'){ const L = ops.slice().sort((a, b) => (C[b.id] || 0) - (C[a.id] || 0));
+    return `<div class="gal">${L.map(o => `<figure class="gi ${propio && propio.includes(o.id) ? 'sel' : ''}">${o.img ? `<img src="${esc(imgUrl(o.img))}" alt="${esc(o.texto)}" data-zoom="${esc(o.id)}">` : ''}<figcaption><span>${esc(o.mia ? 'Tu foto' : o.texto)}</span><b class="cnt">♥ ${C[o.id] || 0}</b></figcaption></figure>`).join('')}</div>` + nVotan(R.votantes); }
   return `<div class="ops">${ops.map(o => { const n = C[o.id] || 0; return `<div class="barra ${propio && propio.includes(o.id) ? 'tuya' : ''}"><i style="width:${Math.round(n * 100 / tot)}%"></i><span>${esc(o.texto)}</span><span>${n}</span></div>`; }).join('')}</div>` + nVotan(R.votantes);
 }
 function paint(){
   $('adminBar').hidden = !isAdmin;
-  const orden = { abierta: 0, pronto: 1, cerrada: 2 };
+  const orden = { recogida: 0, abierta: 0, espera: 1, pronto: 1, cerrada: 2 };
   const L = V.slice().sort((a, b) => orden[estado(a)] - orden[estado(b)] || new Date(b.fin) - new Date(a.fin));
-  $('vl').innerHTML = L.map(v => { const e = estado(v), R = res[v.id], propio = mi[v.id], ops = v.opciones.concat(v.en_blanco ? [{ id: 'blanco', texto: 'En blanco' }] : []);
+  $('vl').innerHTML = L.map(v => { const e = estado(v), R = res[v.id], propio = mi[v.id], ops = opsDe(v).concat(v.en_blanco ? [{ id: 'blanco', texto: 'En blanco' }] : []);
     const s = sel[v.id] || (propio ? propio.slice() : []), editando = abierta[v.id] === 'edit';
     let cuerpo = '';
-    if (e === 'abierta'){
+    if (e === 'recogida') cuerpo = formEnvio(v);
+    else if (e === 'espera') cuerpo = `<p class="pend">El envío de fotos ya terminó (${(fotos[v.id] || []).length ? 'tu foto ya está dentro' : 'no enviaste foto'}). La votación empieza el ${esc(fmt(v.inicio))}.</p>`;
+    else if (e === 'abierta'){
       if (!yo) cuerpo = '<p class="pend">Abre tu enlace personal (carnet) para poder votar.</p>';
       else if (propio && !editando) cuerpo = `<p class="pend">✅ Has votado: <b>${esc(propio.map(x => nom(v, x)).join(', '))}</b>.${v.permitir_cambio ? '' : ' No se puede cambiar.'}</p>` + (v.permitir_cambio ? '<div class="fila"><button class="gbtn suave" data-ed="1" type="button">Cambiar mi voto</button></div>' : '');
       else cuerpo = formVoto(v, ops, s, propio, editando);
@@ -202,12 +217,21 @@ function paint(){
     let adm = '';
     if (isAdmin){ const q = quien[v.id]; adm = `<div class="fila"><button class="gbtn suave" data-quien="1" type="button">Quién ha votado</button><button class="gbtn suave" data-edit="1" type="button">Editar</button>${e === 'abierta' ? '<button class="gbtn suave" data-cerrar="1" type="button">Cerrar ya</button>' : ''}<button class="gbtn suave" data-borrar="1" type="button">Borrar</button></div>`
       + (q ? `<p class="vm">${q.filter(x => x.v).length} de ${q.length} han votado (solo se ve quién, nunca qué).</p><div class="quien">${q.map(x => `<span class="${x.v ? 'si' : ''}">${x.v ? '✓' : '·'} ${esc(x.n)}${x.c ? '' : ' (sin carnet)'}</span>`).join('')}</div>` : ''); }
-    const extra = [v.tipo === 'numerica' ? `nota del ${v.escala_min} al ${v.escala_max}` : v.multiple ? `elige hasta ${v.max_opciones}` : v.tipo === 'galeria' ? 'un corazón' : 'una opción', v.permitir_cambio ? 'se puede cambiar' : 'no se puede cambiar'].join(' · ');
-    return `<section class="vc" data-id="${v.id}">${v.imagen_path ? `<img class="portada-v" src="${esc(imgUrl(v.imagen_path))}" alt="">` : ''}<h2>${esc(v.titulo)} <span class="chip ${e === 'abierta' ? 'on' : e === 'pronto' ? 'pr' : ''}">${e === 'abierta' ? 'Abierta' : e === 'pronto' ? 'Próximamente' : 'Cerrada'}</span></h2>${v.descripcion ? `<p class="vd">${esc(v.descripcion)}</p>` : ''}<p class="vm">${esc(fmt(v.inicio))} → ${esc(fmt(v.fin))} · ${esc(extra)}</p>${cuerpo}${r}${adm}</section>`; }).join('') || '<p class="pend">No hay votaciones por ahora.</p>';
+    if (isAdmin && v.tipo === 'concurso' && fotosAdm[v.id]){ const fa = fotosAdm[v.id]; adm += `<p class="vm">Fotos recibidas: ${fa.length} (solo los admins ven quién envió cada una).</p>` + (fa.length ? `<div class="gal">${fa.map(f => `<figure class="gi"><img src="${esc(imgUrl(f.img))}" alt="" data-zimg="${esc(f.img)}"><figcaption><span>${esc(nombres[f.miembro] || f.miembro)}${f.titulo ? ' · ' + esc(f.titulo) : ''}</span><button class="odel" type="button" data-fdel="${f.id}" title="Borrar foto">×</button></figcaption></figure>`).join('')}</div>` : ''); }
+    const extra = [v.tipo === 'numerica' ? `nota del ${v.escala_min} al ${v.escala_max}` : v.multiple ? `elige hasta ${v.max_opciones}` : (v.tipo === 'galeria' || v.tipo === 'concurso') ? 'un corazón' : 'una opción', v.permitir_cambio ? 'se puede cambiar' : 'no se puede cambiar'].join(' · ');
+    return `<section class="vc" data-id="${v.id}">${v.imagen_path ? `<img class="portada-v" src="${esc(imgUrl(v.imagen_path))}" alt="">` : ''}<h2>${esc(v.titulo)} <span class="chip ${e === 'abierta' || e === 'recogida' ? 'on' : e === 'pronto' || e === 'espera' ? 'pr' : ''}">${{ abierta: 'Abierta', recogida: 'Envío de fotos', espera: 'Votación pronto', pronto: 'Próximamente', cerrada: 'Cerrada' }[e]}</span></h2>${v.descripcion ? `<p class="vd">${esc(v.descripcion)}</p>` : ''}<p class="vm">${v.tipo === 'concurso' ? `Fotos: ${esc(fmt(v.envios_desde))} → ${esc(fmt(v.envios_hasta))} · Votación: ` : ''}${esc(fmt(v.inicio))} → ${esc(fmt(v.fin))} · ${esc(extra)}</p>${cuerpo}${r}${adm}</section>`; }).join('') || '<p class="pend">No hay votaciones por ahora.</p>';
 }
 $('vl').addEventListener('click', async e => {
   const sec = e.target.closest('.vc'); if (!sec) return; const id = sec.dataset.id, v = V.find(x => x.id === id);
-  const z = e.target.closest('[data-zoom]'); if (z){ const o = v.opciones.find(x => x.id === z.dataset.zoom); if (o && o.img){ $('zoomImg').src = imgUrl(o.img); $('zoomCap').textContent = o.texto || ''; $('zoomDlg').showModal(); } return; }
+  const zi = e.target.closest('[data-zimg]'); if (zi){ $('zoomImg').src = imgUrl(zi.dataset.zimg); $('zoomCap').textContent = ''; $('zoomDlg').showModal(); return; }
+  const fd = e.target.closest('[data-fdel]'); if (fd){ if (!confirm('¿Borrar esta foto del concurso?')) return; const r = await sb.from('votacion_fotos').delete().eq('id', fd.dataset.fdel); if (r.error) return toast('No se pudo borrar.'); load(); return; }
+  const qt = e.target.closest('[data-quitar]'); if (qt){ const r = await sb.rpc('concurso_quitar', { p_votacion: id, p_token: tokenActual(), p_foto: qt.dataset.quitar }); if (r.data !== 'ok') return toast(MSG[r.data] || 'No se pudo quitar.'); toast('Foto quitada.'); load(); return; }
+  if (e.target.closest('[data-subir]')){ const t = (sec.querySelector('.tf') || {}).value || '';
+    elegirImagen(async f => { try { toast('Subiendo…'); const p = `con/${id}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}.jpg`;
+      const up = await sb.storage.from('mooncards').upload(p, await reducir(f, 1400), { contentType: 'image/jpeg' }); if (up.error) throw up.error;
+      const r = await sb.rpc('concurso_enviar', { p_votacion: id, p_token: tokenActual(), p_path: p, p_titulo: t }); if (r.data !== 'ok') return toast(MSG[r.data] || 'No se pudo enviar la foto.');
+      toast('¡Foto enviada!'); load(); } catch (err) { toast('No se pudo subir la foto.'); } }); return; }
+  const z = e.target.closest('[data-zoom]'); if (z){ const o = opsDe(v).find(x => x.id === z.dataset.zoom); if (o && o.img){ $('zoomImg').src = imgUrl(o.img); $('zoomCap').textContent = o.texto || ''; $('zoomDlg').showModal(); } return; }
   const nu = e.target.closest('[data-num]'); if (nu){ sel[id] = [nu.dataset.num]; paint(); return; }
   const op = e.target.closest('[data-op]');
   if (op){ const o = op.dataset.op; let s = (sel[id] || (mi[id] ? mi[id].slice() : [])).slice();
@@ -231,13 +255,14 @@ function reducir(file, max){ return new Promise((ok, ko) => { const im = new Ima
 async function subir(blob){ const p = `vot/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}.jpg`; const r = await sb.storage.from('mooncards').upload(p, blob, { contentType: 'image/jpeg' }); if (r.error) throw r.error; return p; }
 function elegirImagen(cb){ const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/png,image/jpeg,image/webp'; i.onchange = () => { const f = i.files[0]; if (f) cb(f); }; i.click(); }
 function editar(v){
-  const n = !v; v = v || { titulo: '', descripcion: '', opciones: [{ id: 'o1', texto: '' }, { id: 'o2', texto: '' }], inicio: new Date().toISOString(), fin: new Date(Date.now() + 7 * 864e5).toISOString(), multiple: false, max_opciones: 2, permitir_cambio: true, resultados: 'final', en_blanco: false, imagen_path: null, tipo: 'opciones', escala_min: 1, escala_max: 10 };
+  const n = !v; v = v || { titulo: '', descripcion: '', opciones: [{ id: 'o1', texto: '' }, { id: 'o2', texto: '' }], inicio: new Date().toISOString(), fin: new Date(Date.now() + 7 * 864e5).toISOString(), multiple: false, max_opciones: 2, permitir_cambio: true, resultados: 'final', en_blanco: false, imagen_path: null, tipo: 'opciones', escala_min: 1, escala_max: 10, envios_desde: null, envios_hasta: null, fotos_por_miembro: 1 };
+  const ahora = Date.now(), dd = k => new Date(ahora + k * 864e5).toISOString();
   const E = { tipo: v.tipo || 'opciones', portada: v.imagen_path, portadaFile: null, ops: v.opciones.map(o => ({ id: o.id, texto: o.texto, img: o.img || null, file: null })), res: v.resultados };
   const sw = (id, t, d, on) => `<label class="sw"><span><b>${t}</b><small>${d}</small></span><input id="${id}" type="checkbox" ${on ? 'checked' : ''}><i></i></label>`;
   $('eB').innerHTML = `<div class="ed-h"><h3>${n ? 'Nueva votación' : 'Editar votación'}</h3><button class="ed-x" id="fK" type="button" aria-label="Cerrar">×</button></div>
   <div class="ed-body">
     <div class="sec">Tipo de votación</div>
-    <div class="seg" id="fTipo">${[['opciones', '🗳️ Opciones'], ['galeria', '🖼️ Galería de fotos'], ['numerica', '🔢 Numérica']].map(([k, t]) => `<button type="button" data-t="${k}" class="${E.tipo === k ? 'on' : ''}" ${n ? '' : 'disabled'}>${t}</button>`).join('')}</div>
+    <div class="seg" id="fTipo">${[['opciones', '🗳️ Opciones'], ['galeria', '🖼️ Galería de fotos'], ['numerica', '🔢 Numérica'], ['concurso', '📸 Concurso de fotos']].map(([k, t]) => `<button type="button" data-t="${k}" class="${E.tipo === k ? 'on' : ''}" ${n ? '' : 'disabled'}>${t}</button>`).join('')}</div>
     <p class="nota" id="fTipoN"></p>
     <div class="sec">Qué se vota</div>
     <label class="cp"><span>Título</span><input id="fT" type="text" maxlength="120" value="${esc(v.titulo)}" placeholder="Ej. ¿Qué evento hacemos en diciembre?"></label>
@@ -245,9 +270,13 @@ function editar(v){
     <div class="cp"><span>Imagen de portada <small>(opcional)</small></span><div class="portada" id="fP"></div></div>
     <div id="fOpsSec"><div class="sec" id="fOpsH">Opciones</div>
     <div id="fOps"></div>
-    ${n ? '<button class="gbtn suave" id="fAdd" type="button">+ Añadir opción</button>' : '<p class="nota">Puedes cambiar el texto y la imagen, pero no añadir ni quitar opciones (ya puede haber votos).</p>'}</div>
+    ${n ? '<button class="gbtn suave" id="fAdd" type="button">+ Añadir opción</button> <button class="gbtn suave" id="fMany" type="button" hidden>🖼️ Subir varias fotos a la vez</button><input id="fManyI" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden>' : '<p class="nota">Puedes cambiar el texto y la imagen, pero no añadir ni quitar opciones (ya puede haber votos).</p>'}</div>
     <div id="fNumSec" hidden><div class="sec">Escala</div><div class="g2"><label class="cp"><span>Valor mínimo</span><input id="fMin" type="number" min="0" max="99" value="${v.escala_min}"></label><label class="cp"><span>Valor máximo</span><input id="fMax" type="number" min="1" max="100" value="${v.escala_max}"></label></div><p class="nota">Cada persona elige un valor entre el mínimo y el máximo (por ejemplo del 1 al 10). Se muestra la media y cuántos votos tuvo cada valor.</p></div>
-    <div class="sec">Cuándo</div>
+    <div id="fEnvSec" hidden><div class="sec">Envío de fotos</div>
+      <div class="g2"><label class="cp"><span>Se pueden enviar desde</span><input id="fEd" type="datetime-local" value="${aLocal(v.envios_desde || dd(0))}"></label><label class="cp"><span>Hasta</span><input id="fEh" type="datetime-local" value="${aLocal(v.envios_hasta || dd(3))}"></label></div>
+      <label class="cp"><span>Fotos por persona (1 a 5)</span><input id="fNf" type="number" min="1" max="5" value="${v.fotos_por_miembro || 1}"></label>
+      <p class="nota">Primero se recogen las fotos de los miembros (con carnet). Cuando empieza la votación se muestran todas, sin nombre, y cada persona puede votar cualquiera menos la suya.</p></div>
+    <div class="sec" id="fCuando">Cuándo</div>
     <div class="g2"><label class="cp"><span>Empieza</span><input id="fI" type="datetime-local" value="${aLocal(v.inicio)}"></label><label class="cp"><span>Termina</span><input id="fF" type="datetime-local" value="${aLocal(v.fin)}"></label></div>
     <div class="sec">Reglas</div>
     <div id="fMulti">${sw('fM', 'Voto múltiple', 'Se pueden elegir varias opciones', v.multiple)}
@@ -267,11 +296,17 @@ function editar(v){
   $('fOps').addEventListener('click', e => { const r = e.target.closest('.orow'); if (!r) return; const i = +r.dataset.i;
     if (e.target.closest('.odel')){ E.ops.splice(i, 1); pintaO(); }
     else if (e.target.closest('.oimg')) elegirImagen(f => { E.ops[i].file = f; pintaO(); }); });
+  if (n){ $('fMany').onclick = () => $('fManyI').click();
+    $('fManyI').onchange = () => { const fs = [...$('fManyI').files]; $('fManyI').value = ''; if (!fs.length) return;
+      E.ops = E.ops.filter(o => o.texto.trim() || o.img || o.file); const sitio = 40 - E.ops.length; if (fs.length > sitio) toast(`Máximo 40 fotos: se añaden ${sitio}.`);
+      fs.slice(0, sitio).forEach(f => { let t = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim(); if (/^(img|dsc|image|photo|foto|screenshot|captura|whatsapp)?[\s\d.()]*$/i.test(t) || /^[\d\s]+$/.test(t)) t = ''; E.ops.push({ id: 'o' + (E.ops.length + 1), texto: t ? t[0].toUpperCase() + t.slice(1) : '', img: null, file: f }); });
+      pintaO(); }; }
   if (n) $('fAdd').onclick = () => { if (E.ops.length >= (E.tipo === 'galeria' ? 40 : 20)) return toast('Máximo alcanzado.'); E.ops.push({ id: 'o' + (E.ops.length + 1), texto: '', img: null, file: null }); pintaO(); $('fOps').lastChild.querySelector('input').focus(); };
   const aplicaTipo = () => { const t = E.tipo; $('fTipo').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
-    $('fOpsSec').hidden = t === 'numerica'; $('fNumSec').hidden = t !== 'numerica'; $('fMulti').hidden = t === 'numerica'; $('fBlancoW').hidden = t !== 'opciones';
+    $('fOpsSec').hidden = t === 'numerica' || t === 'concurso'; $('fNumSec').hidden = t !== 'numerica'; $('fMulti').hidden = t === 'numerica'; $('fEnvSec').hidden = t !== 'concurso'; $('fCuando').textContent = t === 'concurso' ? 'Votación' : 'Cuándo'; if ($('fMany')) $('fMany').hidden = t !== 'galeria';
+    if (n && t === 'concurso' && !E.fechas){ E.fechas = true; const loc = k => aLocal(dd(k)); $('fEd').value = loc(0); $('fEh').value = loc(3); $('fI').value = loc(3); $('fF').value = loc(7); } $('fBlancoW').hidden = t !== 'opciones';
     $('fOpsH').textContent = t === 'galeria' ? 'Fotos' : 'Opciones'; $('fOps').querySelectorAll('input[type=text]').forEach((x, i) => x.placeholder = t === 'galeria' ? `Título de la foto ${i + 1} (opcional)` : `Opción ${i + 1}`);
-    $('fTipoN').textContent = { opciones: 'Texto con opciones; cada persona elige una (o varias).', galeria: 'Cada foto lleva un corazón: la gente da «me gusta» a las que prefiera. Sube una foto en cada fila.', numerica: 'La gente pone un valor numérico, por ejemplo una nota del 1 al 10. Usa la imagen de portada para mostrar lo que se puntúa.' }[t] + (n ? '' : ' (El tipo no se puede cambiar al editar.)'); };
+    $('fTipoN').textContent = { opciones: 'Texto con opciones; cada persona elige una (o varias).', galeria: 'Cada foto lleva un corazón: la gente da «me gusta» a las que prefiera. Sube una foto en cada fila.', concurso: 'Cada miembro sube su foto durante un plazo; después se abre la votación con todas las fotos (sin nombre) y no se puede votar la propia.', numerica: 'La gente pone un valor numérico, por ejemplo una nota del 1 al 10. Usa la imagen de portada para mostrar lo que se puntúa.' }[t] + (n ? '' : ' (El tipo no se puede cambiar al editar.)'); };
   $('fTipo').onclick = e => { const b = e.target.closest('[data-t]'); if (!b || !n || b.disabled) return; E.tipo = b.dataset.t; aplicaTipo(); };
   aplicaTipo();
   $('fM').onchange = () => { $('fXw').hidden = !$('fM').checked; };
@@ -281,6 +316,8 @@ function editar(v){
     const f = { titulo: $('fT').value.trim(), descripcion: $('fD').value.trim() || null, inicio: new Date($('fI').value).toISOString(), fin: new Date($('fF').value).toISOString(), multiple: $('fM').checked, max_opciones: $('fM').checked ? Math.max(1, +$('fX').value || 1) : 1, permitir_cambio: $('fC').checked, en_blanco: $('fB').checked, resultados: E.res, tipo: E.tipo };
     if (!f.titulo) return toast('Pon un título.'); if (!(new Date(f.fin) > new Date(f.inicio))) return toast('El final debe ser posterior al inicio.');
     if (E.tipo === 'numerica'){ f.escala_min = Math.max(0, parseInt($('fMin').value, 10)); f.escala_max = Math.min(100, parseInt($('fMax').value, 10)); if (!(f.escala_max > f.escala_min)) return toast('El máximo debe ser mayor que el mínimo.'); f.multiple = false; f.max_opciones = 1; f.en_blanco = false; }
+    else if (E.tipo === 'concurso'){ f.envios_desde = new Date($('fEd').value).toISOString(); f.envios_hasta = new Date($('fEh').value).toISOString(); f.fotos_por_miembro = Math.min(5, Math.max(1, parseInt($('fNf').value, 10) || 1)); f.en_blanco = false;
+      if (!(new Date(f.envios_desde) < new Date(f.envios_hasta))) return toast('El envío debe terminar después de empezar.'); if (new Date(f.envios_hasta) > new Date(f.inicio)) return toast('La votación debe empezar cuando termine el envío o después.'); }
     else {
       if (E.tipo === 'galeria'){ if (E.ops.some(o => !o.file && !o.img)) return toast('Cada foto necesita su imagen.'); E.ops.forEach((o, i) => { if (!o.texto.trim()) o.texto = 'Foto ' + (i + 1); }); f.en_blanco = false; }
       else if (E.ops.some(o => !o.texto.trim())) return toast('Hay opciones sin texto.');
@@ -289,9 +326,11 @@ function editar(v){
     $('fS').disabled = true;
     try {
       f.imagen_path = E.portadaFile ? await subir(await reducir(E.portadaFile, 1400)) : E.portada;
-      if (E.tipo !== 'numerica') for (const o of E.ops) if (o.file) o.img = await subir(await reducir(o.file, 600));
+      if (E.tipo !== 'numerica' && E.tipo !== 'concurso') for (const o of E.ops) if (o.file) o.img = await subir(await reducir(o.file, 600));
     } catch (e) { $('fS').disabled = false; return toast('No se pudo subir una imagen.'); }
-    f.opciones = E.tipo === 'numerica' ? [] : E.ops.map(o => { const x = { id: o.id, texto: o.texto.trim() }; if (o.img) x.img = o.img; return x; });
+    if (E.tipo !== 'concurso'){ f.envios_desde = null; f.envios_hasta = null; f.fotos_por_miembro = 1; }
+    if (n) E.ops.forEach((o, i) => { o.id = 'o' + (i + 1); });
+    f.opciones = (E.tipo === 'numerica' || E.tipo === 'concurso') ? [] : E.ops.map(o => { const x = { id: o.id, texto: o.texto.trim() }; if (o.img) x.img = o.img; return x; });
     const r = n ? await sb.from('votaciones').insert(f) : await sb.from('votaciones').update(f).eq('id', v.id);
     $('fS').disabled = false; if (r.error) return toast('No se pudo guardar: ' + r.error.message); $('edDlg').close(); toast('Votación guardada.'); load(); };
   $('edDlg').showModal();
