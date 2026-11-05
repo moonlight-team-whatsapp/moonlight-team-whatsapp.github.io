@@ -141,7 +141,7 @@ async function load(){
   if (isAdmin){
     const [m, o, c] = await Promise.all([sb.from('miembros').select('id,data'), sb.from('ocupados').select('id,data'), sb.from('carnets').select('miembro_id')]);
     const per = {}; (o.data || []).forEach(x => { const d = x.data || {}; if (d.miembroId) (per[d.miembroId] = per[d.miembroId] || []).push(d.nombre); });
-    miembros = (m.data || []).filter(r => !(r.data && (r.data.baneado || r.data.activo === false))); nombres = {};
+    miembros = (m.data || []).filter(r => !(r.data && (r.data.baneado || r.data.activo === false)) && per[r.id]); nombres = {};
     miembros.forEach(r => nombres[r.id] = (per[r.id] || []).join(', ') || (r.data || {}).apodoInterno || r.id);
     carn = new Set((c.data || []).map(x => x.miembro_id));
   }

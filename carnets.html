@@ -77,7 +77,7 @@ async function load(){
   const [mi, oc, ca] = await Promise.all([sb.from('miembros').select('id,data'), sb.from('ocupados').select('id,data'), sb.from('carnets').select('miembro_id,creado')]);
   const per = {};
   (oc.data || []).forEach(o => { const d = o.data || {}; if (d.miembroId) (per[d.miembroId] = per[d.miembroId] || []).push(d.nombre); });
-  M = (mi.data || []).filter(r => !(r.data && (r.data.baneado || r.data.activo === false))).map(r => { const d = r.data || {}; return { id: r.id, n: d.apodoInterno || r.id, p: per[r.id] || [], o: d.orden || 0 }; }).sort((a, b) => a.o - b.o);
+  M = (mi.data || []).filter(r => !(r.data && (r.data.baneado || r.data.activo === false))).map(r => { const d = r.data || {}; return { id: r.id, n: d.apodoInterno || r.id, p: per[r.id] || [], o: d.orden || 0 }; }).filter(m => m.p.length).sort((a, b) => a.o - b.o);
   carn = {}; (ca.data || []).forEach(c => carn[c.miembro_id] = c.creado); paint();
 }
 function paint(){
