@@ -1,0 +1,6 @@
+-- Votaciones (referencia; ya aplicado como migración «votaciones»).
+-- votaciones: título, opciones jsonb [{id,texto}], inicio/fin, multiple + max_opciones, permitir_cambio, resultados (nunca|final|directo), en_blanco. Lectura pública, escritura admin.
+-- votos: (votacion_id, miembro_id, opciones text[]). Sin ninguna política de lectura: solo se accede con funciones security definer:
+--   votar(votacion, token, opciones) -> 'ok' | 'sin_carnet' | 'cerrada' | 'ya_votaste' | ...
+--   mi_voto(votacion, token), votacion_resultados(votacion) (solo totales, según la opción «resultados»),
+--   votacion_quienes(votacion) (solo admin: quién votó, nunca qué), votaciones_pendientes(token).

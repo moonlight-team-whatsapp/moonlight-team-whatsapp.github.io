@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Votaciones · Moonlight Team</title>
+<meta name="description" content="Votaciones de Moonlight Team: vota con tu carnet y mira los resultados.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500;1,600&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .wrap{ max-width:820px; }
+  .top h1{ font-size:clamp(1.9rem,8vw,3rem); line-height:1.1; }
+  .aviso{ margin:4px 0 16px; padding:10px 14px; border:1px solid rgba(125,255,176,.4); border-radius:10px; background:rgba(125,255,176,.07); font-size:.95rem; line-height:1.45; }
+  .aviso b{ color:#9dffc6; }
+  .vl{ display:grid; gap:14px; margin-bottom:30px; }
+  .vc{ border:1px solid var(--border); border-radius:12px; background:rgba(16,22,48,.72); padding:16px 18px; }
+  .vc h2{ margin:0 0 4px; font-family:'Cormorant',serif; font-style:italic; font-size:1.55rem; color:var(--gold); display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .chip{ font-family:'Crimson Pro',serif; font-style:normal; font-size:.82rem; padding:2px 10px; border-radius:999px; border:1px solid var(--border); color:var(--ink-soft); }
+  .chip.on{ color:#7dffb0; border-color:rgba(125,255,176,.5); background:rgba(125,255,176,.08); }
+  .chip.pr{ color:var(--gold); border-color:rgba(217,195,131,.5); }
+  .vd{ color:var(--ink-soft); margin:4px 0; white-space:pre-wrap; }
+  .vm{ color:var(--ink-soft); font-size:.88rem; margin:6px 0; }
+  .ops{ display:grid; gap:8px; margin:12px 0; }
+  .op{ text-align:left; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.04); color:var(--ink); font-family:'Crimson Pro',serif; font-size:1.05rem; cursor:pointer; transition:all .15s; }
+  .op:hover{ border-color:var(--gold-dim); }
+  .op.sel{ border-color:var(--gold); background:rgba(217,195,131,.14); color:var(--gold); }
+  .op.sel::before{ content:'✓ '; }
+  .barra{ position:relative; padding:8px 12px; border:1px solid var(--border); border-radius:8px; overflow:hidden; display:flex; justify-content:space-between; gap:10px; }
+  .barra i{ position:absolute; inset:0 auto 0 0; background:rgba(217,195,131,.2); z-index:0; }
+  .barra span{ position:relative; z-index:1; }
+  .barra.tuya{ border-color:var(--gold); }
+  .fila{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; align-items:center; }
+  .gbtn{ padding:6px 14px; border-radius:999px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1rem; cursor:pointer; color:var(--gold); border:1px solid rgba(217,195,131,.5); background:rgba(217,195,131,.08); }
+  .gbtn:hover{ background:rgba(217,195,131,.22); } .gbtn[disabled]{ opacity:.5; cursor:default; }
+  .gbtn.suave{ color:var(--ink-soft); border-color:var(--border); background:none; font-size:.92rem; }
+  .pend{ color:var(--ink-soft); font-style:italic; margin:8px 0; }
+  .quien{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .quien span{ font-size:.9rem; padding:3px 10px; border-radius:999px; border:1px solid var(--border); color:var(--ink-soft); }
+  .quien span.si{ color:#7dffb0; border-color:rgba(125,255,176,.45); }
+  dialog.adv{ width:min(560px, calc(100vw - 24px)); max-height:calc(100dvh - 24px); padding:18px; border:1px solid var(--gold-dim); border-radius:12px; background:#101630; color:var(--ink); overflow:auto; }
+  dialog.adv::backdrop{ background:rgba(4,6,18,.72); }
+  .ed label{ display:flex; flex-direction:column; gap:4px; margin:10px 0; color:var(--ink-soft); font-size:.92rem; }
+  .ed label.chk{ flex-direction:row; align-items:center; gap:8px; }
+  .ed input:not([type=checkbox]), .ed select, .ed textarea{ padding:8px 10px; font-family:inherit; font-size:1rem; color:var(--ink); background:#141b37; border:1px solid var(--border); border-radius:6px; color-scheme:dark; }
+  .ed textarea{ min-height:90px; resize:vertical; }
+  .ed .nota{ font-size:.85rem; color:var(--ink-soft); }
+  #toast{ position:fixed; left:50%; bottom:20px; transform:translate(-50%,20px); background:#141b37; border:1px solid var(--gold-dim); color:var(--ink); padding:9px 16px; border-radius:8px; opacity:0; transition:all .3s; z-index:30; pointer-events:none; max-width:90vw; text-align:center; }
+  #toast.show{ opacity:1; transform:translate(-50%,0); }
+</style>
+</head><body>
+<div class="stars" id="starsLayer" aria-hidden="true"></div>
+<div class="mist m1" aria-hidden="true"></div>
+<div class="mist m2" aria-hidden="true"></div>
+<div class="moon" aria-hidden="true"></div>
+<div class="wrap">
+  <a class="back-link" href="index.html">← Volver al índice</a>
+  <header class="top">
+    <div>
+      <div class="title-wrap"><h1>Votaciones</h1></div>
+      <p class="subtitle">Decide con el resto del team. Para votar necesitas tu carnet.</p>
+    </div>
+    <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
+  </header>
+  <div class="aviso"><b>🗳️ Tu voto no lo ve nadie en la web.</b> Solo se publican los totales, nunca quién votó qué. Los admins únicamente ven quién ha votado y quién falta.</div>
+  <div class="fila" id="adminBar" hidden><button class="gbtn" id="nueva" type="button">+ Nueva votación</button></div>
+  <p class="pend" id="yo"></p>
+  <div class="vl" id="vl"></div>
+</div>
+<dialog class="adv" id="edDlg"><div class="ed" id="eB"></div></dialog>
+<dialog id="loginDialog">
+  <div class="dialog-inner">
+    <h3>Acceso admin</h3>
+    <div class="dialog-field"><label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username"></div>
+    <div class="dialog-field"><label for="loginPass">Contraseña</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+    <p class="dialog-error" id="loginError"></p>
+    <div class="dialog-actions">
+      <button class="btn-primary" id="loginSubmit" type="button">Entrar</button>
+      <button class="btn-ghost" id="loginCancel" type="button">Cancelar</button>
+    </div>
+  </div>
+</dialog>
+<div id="toast" role="status"></div>
+<script src="js/temporadas.js" defer></script>
+<script type="module">
+import { sb } from './js/supabase-sesion.js';
+import { tokenActual, miMiembro } from './js/carnet.js';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+(function(){ const l = $('starsLayer'), fr = document.createDocumentFragment(); for (let i = 0; i < 30; i++){ const s = document.createElement('span'); s.className = 'star'; const z = (Math.random()*1.6+.8).toFixed(2); s.style.cssText = `top:${Math.random()*100}%;left:${Math.random()*100}%;width:${z}px;height:${z}px`; s.style.setProperty('--dur', (Math.random()*3+2).toFixed(2)+'s'); s.style.setProperty('--delay', (Math.random()*5).toFixed(2)+'s'); s.style.setProperty('--o-min', '.2'); s.style.setProperty('--o-max', '.85'); fr.appendChild(s); } l.appendChild(fr); })();
+const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), 3800); };
+const fmt = d => new Date(d).toLocaleString('es-ES', { timeZone: 'Europe/Madrid', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+const aLocal = d => { const x = new Date(new Date(d).getTime() - new Date(d).getTimezoneOffset() * 60000); return x.toISOString().slice(0, 16); };
+const MSG = { sin_carnet: 'Necesitas tu carnet para votar.', no_existe: 'Esa votación ya no existe.', no_empezada: 'Esta votación aún no ha empezado.', cerrada: 'Esta votación ya está cerrada.', opcion_invalida: 'Elige una opción válida.', demasiadas: 'Has elegido demasiadas opciones.', ya_votaste: 'Ya has votado y no se puede cambiar.' };
+let isAdmin = false, yo = null, V = [], mi = {}, res = {}, nombres = {}, miembros = [], carn = new Set(), quien = {}, abierta = {}, sel = {};
+
+async function load(){
+  yo = await miMiembro();
+  $('yo').textContent = yo ? '' : 'No hemos encontrado tu carnet en este navegador: puedes ver las votaciones, pero para votar abre tu enlace personal.';
+  const { data } = await sb.from('votaciones').select('*').order('fin', { ascending: false }); V = data || [];
+  const tk = tokenActual(); mi = {}; res = {};
+  await Promise.all(V.map(async v => {
+    if (yo){ const r = await sb.rpc('mi_voto', { p_votacion: v.id, p_token: tk }); mi[v.id] = r.data || null; }
+    const r2 = await sb.rpc('votacion_resultados', { p_votacion: v.id }); res[v.id] = r2.data || null;
+  }));
+  if (isAdmin){
+    const [m, o, c] = await Promise.all([sb.from('miembros').select('id,data'), sb.from('ocupados').select('id,data'), sb.from('carnets').select('miembro_id')]);
+    const per = {}; (o.data || []).forEach(x => { const d = x.data || {}; if (d.miembroId) (per[d.miembroId] = per[d.miembroId] || []).push(d.nombre); });
+    miembros = (m.data || []).filter(r => !(r.data && (r.data.baneado || r.data.activo === false))); nombres = {};
+    miembros.forEach(r => nombres[r.id] = (per[r.id] || []).join(', ') || (r.data || {}).apodoInterno || r.id);
+    carn = new Set((c.data || []).map(x => x.miembro_id));
+  }
+  paint();
+}
+const estado = v => { const n = Date.now(); return n < new Date(v.inicio) ? 'pronto' : n > new Date(v.fin) ? 'cerrada' : 'abierta'; };
+const nom = (v, id) => id === 'blanco' ? 'En blanco' : ((v.opciones.find(o => o.id === id) || {}).texto || id);
+function paint(){
+  $('adminBar').hidden = !isAdmin;
+  const orden = { abierta: 0, pronto: 1, cerrada: 2 };
+  const L = V.slice().sort((a, b) => orden[estado(a)] - orden[estado(b)] || new Date(b.fin) - new Date(a.fin));
+  $('vl').innerHTML = L.map(v => { const e = estado(v), R = res[v.id], propio = mi[v.id], ops = v.opciones.concat(v.en_blanco ? [{ id: 'blanco', texto: 'En blanco' }] : []);
+    const s = sel[v.id] || (propio ? propio.slice() : []), editando = abierta[v.id] === 'edit';
+    let cuerpo = '';
+    if (e === 'abierta'){
+      if (!yo) cuerpo = '<p class="pend">Abre tu enlace personal (carnet) para poder votar.</p>';
+      else if (propio && !editando) cuerpo = `<p class="pend">✅ Has votado: <b>${esc(propio.map(x => nom(v, x)).join(', '))}</b>.${v.permitir_cambio ? '' : ' No se puede cambiar.'}</p>` + (v.permitir_cambio ? '<div class="fila"><button class="gbtn suave" data-ed="1" type="button">Cambiar mi voto</button></div>' : '');
+      else cuerpo = `<div class="ops">${ops.map(o => `<button type="button" class="op ${s.includes(o.id) ? 'sel' : ''}" data-op="${esc(o.id)}">${esc(o.texto)}</button>`).join('')}</div><div class="fila"><button class="gbtn" data-votar="1" type="button">${propio ? 'Guardar cambio' : 'Votar'}</button>${editando ? '<button class="gbtn suave" data-cancel="1" type="button">Cancelar</button>' : ''}</div>`;
+    } else if (e === 'pronto') cuerpo = `<p class="pend">Se abre el ${esc(fmt(v.inicio))}.</p>`;
+    else if (propio) cuerpo = `<p class="pend">Tu voto: ${esc(propio.map(x => nom(v, x)).join(', '))}.</p>`;
+    let r = '';
+    if (R){ const tot = Math.max(1, R.votantes); r = `<div class="ops">${ops.map(o => { const n = (R.conteos || {})[o.id] || 0; return `<div class="barra ${propio && propio.includes(o.id) ? 'tuya' : ''}"><i style="width:${Math.round(n * 100 / tot)}%"></i><span>${esc(o.texto)}</span><span>${n}</span></div>`; }).join('')}</div><p class="vm">${R.votantes} ${R.votantes === 1 ? 'persona ha votado' : 'personas han votado'}.</p>`; }
+    else if (v.resultados === 'final') r = '<p class="vm">Los resultados se publicarán cuando termine la votación.</p>'; else if (v.resultados === 'nunca') r = '<p class="vm">Esta votación no publica resultados.</p>';
+    let adm = '';
+    if (isAdmin){ const q = quien[v.id]; adm = `<div class="fila"><button class="gbtn suave" data-quien="1" type="button">Quién ha votado</button><button class="gbtn suave" data-edit="1" type="button">Editar</button>${e === 'abierta' ? '<button class="gbtn suave" data-cerrar="1" type="button">Cerrar ya</button>' : ''}<button class="gbtn suave" data-borrar="1" type="button">Borrar</button></div>`
+      + (q ? `<p class="vm">${q.filter(x => x.v).length} de ${q.length} han votado (solo se ve quién, nunca qué).</p><div class="quien">${q.map(x => `<span class="${x.v ? 'si' : ''}">${x.v ? '✓' : '·'} ${esc(x.n)}${x.c ? '' : ' (sin carnet)'}</span>`).join('')}</div>` : ''); }
+    const extra = [v.multiple ? `elige hasta ${v.max_opciones}` : 'una opción', v.permitir_cambio ? 'se puede cambiar' : 'no se puede cambiar'].join(' · ');
+    return `<section class="vc" data-id="${v.id}"><h2>${esc(v.titulo)} <span class="chip ${e === 'abierta' ? 'on' : e === 'pronto' ? 'pr' : ''}">${e === 'abierta' ? 'Abierta' : e === 'pronto' ? 'Próximamente' : 'Cerrada'}</span></h2>${v.descripcion ? `<p class="vd">${esc(v.descripcion)}</p>` : ''}<p class="vm">${esc(fmt(v.inicio))} → ${esc(fmt(v.fin))} · ${esc(extra)}</p>${cuerpo}${r}${adm}</section>`; }).join('') || '<p class="pend">No hay votaciones por ahora.</p>';
+}
+$('vl').addEventListener('click', async e => {
+  const sec = e.target.closest('.vc'); if (!sec) return; const id = sec.dataset.id, v = V.find(x => x.id === id);
+  const op = e.target.closest('[data-op]');
+  if (op){ const o = op.dataset.op; let s = (sel[id] || (mi[id] ? mi[id].slice() : [])).slice();
+    if (!v.multiple || o === 'blanco') s = s.includes(o) ? [] : [o];
+    else { s = s.filter(x => x !== 'blanco'); if (s.includes(o)) s = s.filter(x => x !== o); else if (s.length < v.max_opciones) s.push(o); else toast(`Máximo ${v.max_opciones} opciones.`); }
+    sel[id] = s; paint(); return; }
+  if (e.target.closest('[data-ed]')){ abierta[id] = 'edit'; sel[id] = (mi[id] || []).slice(); paint(); }
+  if (e.target.closest('[data-cancel]')){ delete abierta[id]; delete sel[id]; paint(); }
+  if (e.target.closest('[data-votar]')){ const s = sel[id] || []; if (!s.length) return toast('Elige al menos una opción.');
+    const { data, error } = await sb.rpc('votar', { p_votacion: id, p_token: tokenActual(), p_opciones: s });
+    if (error) return toast('No se pudo votar. Inténtalo de nuevo.'); if (data !== 'ok') return toast(MSG[data] || 'No se pudo votar.');
+    delete abierta[id]; delete sel[id]; toast('¡Voto guardado!'); load(); }
+  if (e.target.closest('[data-quien]')){ const { data } = await sb.rpc('votacion_quienes', { p_votacion: id }); const set = new Set(data || []);
+    quien[id] = miembros.map(m => ({ id: m.id, n: nombres[m.id], v: set.has(m.id), c: carn.has(m.id) })).sort((a, b) => b.v - a.v || a.n.localeCompare(b.n)); paint(); }
+  if (e.target.closest('[data-edit]')) editar(v);
+  if (e.target.closest('[data-cerrar]')){ if (!confirm('¿Cerrar la votación ahora?')) return; const { error } = await sb.from('votaciones').update({ fin: new Date().toISOString() }).eq('id', id); if (error) return toast('No se pudo cerrar.'); load(); }
+  if (e.target.closest('[data-borrar]')){ if (!confirm('¿Borrar la votación y todos sus votos?')) return; const { error } = await sb.from('votaciones').delete().eq('id', id); if (error) return toast('No se pudo borrar.'); load(); }
+});
+function editar(v){
+  const n = !v; v = v || { titulo: '', descripcion: '', opciones: [], inicio: new Date().toISOString(), fin: new Date(Date.now() + 7 * 864e5).toISOString(), multiple: false, max_opciones: 1, permitir_cambio: true, resultados: 'final', en_blanco: false };
+  $('eB').innerHTML = `<h3>${n ? 'Nueva votación' : 'Editar votación'}</h3>
+    <label>Título<input id="fT" maxlength="120" value="${esc(v.titulo)}"></label>
+    <label>Descripción (opcional)<textarea id="fD" maxlength="800">${esc(v.descripcion)}</textarea></label>
+    ${n ? '<label>Opciones (una por línea, de 2 a 20)<textarea id="fO" placeholder="Opción A&#10;Opción B"></textarea></label>' : '<p class="nota">Las opciones no se pueden cambiar una vez creada la votación.</p>'}
+    <label>Empieza<input id="fI" type="datetime-local" value="${aLocal(v.inicio)}"></label>
+    <label>Termina<input id="fF" type="datetime-local" value="${aLocal(v.fin)}"></label>
+    <label class="chk"><input id="fM" type="checkbox" ${v.multiple ? 'checked' : ''}> Voto múltiple</label>
+    <label>Máximo de opciones si es múltiple<input id="fX" type="number" min="1" max="20" value="${v.max_opciones}"></label>
+    <label class="chk"><input id="fC" type="checkbox" ${v.permitir_cambio ? 'checked' : ''}> Se puede cambiar el voto mientras esté abierta</label>
+    <label class="chk"><input id="fB" type="checkbox" ${v.en_blanco ? 'checked' : ''}> Añadir opción «En blanco»</label>
+    <label>Resultados<select id="fR"><option value="final" ${v.resultados === 'final' ? 'selected' : ''}>Se publican al terminar</option><option value="directo" ${v.resultados === 'directo' ? 'selected' : ''}>En directo</option><option value="nunca" ${v.resultados === 'nunca' ? 'selected' : ''}>No se publican (solo tú los ves)</option></select></label>
+    <div class="fila"><button class="gbtn" id="fS" type="button">Guardar</button><button class="gbtn suave" id="fK" type="button">Cancelar</button></div>`;
+  $('fK').onclick = () => $('edDlg').close();
+  $('fS').onclick = async () => {
+    const f = { titulo: $('fT').value.trim(), descripcion: $('fD').value.trim() || null, inicio: new Date($('fI').value).toISOString(), fin: new Date($('fF').value).toISOString(), multiple: $('fM').checked, max_opciones: $('fM').checked ? Math.max(1, +$('fX').value || 1) : 1, permitir_cambio: $('fC').checked, en_blanco: $('fB').checked, resultados: $('fR').value };
+    if (!f.titulo) return toast('Pon un título.'); if (!(new Date(f.fin) > new Date(f.inicio))) return toast('El final debe ser posterior al inicio.');
+    if (n){ const ls = String($('fO').value).split('\n').map(x => x.trim()).filter(Boolean); if (ls.length < 2) return toast('Pon al menos 2 opciones.'); if (ls.length > 20) return toast('Máximo 20 opciones.'); f.opciones = ls.map((t, i) => ({ id: 'o' + (i + 1), texto: t })); if (f.max_opciones > ls.length) f.max_opciones = ls.length; }
+    const r = n ? await sb.from('votaciones').insert(f) : await sb.from('votaciones').update(f).eq('id', v.id);
+    if (r.error) return toast('No se pudo guardar: ' + r.error.message); $('edDlg').close(); toast('Votación guardada.'); load(); };
+  $('edDlg').showModal();
+}
+$('nueva').onclick = () => editar(null);
+$('adminToggleBtn').addEventListener('click', () => {
+  if (isAdmin) sb.auth.signOut();
+  else { $('loginError').textContent = ''; $('loginEmail').value = ''; $('loginPass').value = ''; $('loginDialog').showModal(); }
+});
+$('loginCancel').addEventListener('click', () => $('loginDialog').close());
+$('loginSubmit').addEventListener('click', async () => {
+  const { error } = await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPass').value });
+  if (error) $('loginError').textContent = 'Email o contraseña incorrectos.'; else $('loginDialog').close();
+});
+sb.auth.onAuthStateChange((_e, session) => { isAdmin = !!session; $('adminToggleBtn').textContent = isAdmin ? 'Cerrar sesión admin' : 'Acceso admin'; load(); });
+</script>
+</body>
+</html>
