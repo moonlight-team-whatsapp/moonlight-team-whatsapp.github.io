@@ -34,6 +34,11 @@
 
 
 ## Calendario de adviento (adviento.html)
-- Hechas: puertas 1-5 (mensaje, memoria, ordenar frase, imagen, sopa de letras) y editor admin.
-- Por construir: sudoku (7, 16), quiz (8, 22), puzle deslizante (10), wordle (11, 23), adivina el personaje (17), laberinto (20), reto galería (14). Ya se pueden preparar su mensaje y sorpresa desde el editor.
+- Hechas: mensaje, imagen, ordenar frase, memoria, sopa de letras, sudoku, quiz y puzle deslizante, con editor admin.
+- Por construir: wordle (11, 23), adivina el personaje (17), laberinto (20), reto galería (14). Ya se pueden preparar su mensaje y sorpresa desde el editor.
 - Idea: guardar el progreso en la cuenta del carnet en vez de localStorage.
+
+
+## Almacenamiento (plan gratuito, 1 GB)
+- Hecho: tope de 800 MB para subidas anónimas, página almacen.html (uso + borrar archivos sin usar) y borrado automático al sustituir o eliminar imágenes.
+- Idea: comprimir el JSON de diseño de las MoonCards (4-7 MB cada uno).

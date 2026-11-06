@@ -84,6 +84,24 @@
   .ed textarea{ min-height:90px; resize:vertical; }
   .ed .nota{ font-size:.85rem; color:var(--ink-soft); margin:2px 0; }
   .ed-plan{ color:var(--gold); }
+  /* sudoku */
+  .su{ display:grid; grid-template-columns:repeat(9,1fr); max-width:400px; margin:8px auto; border:2px solid var(--gold-dim); border-radius:6px; overflow:hidden; touch-action:manipulation; }
+  .su button{ aspect-ratio:1; border:0; border-right:1px solid rgba(255,255,255,.1); border-bottom:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); color:var(--gold); font-family:'Crimson Pro',serif; font-size:clamp(1rem,4.6vw,1.4rem); padding:0; cursor:pointer; }
+  .su button.d{ color:var(--ink); font-weight:700; background:rgba(255,255,255,.08); cursor:default; }
+  .su button.c3{ border-right:2px solid var(--gold-dim); } .su button.r3{ border-bottom:2px solid var(--gold-dim); }
+  .su button.sel{ background:rgba(217,195,131,.32); } .su button.rel{ background:rgba(217,195,131,.1); } .su button.d.rel{ background:rgba(217,195,131,.16); }
+  .su button.mal{ color:#ff8a8a; }
+  .pad{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; max-width:400px; margin:8px auto; }
+  .pad button{ padding:9px 0; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--ink); font-size:1.15rem; font-family:'Crimson Pro',serif; cursor:pointer; }
+  /* quiz */
+  .qz-q{ font-size:1.12rem; margin:6px 0 10px; } .qz-o{ display:grid; gap:8px; }
+  .qz-o button{ text-align:left; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.04); color:var(--ink); font-family:'Crimson Pro',serif; font-size:1.05rem; cursor:pointer; }
+  .qz-o button:hover:not(:disabled){ border-color:var(--gold-dim); } .qz-o button.ok{ border-color:#7dffb0; background:rgba(125,255,176,.12); } .qz-o button.ko{ border-color:#ff8a8a; background:rgba(255,138,138,.1); }
+  /* puzle */
+  .pz{ display:grid; gap:3px; max-width:360px; margin:8px auto; aspect-ratio:1; touch-action:manipulation; }
+  .pz button{ border:1px solid rgba(255,255,255,.15); border-radius:4px; padding:0; cursor:pointer; background-color:#1c2450; color:var(--gold); font-family:'Cormorant',serif; font-weight:600; font-size:1.8rem; background-repeat:no-repeat; }
+  .pz button.v{ visibility:hidden; } .pz.fin{ gap:0; } .pz.fin button{ border-color:transparent; border-radius:0; }
+  /* editor */
   #toast{ position:fixed; left:50%; bottom:20px; transform:translate(-50%,20px); background:#141b37; border:1px solid var(--gold-dim); color:var(--ink); padding:9px 16px; border-radius:8px; opacity:0; transition:all .3s; z-index:30; pointer-events:none; max-width:90vw; text-align:center; }
   #toast.show{ opacity:1; transform:translate(-50%,0); }
 </style>
@@ -141,7 +159,7 @@ const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('s
 // Plan del calendario (lo que se sugiere por día) y qué tipos ya están construidos
 const PLAN = ['mensaje','memoria','frase','imagen','sopa','mensaje','sudoku','quiz','frase','puzle','wordle','mensaje','sopa','reto','memoria','sudoku','adivina','frase','imagen','laberinto','mensaje','quiz','wordle','mensaje'];
 const TIPOS = { mensaje:'Mensaje', imagen:'Imagen', frase:'Ordenar la frase', memoria:'Memoria de parejas', sopa:'Sopa de letras', sudoku:'Sudoku', quiz:'Quiz', puzle:'Puzle deslizante', wordle:'Wordle', adivina:'Adivina el personaje', laberinto:'Laberinto', reto:'Reto de la galería' };
-const HECHOS = ['mensaje','imagen','frase','memoria','sopa'];
+const HECHOS = ['mensaje','imagen','frase','memoria','sopa','sudoku','quiz','puzle'];
 const PROG = 'mc_adv';
 const prog = () => { try { return JSON.parse(localStorage.getItem(PROG) || '{}'); } catch (e) { return {}; } };
 const marcar = (d, k) => { try { const p = prog(); p[d] = Object.assign(p[d] || {}, { [k]: 1 }); localStorage.setItem(PROG, JSON.stringify(p)); } catch (e) {} paint(); };
@@ -182,13 +200,13 @@ async function abrir(d){
   if (!r){ $('dT').textContent = 'Puerta sin contenido'; B.innerHTML = `<p class="pend">Esta puerta todavía no tiene sorpresa.${isAdmin ? ' Pulsa «Editar» para crearla.' : ''}</p>`; adminBar(B, d); $('dlg').showModal(); return; }
   $('dT').textContent = r.titulo || TIPOS[r.tipo];
   const premio = document.createElement('div'); premio.className = 'premio'; premio.innerHTML = premioHtml(r);
-  const esJuego = ['frase','memoria','sopa'].includes(r.tipo);
+  const esJuego = ['frase','memoria','sopa','sudoku','quiz','puzle'].includes(r.tipo);
   const fin = () => { premio.hidden = false; const sk = B.querySelector('.gbtn.suave'); if (sk) sk.remove(); marcar(d, 'h'); };
   if (esJuego){
     const g = document.createElement('div'); B.appendChild(g);
-    const intro = document.createElement('p'); intro.textContent = { frase: 'Ordena las palabras para formar la frase.', memoria: 'Encuentra todas las parejas.', sopa: 'Encuentra las palabras: arrastra el dedo o el ratón sobre las letras.' }[r.tipo]; g.appendChild(intro);
+    const intro = document.createElement('p'); intro.textContent = { frase: 'Ordena las palabras para formar la frase.', memoria: 'Encuentra todas las parejas.', sopa: 'Encuentra las palabras: arrastra el dedo o el ratón sobre las letras.', sudoku: 'Rellena la cuadrícula: cada fila, columna y cuadro de 3×3 lleva los números del 1 al 9 sin repetir.', quiz: 'Responde las preguntas. Con un 60 % de aciertos abres la sorpresa.', puzle: 'Desliza las piezas para recomponer la imagen.' }[r.tipo]; g.appendChild(intro);
     const area = document.createElement('div'); g.appendChild(area);
-    ({ frase: juegoFrase, memoria: juegoMemoria, sopa: juegoSopa })[r.tipo](area, r.datos || {}, fin, d);
+    ({ frase: juegoFrase, memoria: juegoMemoria, sopa: juegoSopa, sudoku: juegoSudoku, quiz: juegoQuiz, puzle: juegoPuzle })[r.tipo](area, r.datos || {}, fin, d, r);
     premio.hidden = true; B.appendChild(premio);
     if (!(prog()[d] || {}).h){ const s = document.createElement('button'); s.type = 'button'; s.className = 'gbtn suave'; s.textContent = 'Ver la sorpresa sin jugar'; s.onclick = () => fin(); B.appendChild(s); }
     else premio.hidden = false;
@@ -270,6 +288,65 @@ function juegoSopa(box, dat, fin, dia){
   grid.addEventListener('pointerup', soltar); grid.addEventListener('pointercancel', soltar); grid.addEventListener('pointerleave', soltar);
 }
 
+
+/* ---------- Juego: sudoku ---------- */
+function sudokuGen(rnd, pistas){
+  const g = Array(81).fill(0);
+  const ok = (p, i, v) => { const r = (i / 9) | 0, c = i % 9; for (let k = 0; k < 9; k++) if (p[r * 9 + k] === v || p[k * 9 + c] === v) return false; const br = r - r % 3, bc = c - c % 3; for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) if (p[(br + a) * 9 + bc + b] === v) return false; return true; };
+  const fill = i => { if (i === 81) return true; for (const v of barajar([1,2,3,4,5,6,7,8,9], rnd)) if (ok(g, i, v)){ g[i] = v; if (fill(i + 1)) return true; g[i] = 0; } return false; };
+  fill(0); const sol = g.slice();
+  const cuenta = p => { let n = 0; (function rec(){ if (n > 1) return; let best = -1, bc = 10, bl = null;
+    for (let i = 0; i < 81; i++) if (!p[i]){ const l = []; for (let v = 1; v <= 9; v++) if (ok(p, i, v)) l.push(v); if (l.length < bc){ bc = l.length; best = i; bl = l; if (bc <= 1) break; } }
+    if (best < 0){ n++; return; } for (const v of bl){ p[best] = v; rec(); p[best] = 0; if (n > 1) return; } })(); return n; };
+  let quedan = 81; for (const i of barajar([...Array(81).keys()], rnd)){ if (quedan <= pistas) break; const b = g[i]; g[i] = 0; if (cuenta(g.slice()) !== 1) g[i] = b; else quedan--; }
+  return { puzzle: g, sol };
+}
+function juegoSudoku(box, dat, fin, dia){
+  const pistas = dat.dificultad === 'medio' ? 32 : 40, { puzzle, sol } = sudokuGen(semilla(dia * 104729 + pistas), pistas), cur = puzzle.slice(); let s = -1;
+  const g = document.createElement('div'); g.className = 'su'; const cel = [];
+  for (let i = 0; i < 81; i++){ const b = document.createElement('button'); b.type = 'button'; b.className = (puzzle[i] ? 'd ' : '') + ((i % 9) % 3 === 2 && i % 9 !== 8 ? 'c3 ' : '') + ((((i / 9) | 0) % 3 === 2) && ((i / 9) | 0) !== 8 ? 'r3' : ''); b.onclick = () => { s = i; pinta(); }; g.appendChild(b); cel.push(b); }
+  const pad = document.createElement('div'); pad.className = 'pad';
+  for (let v = 1; v <= 9; v++){ const b = document.createElement('button'); b.type = 'button'; b.textContent = v; b.onclick = () => poner(v); pad.appendChild(b); }
+  const bd = document.createElement('button'); bd.type = 'button'; bd.textContent = '⌫'; bd.onclick = () => poner(0); pad.appendChild(bd); box.append(g, pad);
+  function pinta(){ const dup = new Set(); for (let i = 0; i < 81; i++) if (cur[i]) for (let j = 0; j < 81; j++) if (j !== i && cur[j] === cur[i] && ((i / 9 | 0) === (j / 9 | 0) || i % 9 === j % 9 || ((i / 9 | 0) / 3 | 0) === ((j / 9 | 0) / 3 | 0) && (i % 9 / 3 | 0) === (j % 9 / 3 | 0))) dup.add(i);
+    cel.forEach((b, i) => { b.textContent = cur[i] || ''; b.classList.toggle('sel', i === s); b.classList.toggle('mal', dup.has(i) && !puzzle[i]); b.classList.toggle('rel', s >= 0 && i !== s && ((i / 9 | 0) === (s / 9 | 0) || i % 9 === s % 9 || (((i / 9 | 0) / 3 | 0) === ((s / 9 | 0) / 3 | 0) && (i % 9 / 3 | 0) === (s % 9 / 3 | 0)))); }); }
+  function poner(v){ if (s < 0 || puzzle[s]) return; cur[s] = v; pinta(); if (cur.every((x, i) => x === sol[i])){ cel.forEach(b => b.disabled = true); pad.remove(); fin(); } }
+  box.addEventListener('keydown', e => { if (e.key >= '1' && e.key <= '9') poner(+e.key); else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') poner(0); else if (s >= 0 && e.key.startsWith('Arrow')){ const d = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -9, ArrowDown: 9 }[e.key]; if (s + d >= 0 && s + d < 81){ s += d; pinta(); e.preventDefault(); } } });
+  box.tabIndex = 0; pinta();
+}
+
+/* ---------- Juego: quiz ---------- */
+function juegoQuiz(box, dat, fin){
+  const P = (dat.preguntas || []).filter(p => p && p.q && (p.o || []).length >= 2);
+  if (!P.length){ box.innerHTML = '<p class="pend">Este quiz aún no está preparado.</p>'; return; }
+  let i = 0, ac = 0;
+  function ver(){ if (i >= P.length){ const min = Math.ceil(P.length * .6), ok = ac >= min;
+      box.innerHTML = `<p class="qz-q">Has acertado <b>${ac}</b> de ${P.length}.</p>`;
+      if (ok){ fin(); return; } const b = document.createElement('button'); b.type = 'button'; b.className = 'gbtn'; b.textContent = 'Intentarlo de nuevo'; b.onclick = () => { i = 0; ac = 0; ver(); };
+      const p = document.createElement('p'); p.className = 'pend'; p.textContent = `Necesitas al menos ${min} aciertos para abrir la sorpresa.`; box.append(p, b); return; }
+    const q = P[i]; box.innerHTML = `<p class="vm" style="color:var(--ink-soft)">Pregunta ${i + 1} de ${P.length}</p><p class="qz-q">${esc(q.q)}</p><div class="qz-o"></div>`;
+    const L = box.querySelector('.qz-o'); q.o.forEach((t, k) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t;
+      b.onclick = () => { L.querySelectorAll('button').forEach((x, j) => { x.disabled = true; if (j === q.c) x.classList.add('ok'); }); if (k === q.c) ac++; else b.classList.add('ko'); setTimeout(() => { i++; ver(); }, 1100); }; L.appendChild(b); }); }
+  ver();
+}
+
+/* ---------- Juego: puzle deslizante ---------- */
+function juegoPuzle(box, dat, fin, dia, r){
+  const N = dat.tam === 4 ? 4 : 3, T = N * N, img = r.imagen_path ? imgUrl(r.imagen_path) : null, rnd = semilla(dia * 7753 + N);
+  let p = Array.from({ length: T }, (_, i) => i), vacio = T - 1;
+  for (let k = 0; k < 60 * N * N; k++){ const x = vacio % N, y = (vacio / N) | 0, v = []; if (x > 0) v.push(vacio - 1); if (x < N - 1) v.push(vacio + 1); if (y > 0) v.push(vacio - N); if (y < N - 1) v.push(vacio + N); const m = v[Math.floor(rnd() * v.length)]; [p[vacio], p[m]] = [p[m], p[vacio]]; vacio = m; }
+  if (p.every((x, i) => x === i)){ [p[0], p[1]] = [p[1], p[0]]; }
+  const g = document.createElement('div'); g.className = 'pz'; g.style.gridTemplateColumns = `repeat(${N},1fr)`; box.appendChild(g);
+  const info = document.createElement('p'); info.className = 'pend'; box.appendChild(info); let mov = 0;
+  function pinta(fin_){ g.innerHTML = ''; p.forEach((t, pos) => { const b = document.createElement('button'); b.type = 'button';
+      if (t === T - 1 && !fin_) b.className = 'v'; else if (img){ b.style.backgroundImage = `url('${img}')`; b.style.backgroundSize = `${N * 100}% ${N * 100}%`; b.style.backgroundPosition = `${(t % N) * 100 / (N - 1)}% ${((t / N) | 0) * 100 / (N - 1)}%`; } else b.textContent = t + 1;
+      b.onclick = () => mover(pos); g.appendChild(b); }); }
+  function mover(pos){ const vx = vacio % N, vy = (vacio / N) | 0, x = pos % N, y = (pos / N) | 0; if (Math.abs(vx - x) + Math.abs(vy - y) !== 1) return;
+    [p[vacio], p[pos]] = [p[pos], p[vacio]]; vacio = pos; mov++; info.textContent = 'Movimientos: ' + mov;
+    if (p.every((t, i) => t === i)){ g.classList.add('fin'); pinta(true); g.querySelectorAll('button').forEach(b => b.disabled = true); fin(); } else pinta(); }
+  info.textContent = 'Movimientos: 0'; pinta();
+}
+
 /* ---------- Editor (admin) ---------- */
 const lineas = s => String(s || '').split('\n').map(x => x.trim()).filter(Boolean);
 const norm = s => sinAc(String(s));
@@ -294,6 +371,9 @@ function editar(d){
         <p class="nota">Quien entre con su carnet verá la frase de su personaje; el resto, la frase completa de arriba.</p>`
       : t === 'memoria' ? `<label>Parejas (una por línea, de 3 a 12)<textarea id="fPar" placeholder="Diluc&#10;Kaeya&#10;Kazuha">${esc((dat.parejas || []).join('\n'))}</textarea></label>`
       : t === 'sopa' ? `<label>Palabras (una por línea, de 2 a 12; sin tildes en la sopa)<textarea id="fPal" placeholder="MONDSTADT&#10;ANEMO&#10;LUNA">${esc((dat.palabras || []).join('\n'))}</textarea></label>`
+      : t === 'sudoku' ? `<label>Dificultad<select id="fDif"><option value="facil" ${dat.dificultad !== 'medio' ? 'selected' : ''}>Fácil (40 números dados)</option><option value="medio" ${dat.dificultad === 'medio' ? 'selected' : ''}>Medio (32 números dados)</option></select></label><p class="nota">El tablero se genera solo y es el mismo para todos ese día.</p>`
+      : t === 'quiz' ? `<label>Preguntas (una por línea: «Pregunta | opción | opción* | opción»; la correcta lleva un asterisco *)<textarea id="fQz" style="min-height:140px" placeholder="¿Quién es el Archonte de Mondstadt? | Zhongli | Venti* | Raiden">${esc((dat.preguntas || []).map(p => [p.q].concat(p.o.map((x, k) => x + (k === p.c ? '*' : ''))).join(' | ')).join('\n'))}</textarea></label><p class="nota">De 3 a 10 preguntas, con 2 a 5 opciones cada una. Se abre la sorpresa con un 60 % de aciertos.</p>`
+      : t === 'puzle' ? `<label>Tamaño<select id="fTam"><option value="3" ${dat.tam !== 4 ? 'selected' : ''}>3 × 3 (8 piezas)</option><option value="4" ${dat.tam === 4 ? 'selected' : ''}>4 × 4 (15 piezas, más difícil)</option></select></label><p class="nota">Usa la imagen que subas abajo como puzle. Sin imagen, se juega con números.</p>`
       : HECHOS.includes(t) ? '' : '<p class="nota">Este juego aún no está construido. Puedes dejar preparada la sorpresa y se mostrará tal cual hasta entonces.</p>'; };
   $('fTipo').onchange = esp; esp();
   const q = $('fImgQ'); if (q) q.onclick = e => { e.preventDefault(); quitar = true; $('fImgN').textContent = 'La imagen se quitará al guardar.'; };
@@ -306,6 +386,10 @@ function editar(d){
       if (per.length) datos.personales = per; if (datos.frase.split(/\s+/).length < 2) return toast('Escribe la frase completa (mínimo 2 palabras).'); }
     if (t === 'memoria'){ datos.parejas = lineas($('fPar').value).slice(0, 12); if (datos.parejas.length < 3) return toast('Pon al menos 3 parejas.'); }
     if (t === 'sopa'){ datos.palabras = lineas($('fPal').value).slice(0, 12); if (datos.palabras.length < 2) return toast('Pon al menos 2 palabras.'); }
+    if (t === 'sudoku') datos.dificultad = $('fDif').value;
+    if (t === 'puzle') datos.tam = +$('fTam').value;
+    if (t === 'quiz'){ const P = [], mal = []; lineas($('fQz').value).forEach(l => { const pa = l.split('|').map(x => x.trim()).filter(Boolean); if (pa.length < 3) return mal.push(l.slice(0, 20)); const o = pa.slice(1, 6), c = o.findIndex(x => x.endsWith('*')); if (c < 0) return mal.push(l.slice(0, 20)); P.push({ q: pa[0], o: o.map(x => x.replace(/\*$/, '').trim()), c }); });
+      if (mal.length) return toast('Revisa estas líneas (faltan opciones o el *): ' + mal.join(' · ')); if (P.length < 3 || P.length > 10) return toast('El quiz necesita de 3 a 10 preguntas.'); datos.preguntas = P; }
     let path = quitar ? null : r.imagen_path; const f = $('fImg').files[0];
     if (f){ if (f.size > 12 * 1024 * 1024) return toast('La imagen pesa demasiado (máx. 12 MB).'); path = `adv/d${d}-${Date.now()}.${f.type === 'image/png' ? 'png' : 'jpg'}`; const up = await sb.storage.from('mooncards').upload(path, f, { contentType: f.type, upsert: true }); if (up.error) return toast('No se pudo subir la imagen.'); }
     const fila = { dia: d, tipo: t, titulo: $('fTit').value.trim() || null, texto: $('fTxt').value.trim() || null, enlace: $('fEnl').value.trim() || null, imagen_path: path, datos, actualizado: new Date().toISOString() };
