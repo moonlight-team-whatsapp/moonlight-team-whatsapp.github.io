@@ -59,6 +59,8 @@
   .n.dim{ opacity:.28; }
   .n.hascard{ padding-left:calc(var(--av, 40px) + 14px); padding-right:8px; border-color:var(--gold-dim); }
   .n .nav{ position:absolute; left:6px; top:50%; transform:translateY(-50%); border-radius:50%; border:1.5px solid var(--gold); box-shadow:0 0 8px rgba(217,195,131,.35); }
+  .n.hasmini{ border-color:var(--gold-dim); }
+  .n.hasmini .nav{ left:-9px; top:-9px; transform:none; border-width:1.5px; }
   .n.hascard b{ font-size:.95rem; }
   .mcbox{ margin:2px 0 12px; } .mcbox img{ display:block; width:100%; border-radius:10px; border:1px solid var(--gold-dim); box-shadow:0 8px 24px rgba(0,0,0,.5); } .mcbox div{ display:flex; justify-content:space-between; margin:6px 2px 0; font-size:.9rem; color:var(--ink-soft); font-style:italic; } .mcbox a{ color:var(--gold); text-decoration:none; }
   .n.gone{ border-style:dashed; opacity:.55; }
@@ -528,8 +530,8 @@
     TP.forEach(p => {
       const cls = p.id === sel ? ' sel' : me && !nb.has(p.id) ? ' dim' : '';
       const sym = p.g === 'f' ? ' ♀' : p.g === 'm' ? ' ♂' : '';
-      const pr = PRIN.get(clave(p.name)), av = pr ? `<span class="nav" style="${avatarCss(pr.url, H - 14)}"></span>` : '';
-      ns += `<div class="n${cls}${pr ? ' hascard' : ''}" data-id="${esc(p.id)}" style="width:${W}px;height:${H}px;left:${X[p.id] + sh - W / 2}px;top:${RY(g[p.id]) - H / 2}px">${av}<b>${esc(p.name)}</b><i>Gen. ${ROM[g[p.id]] || g[p.id] + 1}${sym}</i></div>`;
+      const pr = PRIN.get(clave(p.name)), mini = W < 120, av = pr ? `<span class="nav" style="${avatarCss(pr.url, mini ? 28 : H - 14)}"></span>` : '';
+      ns += `<div class="n${cls}${pr ? (mini ? ' hasmini' : ' hascard') : ''}" data-id="${esc(p.id)}" style="width:${W}px;height:${H}px;left:${X[p.id] + sh - W / 2}px;top:${RY(g[p.id]) - H / 2}px">${av}<b>${esc(p.name)}</b><i>Gen. ${ROM[g[p.id]] || g[p.id] + 1}${sym}</i></div>`;
     });
     if (sl.length){
       gl += `<div class="gl" style="top:${soloHead.y}px"><span>Sin familia</span></div>`;
