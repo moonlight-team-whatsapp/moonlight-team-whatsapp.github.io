@@ -509,13 +509,12 @@
   $('bBgQ').onclick = function(){ S.bg = null; redraw(); };
   $('iBgZoom').oninput = function(){ S.bz = +this.value; redraw(); };
   $('iDim').oninput = function(){ S.dim = +this.value / 100; redraw(); };
-  $('iBg').onchange = function(e){
-    var f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  function ponerBg(f){
     createImageBitmap(f).then(function(b){ S.bg = fit(b, 2000); S.bx = 0; S.by = 0; S.bz = 1; $('iBgZoom').value = 1; redraw(); }).catch(function(){ $('msg').textContent = 'No se pudo leer esa imagen, prueba con otra.'; });
-  };
+  }
+  $('iBg').onchange = function(e){ var f = e.target.files[0]; e.target.value = ''; if (f) ponerBg(f); };
   $('bStImg').onclick = function(){ $('iStImg').click(); };
-  $('iStImg').onchange = function(e){
-    var fs = Array.prototype.slice.call(e.target.files); e.target.value = '';
+  function ponerAdornos(fs){
     fs.forEach(function(f){
       if (S.stickers.length >= 40){ $('msg').textContent = 'Máximo 40 adornos.'; return; }
       createImageBitmap(f).then(function(b){
@@ -524,16 +523,37 @@
         S.sel = S.stickers.length - 1; $('iStSize').value = 180; cv.style.touchAction = 'none'; redraw();
       }).catch(function(){ $('msg').textContent = 'No se pudo leer una de las imágenes.'; });
     });
-  };
+  }
+  $('iStImg').onchange = function(e){ var fs = Array.prototype.slice.call(e.target.files); e.target.value = ''; ponerAdornos(fs); };
   $('iZoom').oninput = function(){ S.zoom = +this.value; redraw(); };
   $('iTag').onchange = function(){ S.tag = this.checked; redraw(); };
   document.querySelectorAll('#sShape button').forEach(function(b){ b.onclick = function(){ S.shape = b.dataset.v; document.querySelectorAll('#sShape button').forEach(function(x){ x.classList.toggle('on', x === b); }); redraw(); }; });
   $('bFoto').onclick = function(){ $('iFoto').click(); };
   $('bFotoQ').onclick = function(){ S.img = null; redraw(); };
-  $('iFoto').onchange = function(e){
-    var f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  function ponerFoto(f){
     createImageBitmap(f).then(function(b){ S.img = b; S.ix = 0; S.iy = 0; redraw(); }).catch(function(){ $('msg').textContent = 'No se pudo leer esa imagen, prueba con otra.'; });
-  };
+  }
+  $('iFoto').onchange = function(e){ var f = e.target.files[0]; e.target.value = ''; if (f) ponerFoto(f); };
+  /* Pegar desde el portapapeles: va a la última zona tocada (foto / fondo / adornos) */
+  var pegarEn = 'foto';
+  [['bFoto','foto'],['bBg','bg'],['bStImg','adorno']].forEach(function(z){
+    var el = $(z[0]), box = el.closest('.f') || el.parentNode;
+    ['pointerdown','focusin'].forEach(function(ev){ box.addEventListener(ev, function(){ pegarEn = z[1]; }); });
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'mini'; b.textContent = '📋 Pegar'; b.title = 'Pegar imagen del portapapeles (o Ctrl+V)';
+    b.onclick = function(){ pegarEn = z[1];
+      if (!navigator.clipboard || !navigator.clipboard.read){ $('msg').textContent = 'Tu navegador no deja pegar con el botón: usa Ctrl+V.'; return; }
+      navigator.clipboard.read().then(function(items){ var hecho = false;
+        return items.reduce(function(pr, it){ return pr.then(function(){ var ty = it.types.filter(function(x){ return /^image\//.test(x); })[0]; if (!ty || hecho) return; hecho = true; return it.getType(ty).then(function(bl){ aplicar(z[1], [bl]); }); }); }, Promise.resolve())
+          .then(function(){ if (!hecho) $('msg').textContent = 'No hay ninguna imagen en el portapapeles.'; });
+      }).catch(function(){ $('msg').textContent = 'No se pudo leer el portapapeles: prueba con Ctrl+V.'; }); };
+    el.insertAdjacentElement('afterend', b);
+  });
+  function aplicar(donde, fs){ if (!fs.length) return;
+    if (donde === 'bg') ponerBg(fs[0]); else if (donde === 'adorno') ponerAdornos(fs); else ponerFoto(fs[0]);
+    $('msg').textContent = 'Imagen pegada en ' + (donde === 'bg' ? 'el fondo' : donde === 'adorno' ? 'los adornos' : 'la foto') + '.'; }
+  document.addEventListener('paste', function(e){
+    var fs = Array.prototype.filter.call((e.clipboardData && e.clipboardData.files) || [], function(f){ return /^image\//.test(f.type); });
+    if (!fs.length) return; e.preventDefault(); aplicar(pegarEn, fs); });
   var sw = $('swatches');
   THEMES.forEach(function(t, i){ var b = document.createElement('button'); b.type = 'button'; b.title = t.n; b.setAttribute('aria-label', 'Fondo ' + t.n);
     b.style.background = 'linear-gradient(135deg,' + t.a + ',' + t.glow + ')'; if (!i) b.className = 'on';
