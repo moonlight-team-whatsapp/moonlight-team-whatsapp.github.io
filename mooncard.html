@@ -152,6 +152,8 @@
     .tabs{ margin-bottom:10px; }
     .tabs button{ font-size:1.02rem; }
   }
+.tagsug{ display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 }
+  .tagchip{ padding:3px 10px; border-radius:999px; border:1px solid rgba(217,195,131,.5); background:rgba(217,195,131,.08); color:var(--gold,#d9c383); font:inherit; font-size:.9rem; cursor:pointer }
 </style>
 </head>
 <body>
@@ -285,6 +287,8 @@
   <p>Se subirán la imagen de tu tarjeta y su <b>diseño editable</b> (con tus fotos), para que otros puedan usarlo como plantilla. Un admin la revisa antes de mostrarla. Máximo 3 tarjetas por personaje.</p>
   <label for="pubPer">Personaje al que pertenece</label><select id="pubPer"><option value="">Cargando personajes…</option></select>
   <label for="pubName">Nombre de la tarjeta (opcional)</label><input id="pubName" type="text" maxlength="40" placeholder="Ej: Kazu navideño" autocomplete="off">
+  <label for="pubTags">Etiquetas (opcional, hasta 5)</label><input id="pubTags" type="text" maxlength="90" placeholder="#navidad #verano #acromatico" autocomplete="off">
+  <div id="pubTagSug" class="tagsug" aria-label="Etiquetas existentes"></div>
   <p id="pubMsg" class="cc-note" role="status"></p>
   <div class="acts"><button class="btn-primary" id="pubOk" type="button">Publicar</button><button class="btn-ghost" id="pubNo" type="button">Cancelar</button></div>
 </dialog>
@@ -706,7 +710,14 @@
       var m = names.filter(function(n){ return n.toLowerCase() === want; })[0]; if (m) sel.value = m;
     });
   }
-  $('bPub').onclick = function(){ fillPer(); $('pubMsg').textContent = ''; $('pubOk').disabled = false; $('pubName').value = ''; $('pubDlg').showModal(); };
+  $('bPub').onclick = function(){ fillPer(); $('pubMsg').textContent = ''; $('pubOk').disabled = false; $('pubName').value = ''; $('pubTags').value = ''; $('pubDlg').showModal(); cargaSug(); };
+  function normTags(s){ var seen = {}, out = [];
+    String(s || '').toLowerCase().replace(/ñ/g, '\u0001').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\u0001/g, 'ñ').split(/[\s,;#]+/).forEach(function(x){ x = x.replace(/[^a-z0-9ñ_]/g, ''); if (x.length >= 2 && !seen[x]){ seen[x] = 1; out.push(x.slice(0, 24)); } });
+    return out.slice(0, 5); }
+  function cargaSug(){ var box = $('pubTagSug'); box.innerHTML = '';
+    sb.from('mooncards').select('etiquetas').eq('aprobada', true).then(function(r){ var c = {}; (r.data || []).forEach(function(x){ (x.etiquetas || []).forEach(function(e){ c[e] = (c[e] || 0) + 1; }); });
+      Object.keys(c).sort(function(a, b){ return c[b] - c[a]; }).slice(0, 20).forEach(function(e){ var b = document.createElement('button'); b.type = 'button'; b.className = 'tagchip'; b.textContent = '#' + e;
+        b.onclick = function(){ var cur = normTags($('pubTags').value); if (cur.indexOf(e) < 0 && cur.length < 5) cur.push(e); $('pubTags').value = cur.map(function(x){ return '#' + x; }).join(' '); }; box.appendChild(b); }); }); }
   $('pubNo').onclick = function(){ $('pubDlg').close(); };
   $('pubOk').onclick = function(){
     var sb = sbp(), pm = $('pubMsg'); if (!sb){ pm.textContent = 'No se pudo conectar. Prueba otra vez en un momento.'; return; }
@@ -724,7 +735,7 @@
       });
     }).then(function(e2){
       if (e2.error) throw e2.error;
-      return sb.from('mooncards').insert({ id: id, personaje: per, titulo: $('pubName').value.trim().slice(0, 40) || null, img_path: pi, diseno_path: pd });
+      return sb.from('mooncards').insert({ id: id, personaje: per, titulo: $('pubName').value.trim().slice(0, 40) || null, etiquetas: normTags($('pubTags').value), img_path: pi, diseno_path: pd });
     }).then(function(r){
       if (r.error){ sb.storage.from('mooncards').remove([pi, pd]); throw r.error; }
       pm.textContent = '¡Enviada! Aparecerá en la galería cuando la apruebe un admin.'; $('pubOk').hidden = true; $('pubNo').textContent = 'Cerrar';

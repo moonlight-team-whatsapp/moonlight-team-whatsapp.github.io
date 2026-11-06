@@ -12,6 +12,10 @@
 <link rel="stylesheet" href="css/styles.css">
 <style>
   .wrap{ max-width:1200px; }
+  .tagbar{ display:flex; flex-wrap:wrap; gap:6px; margin:-6px 0 16px }
+  .tagbar button,.gtags span{ padding:3px 10px; border-radius:999px; border:1px solid rgba(217,195,131,.45); background:rgba(217,195,131,.07); color:var(--gold,#d9c383); font:inherit; font-size:.88rem; cursor:pointer }
+  .tagbar button.on{ background:rgba(217,195,131,.3); color:#fff }
+  .gtags{ display:flex; flex-wrap:wrap; gap:4px } .gtags span{ cursor:default; padding:1px 8px; font-size:.8rem }
   .filters{ display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 16px; align-items:center; }
   .filters select{ padding:8px 10px; font-family:'Crimson Pro',serif; font-size:1rem; color:var(--ink); background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:4px; min-width:200px; }
   .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
@@ -50,6 +54,7 @@
   </header>
   <div id="pendBox" hidden><h2 class="sec">Pendientes de aprobar</h2><div class="grid" id="pendGrid"></div><h2 class="sec">Publicadas</h2></div>
   <div class="filters"><select id="fPer" aria-label="Filtrar por personaje"><option value="">Todos los personajes</option></select><span id="count" class="subtitle"></span></div>
+  <div class="tagbar" id="tagBar"></div>
   <div class="grid" id="grid"></div>
   <p class="empty-note" id="empty" hidden>Todavía no hay tarjetas en la galería.</p>
 </div>
@@ -72,7 +77,7 @@ import { sb } from './js/supabase-sesion.js';
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 (function(){ const l = $('starsLayer'), fr = document.createDocumentFragment(); for (let i = 0; i < 36; i++){ const s = document.createElement('span'); s.className = 'star'; const z = (Math.random()*1.6+.8).toFixed(2); s.style.cssText = `top:${Math.random()*100}%;left:${Math.random()*100}%;width:${z}px;height:${z}px`; s.style.setProperty('--dur', (Math.random()*3+2).toFixed(2)+'s'); s.style.setProperty('--delay', (Math.random()*5).toFixed(2)+'s'); s.style.setProperty('--o-min', '.2'); s.style.setProperty('--o-max', '.85'); fr.appendChild(s); } l.appendChild(fr); })();
-let isAdmin = false, rows = [], names = [];
+let isAdmin = false, rows = [], names = [], tagSel = null;
 const url = p => sb.storage.from('mooncards').getPublicUrl(p).data.publicUrl;
 async function load(){
   const { data } = await sb.from('mooncards').select('*').order('creada', { ascending: false });
@@ -81,20 +86,24 @@ async function load(){
 }
 function card(r, pend){
   const d = new Date(r.creada).toLocaleDateString('es-ES');
-  return `<article class="gc${pend ? ' pend' : ''}" style="--i:IDX"><img src="${url(r.img_path)}" alt="${esc(r.titulo || 'MoonCard de ' + r.personaje)}" loading="lazy" data-zoom="${esc(url(r.img_path))}"><div class="meta"><b>${esc(r.titulo || r.personaje)}</b><small>${r.principal ? '★ Principal · ' : ''}${r.titulo ? esc(r.personaje) + ' · ' : ''}${d}</small><div class="row"><a class="gbtn" href="mooncard.html?plantilla=${r.id}">Usar como plantilla</a>${isAdmin ? `<select class="gsel" data-per="${r.id}" aria-label="Cambiar personaje">${names.map(n => `<option${n === r.personaje ? ' selected' : ''}>${esc(n)}</option>`).join('')}${names.includes(r.personaje) ? '' : `<option selected>${esc(r.personaje)}</option>`}</select>` : ''}${isAdmin ? (pend ? `<button class="gbtn" data-ok="${r.id}" type="button">Aprobar</button>` : (r.principal ? '' : `<button class="gbtn" data-main="${r.id}" type="button">Hacer principal</button>`)) + `<button class="gbtn red" data-del="${r.id}" type="button">Borrar</button>` : ''}</div></div></article>`;
+  return `<article class="gc${pend ? ' pend' : ''}" style="--i:IDX"><img src="${url(r.img_path)}" alt="${esc(r.titulo || 'MoonCard de ' + r.personaje)}" loading="lazy" data-zoom="${esc(url(r.img_path))}"><div class="meta"><b>${esc(r.titulo || r.personaje)}</b>${(r.etiquetas || []).length ? `<div class="gtags">${r.etiquetas.map(e => `<span>#${esc(e)}</span>`).join('')}</div>` : ''}<small>${r.principal ? '★ Principal · ' : ''}${r.titulo ? esc(r.personaje) + ' · ' : ''}${d}</small><div class="row"><a class="gbtn" href="mooncard.html?plantilla=${r.id}">Usar como plantilla</a>${isAdmin ? `<select class="gsel" data-per="${r.id}" aria-label="Cambiar personaje">${names.map(n => `<option${n === r.personaje ? ' selected' : ''}>${esc(n)}</option>`).join('')}${names.includes(r.personaje) ? '' : `<option selected>${esc(r.personaje)}</option>`}</select>` : ''}${isAdmin ? (pend ? `<button class="gbtn" data-ok="${r.id}" type="button">Aprobar</button>` : (r.principal ? '' : `<button class="gbtn" data-main="${r.id}" type="button">Hacer principal</button>`)) + `<button class="gbtn red" data-del="${r.id}" type="button">Borrar</button>` : ''}</div></div></article>`;
 }
 function paint(){
   const ap = rows.filter(r => r.aprobada), pe = rows.filter(r => !r.aprobada);
   const keys = [...new Map(ap.map(r => [r.personaje_key, r.personaje])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
   const sel = $('fPer'), cur = sel.value;
   sel.innerHTML = '<option value="">Todos los personajes</option>' + keys.map(([k, n]) => `<option value="${esc(k)}">${esc(n)}</option>`).join(''); sel.value = keys.some(k => k[0] === cur) ? cur : '';
-  const list = ap.filter(r => !sel.value || r.personaje_key === sel.value);
+  const cnt = {}; ap.forEach(r => (r.etiquetas || []).forEach(e => cnt[e] = (cnt[e] || 0) + 1));
+  if (tagSel && !cnt[tagSel]) tagSel = null;
+  $('tagBar').innerHTML = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a] || a.localeCompare(b)).map(e => `<button type="button" data-tag="${esc(e)}" class="${e === tagSel ? 'on' : ''}">#${esc(e)} <small>${cnt[e]}</small></button>`).join('');
+  const list = ap.filter(r => (!sel.value || r.personaje_key === sel.value) && (!tagSel || (r.etiquetas || []).includes(tagSel)));
   $('grid').innerHTML = list.map((r, i) => card(r, false).replace('IDX', i)).join('');
   $('empty').hidden = !!ap.length; $('count').textContent = ap.length ? list.length + ' tarjeta' + (list.length === 1 ? '' : 's') : '';
   $('pendBox').hidden = !(isAdmin && pe.length);
   $('pendGrid').innerHTML = pe.map((r, i) => card(r, true).replace('IDX', i)).join('');
 }
 $('fPer').onchange = paint;
+$('tagBar').onclick = e => { const b = e.target.closest('[data-tag]'); if (!b) return; tagSel = tagSel === b.dataset.tag ? null : b.dataset.tag; paint(); };
 document.addEventListener('change', async e => {
   const s = e.target.closest('[data-per]'); if (!s) return;
   const { error } = await sb.from('mooncards').update({ personaje: s.value }).eq('id', s.dataset.per);
