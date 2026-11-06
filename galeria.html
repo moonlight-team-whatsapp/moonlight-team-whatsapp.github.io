@@ -15,6 +15,7 @@
   .tagbar{ display:flex; flex-wrap:wrap; gap:6px; margin:-6px 0 16px }
   .tagbar button,.gtags span{ padding:3px 10px; border-radius:999px; border:1px solid rgba(217,195,131,.45); background:rgba(217,195,131,.07); color:var(--gold,#d9c383); font:inherit; font-size:.88rem; cursor:pointer }
   .tagbar button.on{ background:rgba(217,195,131,.3); color:#fff }
+  .gtin{ padding:6px 10px; font:inherit; font-size:.9rem; color:var(--ink); background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:8px; min-width:0; width:100% }
   .gtags{ display:flex; flex-wrap:wrap; gap:4px } .gtags span{ cursor:default; padding:1px 8px; font-size:.8rem }
   .filters{ display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 16px; align-items:center; }
   .filters select{ padding:8px 10px; font-family:'Crimson Pro',serif; font-size:1rem; color:var(--ink); background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:4px; min-width:200px; }
@@ -86,7 +87,7 @@ async function load(){
 }
 function card(r, pend){
   const d = new Date(r.creada).toLocaleDateString('es-ES');
-  return `<article class="gc${pend ? ' pend' : ''}" style="--i:IDX"><img src="${url(r.img_path)}" alt="${esc(r.titulo || 'MoonCard de ' + r.personaje)}" loading="lazy" data-zoom="${esc(url(r.img_path))}"><div class="meta"><b>${esc(r.titulo || r.personaje)}</b>${(r.etiquetas || []).length ? `<div class="gtags">${r.etiquetas.map(e => `<span>#${esc(e)}</span>`).join('')}</div>` : ''}<small>${r.principal ? '★ Principal · ' : ''}${r.titulo ? esc(r.personaje) + ' · ' : ''}${d}</small><div class="row"><a class="gbtn" href="mooncard.html?plantilla=${r.id}">Usar como plantilla</a>${isAdmin ? `<select class="gsel" data-per="${r.id}" aria-label="Cambiar personaje">${names.map(n => `<option${n === r.personaje ? ' selected' : ''}>${esc(n)}</option>`).join('')}${names.includes(r.personaje) ? '' : `<option selected>${esc(r.personaje)}</option>`}</select>` : ''}${isAdmin ? (pend ? `<button class="gbtn" data-ok="${r.id}" type="button">Aprobar</button>` : (r.principal ? '' : `<button class="gbtn" data-main="${r.id}" type="button">Hacer principal</button>`)) + `<button class="gbtn red" data-del="${r.id}" type="button">Borrar</button>` : ''}</div></div></article>`;
+  return `<article class="gc${pend ? ' pend' : ''}" style="--i:IDX"><img src="${url(r.img_path)}" alt="${esc(r.titulo || 'MoonCard de ' + r.personaje)}" loading="lazy" data-zoom="${esc(url(r.img_path))}"><div class="meta"><b>${esc(r.titulo || r.personaje)}</b>${(r.etiquetas || []).length ? `<div class="gtags">${r.etiquetas.map(e => `<span>#${esc(e)}</span>`).join('')}</div>` : ''}<small>${r.principal ? '★ Principal · ' : ''}${r.titulo ? esc(r.personaje) + ' · ' : ''}${d}</small><div class="row"><a class="gbtn" href="mooncard.html?plantilla=${r.id}">Usar como plantilla</a>${isAdmin ? `<select class="gsel" data-per="${r.id}" aria-label="Cambiar personaje">${names.map(n => `<option${n === r.personaje ? ' selected' : ''}>${esc(n)}</option>`).join('')}${names.includes(r.personaje) ? '' : `<option selected>${esc(r.personaje)}</option>`}</select>` : ''}${isAdmin ? `<input class="gtin" data-tags="${r.id}" maxlength="90" placeholder="#etiquetas" aria-label="Etiquetas" value="${esc((r.etiquetas || []).map(e => '#' + e).join(' '))}">` : ''}${isAdmin ? (pend ? `<button class="gbtn" data-ok="${r.id}" type="button">Aprobar</button>` : (r.principal ? '' : `<button class="gbtn" data-main="${r.id}" type="button">Hacer principal</button>`)) + `<button class="gbtn red" data-del="${r.id}" type="button">Borrar</button>` : ''}</div></div></article>`;
 }
 function paint(){
   const ap = rows.filter(r => r.aprobada), pe = rows.filter(r => !r.aprobada);
@@ -104,7 +105,12 @@ function paint(){
 }
 $('fPer').onchange = paint;
 $('tagBar').onclick = e => { const b = e.target.closest('[data-tag]'); if (!b) return; tagSel = tagSel === b.dataset.tag ? null : b.dataset.tag; paint(); };
+function normTags(s){ const seen = {}, out = [];
+  String(s || '').toLowerCase().replace(/ñ/g, '\u0001').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\u0001/g, 'ñ').split(/[\s,;#]+/).forEach(x => { x = x.replace(/[^a-z0-9ñ_]/g, ''); if (x.length >= 2 && !seen[x]){ seen[x] = 1; out.push(x.slice(0, 24)); } });
+  return out.slice(0, 5); }
 document.addEventListener('change', async e => {
+  const ti = e.target.closest('[data-tags]');
+  if (ti){ const { error } = await sb.from('mooncards').update({ etiquetas: normTags(ti.value) }).eq('id', ti.dataset.tags); if (error){ ti.style.borderColor = '#ff9b9b'; ti.title = 'No se pudo guardar'; } else load(); return; }
   const s = e.target.closest('[data-per]'); if (!s) return;
   const { error } = await sb.from('mooncards').update({ personaje: s.value }).eq('id', s.dataset.per);
   if (error){ s.style.borderColor = '#ff9b9b'; s.title = /limite/.test(error.message) ? 'Ese personaje ya tiene 3 tarjetas' : 'No se pudo cambiar'; setTimeout(load, 1800); } else load();
