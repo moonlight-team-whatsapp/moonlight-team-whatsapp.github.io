@@ -70,6 +70,8 @@
   .mc.up{ background:rgba(217,195,131,.14); border-color:var(--gold); }
   .mc.up::before, .mc.ok::before{ content:''; }
   .mc.up span, .mc.ok span{ display:block; }
+  .mc span img{ width:100%; height:100%; object-fit:cover; border-radius:6px; display:block; }
+  .mc.up span, .mc.ok span{ width:100%; height:100%; }
   .mc.ok{ background:rgba(125,255,176,.1); border-color:rgba(125,255,176,.5); cursor:default; }
   /* sopa de letras */
   .sp{ display:grid; gap:2px; user-select:none; -webkit-user-select:none; touch-action:none; margin:8px auto; max-width:420px; }
@@ -102,6 +104,9 @@
   .pz button{ border:1px solid rgba(255,255,255,.15); border-radius:4px; padding:0; cursor:pointer; background-color:#1c2450; color:var(--gold); font-family:'Cormorant',serif; font-weight:600; font-size:1.8rem; background-repeat:no-repeat; }
   .pz button.v{ visibility:hidden; } .pz.fin{ gap:0; } .pz.fin button{ border-color:transparent; border-radius:0; }
   /* editor */
+  .orow{ display:flex; gap:8px; align-items:center; margin:6px 0; } .orow input[type=text]{ flex:1; }
+  .oimg{ flex:none; width:46px; height:46px; border-radius:8px; border:1px dashed var(--border); background:rgba(255,255,255,.03) center/cover no-repeat; color:var(--ink-soft); cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center; padding:0; } .oimg:hover{ border-color:var(--gold-dim); }
+  .odel{ flex:none; width:32px; height:32px; border-radius:50%; border:1px solid var(--border); background:none; color:var(--ink-soft); cursor:pointer; } .odel:hover{ color:#ff8a8a; border-color:#ff8a8a; }
   #toast{ position:fixed; left:50%; bottom:20px; transform:translate(-50%,20px); background:#141b37; border:1px solid var(--gold-dim); color:var(--ink); padding:9px 16px; border-radius:8px; opacity:0; transition:all .3s; z-index:30; pointer-events:none; max-width:90vw; text-align:center; }
   #toast.show{ opacity:1; transform:translate(-50%,0); }
 </style>
@@ -245,16 +250,17 @@ function juegoFrase(box, dat, fin){
 }
 
 /* ---------- Juego: memoria de parejas ---------- */
+function parejasDe(dat){ return (dat.parejas || []).map(x => typeof x === 'string' ? { t: x.trim() } : { t: String(x.t || '').trim(), img: x.img || null }).filter(x => x.t || x.img).slice(0, 12); }
 function juegoMemoria(box, dat, fin){
-  const par = (dat.parejas || []).map(s => String(s).trim()).filter(Boolean).slice(0, 12);
+  const par = parejasDe(dat);
   if (par.length < 3){ box.innerHTML = '<p class="pend">Este juego aún no está preparado.</p>'; return; }
-  const cartas = barajar(par.concat(par)); const g = document.createElement('div'); g.className = 'mem'; box.appendChild(g);
+  const cartas = barajar(par.map((p, k) => Object.assign({ k }, p)).concat(par.map((p, k) => Object.assign({ k }, p)))); const g = document.createElement('div'); g.className = 'mem'; box.appendChild(g);
   const info = document.createElement('p'); info.className = 'pend'; box.appendChild(info);
   let abiertas = [], bloq = false, mov = 0, hechas = 0; info.textContent = 'Movimientos: 0';
-  cartas.forEach(t => { const b = document.createElement('button'); b.type = 'button'; b.className = 'mc'; b.innerHTML = `<span>${esc(t)}</span>`; b.dataset.t = t;
+  cartas.forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.className = 'mc'; b.innerHTML = `<span>${c.img ? `<img src="${esc(imgUrl(c.img))}" alt="${esc(c.t)}" draggable="false">` : ''}${c.t && !c.img ? esc(c.t) : ''}</span>`; b.dataset.k = c.k;
     b.onclick = () => { if (bloq || b.classList.contains('up') || b.classList.contains('ok')) return; b.classList.add('up'); abiertas.push(b);
       if (abiertas.length === 2){ mov++; info.textContent = 'Movimientos: ' + mov; const [x, y] = abiertas;
-        if (x.dataset.t === y.dataset.t){ x.className = y.className = 'mc ok'; abiertas = []; if (++hechas === par.length) fin(); }
+        if (x.dataset.k === y.dataset.k){ x.className = y.className = 'mc ok'; abiertas = []; if (++hechas === par.length) fin(); }
         else { bloq = true; setTimeout(() => { x.classList.remove('up'); y.classList.remove('up'); abiertas = []; bloq = false; }, 800); } } };
     g.appendChild(b); });
   g.style.gridTemplateColumns = `repeat(${cartas.length > 12 ? 5 : 4},1fr)`;
@@ -332,7 +338,7 @@ function juegoQuiz(box, dat, fin){
 
 /* ---------- Juego: puzle deslizante ---------- */
 function juegoPuzle(box, dat, fin, dia, r){
-  const N = dat.tam === 4 ? 4 : 3, T = N * N, img = r.imagen_path ? imgUrl(r.imagen_path) : null, rnd = semilla(dia * 7753 + N);
+  const N = dat.tam === 4 ? 4 : 3, T = N * N, img = r.imagen_path ? imgUrl(r.imagen_path) : (dat.img_local && /^[\w./-]+$/.test(dat.img_local) ? dat.img_local : null), rnd = semilla(dia * 7753 + N);
   let p = Array.from({ length: T }, (_, i) => i), vacio = T - 1;
   for (let k = 0; k < 60 * N * N; k++){ const x = vacio % N, y = (vacio / N) | 0, v = []; if (x > 0) v.push(vacio - 1); if (x < N - 1) v.push(vacio + 1); if (y > 0) v.push(vacio - N); if (y < N - 1) v.push(vacio + N); const m = v[Math.floor(rnd() * v.length)]; [p[vacio], p[m]] = [p[m], p[vacio]]; vacio = m; }
   if (p.every((x, i) => x === i)){ [p[0], p[1]] = [p[1], p[0]]; }
@@ -348,6 +354,9 @@ function juegoPuzle(box, dat, fin, dia, r){
 }
 
 /* ---------- Editor (admin) ---------- */
+function reducirImg(file, max){ return new Promise((ok, ko) => { const im = new Image(), u = URL.createObjectURL(file); im.onload = () => { const k = Math.min(1, max / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); c.toBlob(b => b ? ok(b) : ko(), 'image/jpeg', .85); }; im.onerror = ko; im.src = u; }); }
+async function subirImg(file, max, pref){ const p = `${pref}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}.jpg`; const r = await sb.storage.from('mooncards').upload(p, await reducirImg(file, max), { contentType: 'image/jpeg' }); if (r.error) throw r.error; return p; }
+function elegirImgs(multi, cb){ const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/png,image/jpeg,image/webp'; i.multiple = multi; i.onchange = () => { const f = [...i.files]; if (f.length) cb(f); }; i.click(); }
 const lineas = s => String(s || '').split('\n').map(x => x.trim()).filter(Boolean);
 const norm = s => sinAc(String(s));
 function editar(d){
@@ -364,18 +373,26 @@ function editar(d){
     <p class="nota" id="fImgN">${r.imagen_path ? 'Ya tiene imagen. Si subes otra, la sustituye. <a href="#" id="fImgQ">Quitar imagen</a>' : 'Sin imagen.'}</p>
     <div class="fila"><button class="gbtn" id="fSave" type="button">Guardar</button><button class="gbtn suave" id="fDel" type="button">Vaciar puerta</button><button class="gbtn suave" id="fCancel" type="button">Cancelar</button></div>`;
   let quitar = false;
+  const MEM = parejasDe(dat).map(p => ({ t: p.t, img: p.img || null, file: null })); const imgViejas = MEM.map(p => p.img).filter(Boolean);
+  const pintaMem = () => { const c = $('fMem'); if (!c) return; c.innerHTML = MEM.map((p, i) => `<div class="orow" data-i="${i}"><button class="oimg" type="button" title="Foto" style="${p.file ? `background-image:url('${URL.createObjectURL(p.file)}')` : p.img ? `background-image:url('${imgUrl(p.img)}')` : ''}">${p.file || p.img ? '' : '🖼️'}</button><input type="text" maxlength="40" value="${esc(p.t)}" placeholder="Título (opcional si hay foto)"><button class="odel" type="button" title="Quitar">×</button></div>`).join(''); };
+  const montaMem = () => { if (!$('fMem')) return; pintaMem();
+    $('fMem').oninput = e => { const r = e.target.closest('.orow'); if (r) MEM[+r.dataset.i].t = e.target.value; };
+    $('fMem').onclick = e => { const r = e.target.closest('.orow'); if (!r) return; const i = +r.dataset.i; if (e.target.closest('.odel')){ MEM.splice(i, 1); pintaMem(); } else if (e.target.closest('.oimg')) elegirImgs(false, fs => { MEM[i].file = fs[0]; pintaMem(); }); };
+    $('mAdd').onclick = () => { if (MEM.length >= 12) return toast('Máximo 12 parejas.'); MEM.push({ t: '', img: null, file: null }); pintaMem(); };
+    $('mMany').onclick = () => elegirImgs(true, fs => { const hueco = 12 - MEM.length; if (fs.length > hueco) toast(`Máximo 12 parejas: se añaden ${hueco}.`); fs.slice(0, Math.max(0, hueco)).forEach(f => { let t = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim(); if (/^(img|dsc|image|photo|foto|screenshot|captura|whatsapp)?[\s\d.()]*$/i.test(t)) t = ''; MEM.push({ t: t ? t[0].toUpperCase() + t.slice(1) : '', img: null, file: f }); }); pintaMem(); }); };
+  montaMem();
   const esp = () => { const t = $('fTipo').value, e = $('fEsp');
     e.innerHTML = t === 'frase' ? `<label>Frase completa<input id="fFrase" maxlength="200" value="${esc(dat.frase)}" placeholder="Bajo la luna brillamos juntos"></label>
         <label>Quién la dice (opcional)<input id="fAut" maxlength="60" value="${esc(dat.autor)}"></label>
         <label>Frases personalizadas por personaje (una por línea: «Personaje: frase»)<textarea id="fPers" placeholder="Kaeya: Bajo la luna nadie bebe solo">${esc(pers)}</textarea></label>
         <p class="nota">Quien entre con su carnet verá la frase de su personaje; el resto, la frase completa de arriba.</p>`
-      : t === 'memoria' ? `<label>Parejas (una por línea, de 3 a 12)<textarea id="fPar" placeholder="Diluc&#10;Kaeya&#10;Kazuha">${esc((dat.parejas || []).join('\n'))}</textarea></label>`
+      : t === 'memoria' ? `<div class="fila"><b>Parejas de la memoria (de 3 a 12)</b></div><div id="fMem"></div><div class="fila"><button class="gbtn suave" id="mAdd" type="button">+ Añadir pareja</button><button class="gbtn suave" id="mMany" type="button">🖼️ Subir varias fotos a la vez</button></div><p class="nota">Cada pareja puede ser una foto (con título opcional) o solo texto. Las fotos se reducen automáticamente.</p>`
       : t === 'sopa' ? `<label>Palabras (una por línea, de 2 a 12; sin tildes en la sopa)<textarea id="fPal" placeholder="MONDSTADT&#10;ANEMO&#10;LUNA">${esc((dat.palabras || []).join('\n'))}</textarea></label>`
       : t === 'sudoku' ? `<label>Dificultad<select id="fDif"><option value="facil" ${dat.dificultad !== 'medio' ? 'selected' : ''}>Fácil (40 números dados)</option><option value="medio" ${dat.dificultad === 'medio' ? 'selected' : ''}>Medio (32 números dados)</option></select></label><p class="nota">El tablero se genera solo y es el mismo para todos ese día.</p>`
       : t === 'quiz' ? `<label>Preguntas (una por línea: «Pregunta | opción | opción* | opción»; la correcta lleva un asterisco *)<textarea id="fQz" style="min-height:140px" placeholder="¿Quién es el Archonte de Mondstadt? | Zhongli | Venti* | Raiden">${esc((dat.preguntas || []).map(p => [p.q].concat(p.o.map((x, k) => x + (k === p.c ? '*' : ''))).join(' | ')).join('\n'))}</textarea></label><p class="nota">De 3 a 10 preguntas, con 2 a 5 opciones cada una. Se abre la sorpresa con un 60 % de aciertos.</p>`
       : t === 'puzle' ? `<label>Tamaño<select id="fTam"><option value="3" ${dat.tam !== 4 ? 'selected' : ''}>3 × 3 (8 piezas)</option><option value="4" ${dat.tam === 4 ? 'selected' : ''}>4 × 4 (15 piezas, más difícil)</option></select></label><p class="nota">Usa la imagen que subas abajo como puzle. Sin imagen, se juega con números.</p>`
       : HECHOS.includes(t) ? '' : '<p class="nota">Este juego aún no está construido. Puedes dejar preparada la sorpresa y se mostrará tal cual hasta entonces.</p>'; };
-  $('fTipo').onchange = esp; esp();
+  $('fTipo').onchange = () => { esp(); montaMem(); }; esp(); montaMem();
   const q = $('fImgQ'); if (q) q.onclick = e => { e.preventDefault(); quitar = true; $('fImgN').textContent = 'La imagen se quitará al guardar.'; };
   $('fCancel').onclick = () => $('edDlg').close();
   $('fDel').onclick = async () => { if (!confirm('¿Vaciar la puerta ' + d + '?')) return; const { error } = await sb.from('adviento').delete().eq('dia', d); if (error) return toast('No se pudo vaciar.'); if (r.imagen_path) try { await sb.storage.from('mooncards').remove([r.imagen_path]); } catch (e) {} delete filas[d]; $('edDlg').close(); paint(); toast('Puerta vaciada.'); };
@@ -384,7 +401,9 @@ function editar(d){
     if (t === 'frase'){ datos.frase = $('fFrase').value.trim(); if ($('fAut').value.trim()) datos.autor = $('fAut').value.trim();
       const per = []; lineas($('fPers').value).forEach(l => { const i = l.indexOf(':'); if (i < 1) return avisos.push(l); const n = l.slice(0, i).trim(), tx = l.slice(i + 1).trim(), o = ocup.find(x => norm(x.n) === norm(n)); if (!o || !tx) return avisos.push(n); per.push({ miembro: o.m, nombre: o.n, texto: tx }); });
       if (per.length) datos.personales = per; if (datos.frase.split(/\s+/).length < 2) return toast('Escribe la frase completa (mínimo 2 palabras).'); }
-    if (t === 'memoria'){ datos.parejas = lineas($('fPar').value).slice(0, 12); if (datos.parejas.length < 3) return toast('Pon al menos 3 parejas.'); }
+    if (t === 'memoria'){ const val = MEM.filter(p => p.t.trim() || p.file || p.img); if (val.length < 3) return toast('Pon al menos 3 parejas.'); $('fSave').disabled = true;
+      try { for (const p of val) if (p.file){ p.img = await subirImg(p.file, 520, `adv/m${d}`); p.file = null; } } catch (e) { $('fSave').disabled = false; return toast('No se pudo subir una foto.'); }
+      datos.parejas = val.map(p => p.img ? { t: p.t.trim(), img: p.img } : { t: p.t.trim() }); const nuevas = new Set(datos.parejas.map(p => p.img)); const sobran = imgViejas.filter(x => !nuevas.has(x)); if (sobran.length) try { await sb.storage.from('mooncards').remove(sobran); } catch (e) {} $('fSave').disabled = false; }
     if (t === 'sopa'){ datos.palabras = lineas($('fPal').value).slice(0, 12); if (datos.palabras.length < 2) return toast('Pon al menos 2 palabras.'); }
     if (t === 'sudoku') datos.dificultad = $('fDif').value;
     if (t === 'puzle') datos.tam = +$('fTam').value;
