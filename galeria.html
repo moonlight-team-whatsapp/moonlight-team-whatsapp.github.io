@@ -16,6 +16,8 @@
   .tagbar button,.gtags span{ padding:3px 10px; border-radius:999px; border:1px solid rgba(217,195,131,.45); background:rgba(217,195,131,.07); color:var(--gold,#d9c383); font:inherit; font-size:.88rem; cursor:pointer }
   .tagbar button.on{ background:rgba(217,195,131,.3); color:#fff }
   .gtin{ padding:6px 10px; font:inherit; font-size:.9rem; color:var(--ink); background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:8px; min-width:0; width:100% }
+  #edDlg[open]{ display:flex; flex-direction:column; gap:6px }
+  #edDlg h3{ margin:0 0 8px } #edDlg label{ margin-top:8px } #edDlg .fila{ margin-top:14px }
   .gtags{ display:flex; flex-wrap:wrap; gap:4px } .gtags span{ cursor:default; padding:1px 8px; font-size:.8rem }
   .filters{ display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 16px; align-items:center; }
   .filters select{ padding:8px 10px; font-family:'Crimson Pro',serif; font-size:1rem; color:var(--ink); background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:4px; min-width:200px; }
@@ -72,7 +74,7 @@
   </div>
 </dialog>
 
-<dialog id="edDlg" style="max-width:min(440px,92vw)"><h3 id="edTit">Editar tarjeta</h3>
+<dialog id="edDlg" style="max-width:min(440px,92vw);padding:22px 24px;display:none" class="eddlg"><h3 id="edTit">Editar tarjeta</h3>
   <label for="edPer">Personaje</label><select id="edPer" class="gsel"></select>
   <label for="edTags">Etiquetas (hasta 5)</label><input id="edTags" class="gtin" maxlength="90" placeholder="#navidad #verano">
   <p id="edMsg" class="subtitle" role="status"></p>
