@@ -115,7 +115,10 @@ document.addEventListener('click', async e => {
   const mn = e.target.closest('[data-main]');
   if (mn){ mn.disabled = true; const r = rows.find(x => x.id === mn.dataset.main); await sb.from('mooncards').update({ principal: false }).eq('personaje_key', r.personaje_key); await sb.from('mooncards').update({ principal: true }).eq('id', r.id); load(); return; }
   const ok = e.target.closest('[data-ok]'), del = e.target.closest('[data-del]');
-  if (ok){ ok.disabled = true; await sb.from('mooncards').update({ aprobada: true }).eq('id', ok.dataset.ok); load(); }
+  if (ok){ ok.disabled = true; const r = rows.find(x => x.id === ok.dataset.ok);
+    if (r && (r.etiquetas || []).includes('main')){ await sb.from('mooncards').update({ principal: false }).eq('personaje_key', r.personaje_key); await sb.from('mooncards').update({ aprobada: true, principal: true }).eq('id', r.id); }
+    else await sb.from('mooncards').update({ aprobada: true }).eq('id', ok.dataset.ok);
+    load(); }
   if (del){
     if (del.dataset.arm !== '1'){ del.dataset.arm = '1'; del.textContent = '¿Seguro? Pulsa otra vez'; setTimeout(() => { del.dataset.arm = ''; del.textContent = 'Borrar'; }, 3500); return; }
     const r = rows.find(x => x.id === del.dataset.del); del.disabled = true;
