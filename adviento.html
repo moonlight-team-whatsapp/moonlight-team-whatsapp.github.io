@@ -298,7 +298,7 @@ function editar(d){
   $('fTipo').onchange = esp; esp();
   const q = $('fImgQ'); if (q) q.onclick = e => { e.preventDefault(); quitar = true; $('fImgN').textContent = 'La imagen se quitará al guardar.'; };
   $('fCancel').onclick = () => $('edDlg').close();
-  $('fDel').onclick = async () => { if (!confirm('¿Vaciar la puerta ' + d + '?')) return; const { error } = await sb.from('adviento').delete().eq('dia', d); if (error) return toast('No se pudo vaciar.'); delete filas[d]; $('edDlg').close(); paint(); toast('Puerta vaciada.'); };
+  $('fDel').onclick = async () => { if (!confirm('¿Vaciar la puerta ' + d + '?')) return; const { error } = await sb.from('adviento').delete().eq('dia', d); if (error) return toast('No se pudo vaciar.'); if (r.imagen_path) try { await sb.storage.from('mooncards').remove([r.imagen_path]); } catch (e) {} delete filas[d]; $('edDlg').close(); paint(); toast('Puerta vaciada.'); };
   $('fSave').onclick = async () => {
     const t = $('fTipo').value; const datos = {}; const avisos = [];
     if (t === 'frase'){ datos.frase = $('fFrase').value.trim(); if ($('fAut').value.trim()) datos.autor = $('fAut').value.trim();
@@ -310,6 +310,7 @@ function editar(d){
     if (f){ if (f.size > 12 * 1024 * 1024) return toast('La imagen pesa demasiado (máx. 12 MB).'); path = `adv/d${d}-${Date.now()}.${f.type === 'image/png' ? 'png' : 'jpg'}`; const up = await sb.storage.from('mooncards').upload(path, f, { contentType: f.type, upsert: true }); if (up.error) return toast('No se pudo subir la imagen.'); }
     const fila = { dia: d, tipo: t, titulo: $('fTit').value.trim() || null, texto: $('fTxt').value.trim() || null, enlace: $('fEnl').value.trim() || null, imagen_path: path, datos, actualizado: new Date().toISOString() };
     const { error } = await sb.from('adviento').upsert(fila); if (error) return toast('No se pudo guardar: ' + error.message);
+    if (r.imagen_path && r.imagen_path !== path) try { await sb.storage.from('mooncards').remove([r.imagen_path]); } catch (e) {}
     filas[d] = fila; $('edDlg').close(); paint(); toast(avisos.length ? 'Guardado. No encontré estos personajes: ' + avisos.join(', ') : 'Puerta guardada.'); };
   $('edDlg').showModal();
 }

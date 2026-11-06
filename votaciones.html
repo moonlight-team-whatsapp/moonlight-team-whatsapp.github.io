@@ -224,7 +224,7 @@ function paint(){
 $('vl').addEventListener('click', async e => {
   const sec = e.target.closest('.vc'); if (!sec) return; const id = sec.dataset.id, v = V.find(x => x.id === id);
   const zi = e.target.closest('[data-zimg]'); if (zi){ $('zoomImg').src = imgUrl(zi.dataset.zimg); $('zoomCap').textContent = ''; $('zoomDlg').showModal(); return; }
-  const fd = e.target.closest('[data-fdel]'); if (fd){ if (!confirm('¿Borrar esta foto del concurso?')) return; const r = await sb.from('votacion_fotos').delete().eq('id', fd.dataset.fdel); if (r.error) return toast('No se pudo borrar.'); load(); return; }
+  const fd = e.target.closest('[data-fdel]'); if (fd){ if (!confirm('¿Borrar esta foto del concurso?')) return; const ff = (fotosAdm[id] || []).find(x => x.id === fd.dataset.fdel); const r = await sb.from('votacion_fotos').delete().eq('id', fd.dataset.fdel); if (r.error) return toast('No se pudo borrar.'); await quitarArchivos([ff && ff.img]); load(); return; }
   const qt = e.target.closest('[data-quitar]'); if (qt){ const r = await sb.rpc('concurso_quitar', { p_votacion: id, p_token: tokenActual(), p_foto: qt.dataset.quitar }); if (r.data !== 'ok') return toast(MSG[r.data] || 'No se pudo quitar.'); toast('Foto quitada.'); load(); return; }
   if (e.target.closest('[data-subir]')){ const t = (sec.querySelector('.tf') || {}).value || '';
     elegirImagen(async f => { try { toast('Subiendo…'); const p = `con/${id}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}.jpg`;
@@ -248,8 +248,9 @@ $('vl').addEventListener('click', async e => {
     quien[id] = miembros.map(m => ({ id: m.id, n: nombres[m.id], v: set.has(m.id), c: carn.has(m.id) })).sort((a, b) => b.v - a.v || a.n.localeCompare(b.n)); paint(); }
   if (e.target.closest('[data-edit]')) editar(v);
   if (e.target.closest('[data-cerrar]')){ if (!confirm('¿Cerrar la votación ahora?')) return; const { error } = await sb.from('votaciones').update({ fin: new Date().toISOString() }).eq('id', id); if (error) return toast('No se pudo cerrar.'); load(); }
-  if (e.target.closest('[data-borrar]')){ if (!confirm('¿Borrar la votación y todos sus votos?')) return; const { error } = await sb.from('votaciones').delete().eq('id', id); if (error) return toast('No se pudo borrar.'); load(); }
+  if (e.target.closest('[data-borrar]')){ if (!confirm('¿Borrar la votación y todos sus votos?')) return; const ps = [v.imagen_path, ...(v.opciones || []).map(o => o.img), ...(fotosAdm[id] || []).map(f => f.img)]; const { error } = await sb.from('votaciones').delete().eq('id', id); if (error) return toast('No se pudo borrar.'); await quitarArchivos(ps); load(); }
 });
+const quitarArchivos = async ps => { ps = [...new Set(ps.filter(Boolean))]; if (ps.length) try { await sb.storage.from('mooncards').remove(ps); } catch (e) {} };
 const imgUrl = p => p ? sb.storage.from('mooncards').getPublicUrl(p).data.publicUrl : '';
 function reducir(file, max){ return new Promise((ok, ko) => { const im = new Image(), u = URL.createObjectURL(file); im.onload = () => { const k = Math.min(1, max / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); c.toBlob(b => b ? ok(b) : ko(), 'image/jpeg', .86); }; im.onerror = ko; im.src = u; }); }
 async function subir(blob){ const p = `vot/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}.jpg`; const r = await sb.storage.from('mooncards').upload(p, blob, { contentType: 'image/jpeg' }); if (r.error) throw r.error; return p; }
@@ -257,6 +258,7 @@ function elegirImagen(cb){ const i = document.createElement('input'); i.type = '
 function editar(v){
   const n = !v; v = v || { titulo: '', descripcion: '', opciones: [{ id: 'o1', texto: '' }, { id: 'o2', texto: '' }], inicio: new Date().toISOString(), fin: new Date(Date.now() + 7 * 864e5).toISOString(), multiple: false, max_opciones: 2, permitir_cambio: true, resultados: 'final', en_blanco: false, imagen_path: null, tipo: 'opciones', escala_min: 1, escala_max: 10, envios_desde: null, envios_hasta: null, fotos_por_miembro: 1 };
   const ahora = Date.now(), dd = k => new Date(ahora + k * 864e5).toISOString();
+  const orig = { imagen_path: v.imagen_path, opciones: JSON.parse(JSON.stringify(v.opciones || [])) };
   const E = { tipo: v.tipo || 'opciones', portada: v.imagen_path, portadaFile: null, ops: v.opciones.map(o => ({ id: o.id, texto: o.texto, img: o.img || null, file: null })), res: v.resultados };
   const sw = (id, t, d, on) => `<label class="sw"><span><b>${t}</b><small>${d}</small></span><input id="${id}" type="checkbox" ${on ? 'checked' : ''}><i></i></label>`;
   $('eB').innerHTML = `<div class="ed-h"><h3>${n ? 'Nueva votación' : 'Editar votación'}</h3><button class="ed-x" id="fK" type="button" aria-label="Cerrar">×</button></div>
@@ -332,7 +334,8 @@ function editar(v){
     if (n) E.ops.forEach((o, i) => { o.id = 'o' + (i + 1); });
     f.opciones = (E.tipo === 'numerica' || E.tipo === 'concurso') ? [] : E.ops.map(o => { const x = { id: o.id, texto: o.texto.trim() }; if (o.img) x.img = o.img; return x; });
     const r = n ? await sb.from('votaciones').insert(f) : await sb.from('votaciones').update(f).eq('id', v.id);
-    $('fS').disabled = false; if (r.error) return toast('No se pudo guardar: ' + r.error.message); $('edDlg').close(); toast('Votación guardada.'); load(); };
+    $('fS').disabled = false; if (r.error) return toast('No se pudo guardar: ' + r.error.message);
+    if (!n){ const nuevas = new Set([f.imagen_path, ...f.opciones.map(o => o.img)]); await quitarArchivos([orig.imagen_path, ...(orig.opciones || []).map(o => o.img)].filter(p => p && !nuevas.has(p))); } $('edDlg').close(); toast('Votación guardada.'); load(); };
   $('edDlg').showModal();
 }
 $('zoomDlg').onclick = () => $('zoomDlg').close();

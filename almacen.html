@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Almacenamiento · Moonlight Team</title>
+<meta name="robots" content="noindex, nofollow" data-auto>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .wrap{ max-width:860px; }
+  .bar2{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0; }
+  .bar2 input{ flex:1; min-width:160px; padding:8px 10px; font-family:inherit; color:var(--ink); background:#141b37; border:1px solid var(--border); border-radius:6px; }
+  .cl{ list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+  .cl li{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; border:1px solid var(--border); border-radius:10px; background:rgba(16,22,48,.7); padding:10px 14px; }
+  .cl .nm{ flex:1; min-width:140px; color:var(--ink); }
+  .cl .nm small{ display:block; color:var(--ink-soft); }
+  .chip{ font-size:.85rem; padding:2px 10px; border-radius:999px; border:1px solid var(--border); color:var(--ink-soft); }
+  .chip.on{ color:#7dffb0; border-color:rgba(125,255,176,.5); background:rgba(125,255,176,.08); }
+  .gbtn{ padding:5px 13px; border-radius:999px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1rem; cursor:pointer; color:var(--gold); border:1px solid rgba(217,195,131,.5); background:rgba(217,195,131,.08); }
+  .gbtn:hover{ background:rgba(217,195,131,.22); }
+  .nuevo{ flex-basis:100%; border:1px dashed var(--gold-dim); border-radius:8px; padding:10px; font-size:.92rem; color:var(--ink-soft); }
+  .nuevo code{ display:block; word-break:break-all; color:var(--gold); margin:6px 0; user-select:all; }
+  .barra-uso{ height:14px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.05); overflow:hidden; margin:10px 0 4px; } .barra-uso i{ display:block; height:100%; width:0; background:linear-gradient(90deg,#7dffb0,var(--gold)); transition:width .6s; } .barra-uso i.alto{ background:linear-gradient(90deg,var(--gold),#ff8a8a); }
+  #toast{ position:fixed; left:50%; bottom:20px; transform:translate(-50%,20px); background:#141b37; border:1px solid var(--gold-dim); color:var(--ink); padding:9px 16px; border-radius:8px; opacity:0; transition:all .3s; z-index:30; pointer-events:none; }
+  #toast.show{ opacity:1; transform:translate(-50%,0); }
+</style>
+</head><body>
+<div class="stars" id="starsLayer" aria-hidden="true"></div>
+<div class="mist m1" aria-hidden="true"></div>
+<div class="mist m2" aria-hidden="true"></div>
+<div class="moon" aria-hidden="true"></div>
+<div class="wrap">
+  <a class="back-link" href="index.html">← Volver al índice</a>
+  <header class="top">
+    <div>
+      <div class="title-wrap"><h1>Almacenamiento</h1></div>
+      <p class="subtitle">Cuánto espacio usan las imágenes y los diseños (plan gratuito: 1 GB) y limpieza de archivos que ya no usa nada.</p>
+    </div>
+    <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
+  </header>
+  <p class="empty-note" id="needAdmin">Esta página es solo para admins. Pulsa «Acceso admin» para entrar.</p>
+  <p class="empty-note" id="needAdmin">Inicia sesión como admin para ver el almacenamiento.</p>
+<div id="panel" hidden>
+  <div class="barra-uso"><i id="uso"></i></div>
+  <p class="empty-note" id="usoT"></p>
+  <ul class="cl" id="carp"></ul>
+  <div class="bar2" style="margin-top:18px"><button class="gbtn" id="analiza" type="button">Buscar archivos sin usar</button><button class="gbtn" id="limpia" type="button" hidden>Borrar los archivos sin usar</button></div>
+  <p class="empty-note" id="resT"></p>
+  <ul class="cl" id="huer"></ul>
+</div>
+</div>
+
+</div>
+<dialog id="loginDialog">
+  <div class="dialog-inner">
+    <h3>Acceso admin</h3>
+    <div class="dialog-field"><label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username"></div>
+    <div class="dialog-field"><label for="loginPass">Contraseña</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+    <p class="dialog-error" id="loginError"></p>
+    <div class="dialog-actions">
+      <button class="btn-primary" id="loginSubmit" type="button">Entrar</button>
+      <button class="btn-ghost" id="loginCancel" type="button">Cancelar</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="toast" role="status"></div>
+<script src="js/temporadas.js" defer></script>
+<div id="toast" role="status"></div>
+<script type="module">
+import { sb } from './js/supabase-sesion.js';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+(function(){ const l = $('starsLayer'), fr = document.createDocumentFragment(); for (let i = 0; i < 30; i++){ const s = document.createElement('span'); s.className = 'star'; const z = (Math.random()*1.6+.8).toFixed(2); s.style.cssText = `top:${Math.random()*100}%;left:${Math.random()*100}%;width:${z}px;height:${z}px`; s.style.setProperty('--dur', (Math.random()*3+2).toFixed(2)+'s'); s.style.setProperty('--delay', (Math.random()*5).toFixed(2)+'s'); s.style.setProperty('--o-min', '.2'); s.style.setProperty('--o-max', '.85'); fr.appendChild(s); } l.appendChild(fr); })();
+const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), 3500); };
+const MB = b => (b / 1048576).toFixed(b < 10485760 ? 2 : 1) + ' MB', LIM = 1024 * 1048576;
+const B = () => sb.storage.from('mooncards');
+let isAdmin = false, files = [], huer = [];
+async function listar(pref = ''){ // recorre carpetas y devuelve todos los archivos con su tamaño
+  const out = []; let off = 0;
+  for (;;){ const { data, error } = await B().list(pref, { limit: 1000, offset: off }); if (error) throw error; if (!data || !data.length) break;
+    for (const it of data){ const p = pref ? pref + '/' + it.name : it.name; if (it.id === null || !it.metadata) out.push(...await listar(p)); else out.push({ path: p, size: it.metadata.size || 0, creado: it.created_at || it.updated_at }); }
+    if (data.length < 1000) break; off += 1000; }
+  return out;
+}
+async function load(){
+  $('needAdmin').hidden = isAdmin; $('panel').hidden = !isAdmin; if (!isAdmin) return;
+  files = await listar(); const tot = files.reduce((a, f) => a + f.size, 0);
+  $('uso').style.width = Math.min(100, tot * 100 / LIM) + '%'; $('uso').classList.toggle('alto', tot > .7 * LIM);
+  $('usoT').textContent = `${MB(tot)} de 1024 MB usados (${(tot * 100 / LIM).toFixed(1)} %) · ${files.length} archivos. Las subidas anónimas se bloquean al llegar a 800 MB.`;
+  const por = {}; files.forEach(f => { const k = f.path.split('/')[0]; (por[k] = por[k] || { n: 0, b: 0 }); por[k].n++; por[k].b += f.size; });
+  const N = { mc: 'MoonCards (imagen y diseño)', adv: 'Adviento', vot: 'Votaciones (portadas y opciones)', con: 'Concurso de fotos' };
+  $('carp').innerHTML = Object.entries(por).sort((a, b) => b[1].b - a[1].b).map(([k, v]) => `<li><div class="nm">${esc(N[k] || k)}<small>${v.n} archivos</small></div><span class="chip">${MB(v.b)}</span></li>`).join('') || '<li>No hay archivos.</li>';
+}
+async function usados(){
+  const u = new Set(), add = p => { if (p) u.add(p); };
+  const [m, a, v, f] = await Promise.all([sb.from('mooncards').select('img_path,diseno_path'), sb.from('adviento').select('imagen_path'), sb.from('votaciones').select('imagen_path,opciones'), sb.from('votacion_fotos').select('img_path')]);
+  for (const r of [m, a, v, f]) if (r.error) throw r.error;
+  (m.data || []).forEach(r => { add(r.img_path); add(r.diseno_path); }); (a.data || []).forEach(r => add(r.imagen_path));
+  (v.data || []).forEach(r => { add(r.imagen_path); (r.opciones || []).forEach(o => add(o.img)); }); (f.data || []).forEach(r => add(r.img_path));
+  return u;
+}
+$('analiza').onclick = async () => {
+  try { const u = await usados(), hace1h = Date.now() - 36e5; files = await listar();
+    huer = files.filter(f => !u.has(f.path) && new Date(f.creado).getTime() < hace1h);
+    const tot = huer.reduce((a, f) => a + f.size, 0);
+    $('resT').textContent = huer.length ? `${huer.length} archivos sin usar (${MB(tot)}). Solo se cuentan los que tienen más de 1 hora, para no tocar subidas en curso.` : 'No hay archivos sin usar. Todo está limpio.';
+    $('huer').innerHTML = huer.map(f => `<li><div class="nm">${esc(f.path)}</div><span class="chip">${MB(f.size)}</span></li>`).join(''); $('limpia').hidden = !huer.length;
+  } catch (e) { toast('No se pudo analizar: ' + (e.message || e)); } };
+$('limpia').onclick = async () => {
+  if (!huer.length || !confirm(`¿Borrar ${huer.length} archivos sin usar? No se puede deshacer.`)) return;
+  try { for (let i = 0; i < huer.length; i += 100){ const { error } = await B().remove(huer.slice(i, i + 100).map(f => f.path)); if (error) throw error; }
+    toast('Archivos borrados.'); huer = []; $('huer').innerHTML = ''; $('limpia').hidden = true; $('resT').textContent = ''; load();
+  } catch (e) { toast('No se pudo borrar: ' + (e.message || e)); } };
+$('adminToggleBtn').addEventListener('click', () => {
+  if (isAdmin) sb.auth.signOut();
+  else { $('loginError').textContent = ''; $('loginEmail').value = ''; $('loginPass').value = ''; $('loginDialog').showModal(); }
+});
+$('loginCancel').addEventListener('click', () => $('loginDialog').close());
+$('loginSubmit').addEventListener('click', async () => {
+  const { error } = await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPass').value });
+  if (error) $('loginError').textContent = 'Email o contraseña incorrectos.'; else $('loginDialog').close();
+});
+sb.auth.onAuthStateChange((_e, session) => { isAdmin = !!session; $('adminToggleBtn').textContent = isAdmin ? 'Cerrar sesión admin' : 'Acceso admin'; load().catch(() => toast('No se pudo leer el almacenamiento.')); });
+</script>
+</body>
+</html>
