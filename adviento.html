@@ -81,7 +81,7 @@
   .sp-l{ display:flex; flex-wrap:wrap; gap:6px 12px; justify-content:center; margin-top:8px; color:var(--ink-soft); }
   .sp-l .f{ text-decoration:line-through; color:#7dffb0; }
   /* wordle / adivina / laberinto */
-  .wd-g{ display:grid; gap:5px; margin:8px auto; } .wd-c{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:6px; font-family:'Cormorant',serif; font-weight:700; font-size:1.7rem; color:var(--ink); background:rgba(255,255,255,.03); }
+  .wd-g{ display:grid; gap:5px; margin:8px auto; width:100%; } .wd-c{ min-width:0; overflow:hidden; font-size:inherit !important; aspect-ratio:1; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:6px; font-family:'Cormorant',serif; font-weight:700; font-size:1.7rem; color:var(--ink); background:rgba(255,255,255,.03); }
   .wd-c.c,.wd-k button.c{ background:#2f7d4f; border-color:#2f7d4f; color:#fff; } .wd-c.p,.wd-k button.p{ background:#a98531; border-color:#a98531; color:#fff; } .wd-c.a,.wd-k button.a{ background:#2a2f4a; border-color:#2a2f4a; color:var(--ink-soft); }
   .wd-k{ display:flex; flex-direction:column; gap:5px; align-items:center; margin-top:8px; } .wd-k > div{ display:flex; gap:4px; justify-content:center; width:100%; }
   .wd-k button{ flex:1; max-width:36px; min-width:0; height:42px; padding:0; border-radius:6px; border:1px solid var(--border); background:rgba(255,255,255,.06); color:var(--ink); font-size:.95rem; cursor:pointer; } .wd-k button.ancha{ max-width:54px; flex:1.4; }
@@ -350,7 +350,7 @@ function juegoWordle(box, dat, fin){
   const W = sa(dat.palabra);
   if (W.length < 4 || W.length > 8){ box.innerHTML = '<p class="pend">Este juego aún no está preparado.</p>'; return; }
   const L = W.length, MAX = 6; let fila = 0, act = '', acabado = false, muerto = false; const est = {};
-  const grid = document.createElement('div'); grid.className = 'wd-g'; grid.style.gridTemplateColumns = `repeat(${L}, 1fr)`; grid.style.maxWidth = (L * 56) + 'px';
+  const grid = document.createElement('div'); grid.className = 'wd-g'; grid.style.gridTemplateColumns = `repeat(${L}, minmax(0, 1fr))`; grid.style.fontSize = L > 6 ? '1.25rem' : '1.7rem'; grid.style.maxWidth = (L * 56) + 'px';
   const cel = []; for (let i = 0; i < MAX * L; i++){ const c = document.createElement('div'); c.className = 'wd-c'; grid.appendChild(c); cel.push(c); }
   const msg = document.createElement('p'); msg.className = 'pend'; msg.style.textAlign = 'center'; msg.textContent = dat.pista ? 'Pista: ' + dat.pista : `Palabra de ${L} letras. Tienes ${MAX} intentos.`;
   const kb = document.createElement('div'); kb.className = 'wd-k'; const teclas = {};
