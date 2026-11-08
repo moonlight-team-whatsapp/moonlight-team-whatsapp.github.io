@@ -4,10 +4,10 @@
   var TEMAS = {
     navidad:   { n: 'Navidad',   ico: '❄️', d: '11-01', h: '01-06' },
     halloween: { n: 'Halloween', ico: '🎃', d: '10-15', h: '11-02' },
-    sanvalentin: { n: 'San Valentín', ico: '💘', d: '02-01', h: '02-15' },
-    primavera: { n: 'Primavera', ico: '🌸', d: '03-21', h: '06-20' },
-    verano:    { n: 'Verano',    ico: '☀️', d: '06-21', h: '09-21' },
-    otono:     { n: 'Otoño',     ico: '🍂', d: '09-22', h: '10-14' }
+    sanvalentin: { n: 'San Valentín', ico: '💘', d: '02-07', h: '02-15' },
+    primavera: { n: 'Primavera', ico: '🌸', d: '03-21', h: '05-20' },
+    verano:    { n: 'Verano',    ico: '☀️', d: '07-01', h: '08-31' },
+    otono:     { n: 'Otoño',     ico: '🍂', d: '10-01', h: '10-14' }
   };
   window.MoonTemas = { TEMAS: TEMAS, KEY: KEY, SB: SB };
   function md(d){ return ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
