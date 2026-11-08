@@ -100,7 +100,10 @@
   .su button.d{ color:var(--ink); font-weight:700; background:rgba(255,255,255,.08); cursor:default; }
   .su button.c3{ border-right:2px solid var(--gold-dim); } .su button.r3{ border-bottom:2px solid var(--gold-dim); }
   .su button.sel{ background:rgba(217,195,131,.32); } .su button.rel{ background:rgba(217,195,131,.1); } .su button.d.rel{ background:rgba(217,195,131,.16); }
-  .su button.mal{ color:#ff8a8a; }
+  .su button.mal{ color:#ff8a8a; } .su button.pis{ color:#9fd0ff; font-weight:700; } .su button.igual{ background:rgba(159,208,255,.2); }
+  .su .nt{ display:grid; grid-template-columns:repeat(3,1fr); width:100%; height:100%; font-size:clamp(.5rem,2.2vw,.68rem); line-height:1; color:var(--ink-soft); font-weight:400; } .su .nt span{ display:flex; align-items:center; justify-content:center; }
+  .su-bar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; max-width:400px; margin:6px auto 0; } .su-bar > span{ flex:1; color:var(--ink-soft); } .su-bar .gbtn.on{ background:rgba(217,195,131,.3); color:#fff; } .su-bar .gbtn:disabled{ opacity:.45; cursor:default; }
+  .pad button.hecho{ opacity:.35; }
   .pad{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; max-width:400px; margin:8px auto; }
   .pad button{ padding:9px 0; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--ink); font-size:1.15rem; font-family:'Crimson Pro',serif; cursor:pointer; }
   /* quiz */
@@ -217,7 +220,7 @@ async function abrir(d){
   const fin = () => { premio.hidden = false; const sk = B.querySelector('.gbtn.suave'); if (sk) sk.remove(); marcar(d, 'h'); };
   if (esJuego){
     const g = document.createElement('div'); B.appendChild(g);
-    const intro = document.createElement('p'); intro.textContent = { wordle: 'Adivina la palabra en 6 intentos: verde = letra bien colocada, dorado = está en otro sitio, gris = no está.', adivina: 'Adivina el personaje con las pistas. Cuantas menos pistas uses, más mérito.', laberinto: 'Guía la luz hasta la estrella: flechas, WASD, los botones o desliza el dedo por el laberinto.', reto: 'Hoy toca un reto. Cuando lo cumplas, márcalo y abre la sorpresa.', frase: 'Ordena las palabras para formar la frase.', memoria: 'Encuentra todas las parejas.', sopa: 'Encuentra las palabras: arrastra el dedo o el ratón sobre las letras.', sudoku: 'Rellena la cuadrícula: cada fila, columna y cuadro de 3×3 lleva los números del 1 al 9 sin repetir.', quiz: 'Responde las preguntas. Con un 60 % de aciertos abres la sorpresa.', puzle: 'Desliza las piezas para recomponer la imagen.' }[r.tipo]; g.appendChild(intro);
+    const intro = document.createElement('p'); intro.textContent = { wordle: 'Adivina la palabra en 6 intentos: verde = letra bien colocada, dorado = está en otro sitio, gris = no está.', adivina: 'Adivina el personaje con las pistas. Cuantas menos pistas uses, más mérito.', laberinto: 'Guía la luz hasta la estrella: flechas, WASD, los botones o desliza el dedo por el laberinto.', reto: 'Hoy toca un reto. Cuando lo cumplas, márcalo y abre la sorpresa.', frase: 'Ordena las palabras para formar la frase.', memoria: 'Encuentra todas las parejas.', sopa: 'Encuentra las palabras: arrastra el dedo o el ratón sobre las letras.', sudoku: 'Rellena la cuadrícula: cada fila, columna y cuadro de 3×3 lleva los números del 1 al 9 sin repetir. Tienes 10 errores y 3 pistas. «Apuntar» deja anotar posibles números sin validarlos; se borran solos cuando un número correcto los descarta.', quiz: 'Responde las preguntas. Con un 60 % de aciertos abres la sorpresa.', puzle: 'Desliza las piezas para recomponer la imagen.' }[r.tipo]; g.appendChild(intro);
     const area = document.createElement('div'); g.appendChild(area);
     ({ frase: juegoFrase, memoria: juegoMemoria, sopa: juegoSopa, sudoku: juegoSudoku, quiz: juegoQuiz, puzle: juegoPuzle, wordle: juegoWordle, adivina: juegoAdivina, laberinto: juegoLaberinto, reto: juegoReto })[r.tipo](area, r.datos || {}, fin, d, r);
     premio.hidden = true; B.appendChild(premio);
@@ -316,16 +319,48 @@ function sudokuGen(rnd, pistas){
   return { puzzle: g, sol };
 }
 function juegoSudoku(box, dat, fin, dia){
-  const pistas = dat.dificultad === 'medio' ? 32 : 40, { puzzle, sol } = sudokuGen(semilla(dia * 104729 + pistas), pistas), cur = puzzle.slice(); let s = -1;
+  const MAXERR = 10, PISTAS = 3, pistas = dat.dificultad === 'medio' ? 32 : 40, { puzzle, sol } = sudokuGen(semilla(dia * 104729 + pistas), pistas);
+  const cur = puzzle.slice(), nota = new Array(81).fill(0), dada = new Array(81).fill(false); let s = -1, apuntar = false, err = 0, ayudas = PISTAS, acabado = false;
+  const rel = (i, j) => (i / 9 | 0) === (j / 9 | 0) || i % 9 === j % 9 || (((i / 9 | 0) / 3 | 0) === ((j / 9 | 0) / 3 | 0) && (i % 9 / 3 | 0) === (j % 9 / 3 | 0));
+  const bar = document.createElement('div'); bar.className = 'su-bar'; const info = document.createElement('span');
+  const bMod = document.createElement('button'); bMod.type = 'button'; bMod.className = 'gbtn suave'; bMod.onclick = () => { apuntar = !apuntar; pinta(); };
+  const bPis = document.createElement('button'); bPis.type = 'button'; bPis.className = 'gbtn suave'; bPis.onclick = () => pista();
+  bar.append(info, bMod, bPis);
   const g = document.createElement('div'); g.className = 'su'; const cel = [];
   for (let i = 0; i < 81; i++){ const b = document.createElement('button'); b.type = 'button'; b.className = (puzzle[i] ? 'd ' : '') + ((i % 9) % 3 === 2 && i % 9 !== 8 ? 'c3 ' : '') + ((((i / 9) | 0) % 3 === 2) && ((i / 9) | 0) !== 8 ? 'r3' : ''); b.onclick = () => { s = i; pinta(); }; g.appendChild(b); cel.push(b); }
-  const pad = document.createElement('div'); pad.className = 'pad';
-  for (let v = 1; v <= 9; v++){ const b = document.createElement('button'); b.type = 'button'; b.textContent = v; b.onclick = () => poner(v); pad.appendChild(b); }
-  const bd = document.createElement('button'); bd.type = 'button'; bd.textContent = '⌫'; bd.onclick = () => poner(0); pad.appendChild(bd); box.append(g, pad);
-  function pinta(){ const dup = new Set(); for (let i = 0; i < 81; i++) if (cur[i]) for (let j = 0; j < 81; j++) if (j !== i && cur[j] === cur[i] && ((i / 9 | 0) === (j / 9 | 0) || i % 9 === j % 9 || ((i / 9 | 0) / 3 | 0) === ((j / 9 | 0) / 3 | 0) && (i % 9 / 3 | 0) === (j % 9 / 3 | 0))) dup.add(i);
-    cel.forEach((b, i) => { b.textContent = cur[i] || ''; b.classList.toggle('sel', i === s); b.classList.toggle('mal', dup.has(i) && !puzzle[i]); b.classList.toggle('rel', s >= 0 && i !== s && ((i / 9 | 0) === (s / 9 | 0) || i % 9 === s % 9 || (((i / 9 | 0) / 3 | 0) === ((s / 9 | 0) / 3 | 0) && (i % 9 / 3 | 0) === (s % 9 / 3 | 0)))); }); }
-  function poner(v){ if (s < 0 || puzzle[s]) return; cur[s] = v; pinta(); if (cur.every((x, i) => x === sol[i])){ cel.forEach(b => b.disabled = true); pad.remove(); fin(); } }
-  box.addEventListener('keydown', e => { if (e.key >= '1' && e.key <= '9') poner(+e.key); else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') poner(0); else if (s >= 0 && e.key.startsWith('Arrow')){ const d = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -9, ArrowDown: 9 }[e.key]; if (s + d >= 0 && s + d < 81){ s += d; pinta(); e.preventDefault(); } } });
+  const pad = document.createElement('div'); pad.className = 'pad'; const pb = [];
+  for (let v = 1; v <= 9; v++){ const b = document.createElement('button'); b.type = 'button'; b.textContent = v; b.onclick = () => poner(v); pad.appendChild(b); pb.push(b); }
+  const bd = document.createElement('button'); bd.type = 'button'; bd.textContent = '⌫'; bd.onclick = () => poner(0); pad.appendChild(bd);
+  const msg = document.createElement('p'); msg.className = 'pend'; msg.style.textAlign = 'center'; box.append(bar, g, pad, msg);
+  function quitaNotas(i, v){ for (let j = 0; j < 81; j++) if (rel(i, j)) nota[j] &= ~(1 << v); nota[i] = 0; }
+  function pinta(){
+    info.textContent = `Errores: ${err}/${MAXERR}`; bMod.textContent = apuntar ? '✏️ Apuntando' : '🔢 Marcando'; bMod.classList.toggle('on', apuntar); bPis.textContent = `💡 Pista (${ayudas})`; bPis.disabled = ayudas <= 0 || acabado;
+    const sv = s >= 0 ? cur[s] : 0;
+    cel.forEach((b, i) => {
+      if (cur[i]) b.textContent = cur[i];
+      else if (nota[i]){ let h = '<span class="nt">'; for (let v = 1; v <= 9; v++) h += `<span>${nota[i] & (1 << v) ? v : ''}</span>`; b.innerHTML = h + '</span>'; }
+      else b.textContent = '';
+      b.classList.toggle('sel', i === s); b.classList.toggle('mal', !puzzle[i] && !!cur[i] && cur[i] !== sol[i]); b.classList.toggle('pis', dada[i]);
+      b.classList.toggle('igual', !!sv && i !== s && cur[i] === sv); b.classList.toggle('rel', s >= 0 && i !== s && rel(i, s)); });
+    pb.forEach((b, k) => { b.classList.toggle('hecho', cur.filter((x, i) => x === k + 1 && x === sol[i]).length >= 9); });
+  }
+  function revisa(){
+    if (err >= MAXERR){ acabado = true; cel.forEach(b => b.disabled = true); pad.remove(); bar.remove(); msg.innerHTML = `Has llegado a ${MAXERR} errores. `; const b = document.createElement('button'); b.type = 'button'; b.className = 'gbtn'; b.textContent = 'Intentarlo de nuevo'; b.onclick = () => { box.innerHTML = ''; juegoSudoku(box, dat, fin, dia); }; msg.appendChild(b); return; }
+    if (cur.every((x, i) => x === sol[i])){ acabado = true; cel.forEach(b => b.disabled = true); pad.remove(); bar.remove(); msg.textContent = '¡Sudoku completado!'; fin(); } }
+  function poner(v){
+    if (acabado || s < 0 || puzzle[s] || dada[s]) return;
+    if (apuntar){ if (!v){ nota[s] = 0; } else if (!cur[s]) nota[s] ^= (1 << v); pinta(); return; }
+    if (!v){ cur[s] = 0; pinta(); return; }
+    if (cur[s] === v) return;
+    cur[s] = v; nota[s] = 0;
+    if (v === sol[s]) quitaNotas(s, v); else { err++; msg.textContent = 'Ese número no va ahí.'; setTimeout(() => { if (msg.textContent === 'Ese número no va ahí.') msg.textContent = ''; }, 1500); }
+    pinta(); revisa(); }
+  function pista(){
+    if (acabado || ayudas <= 0) return;
+    let i = s >= 0 && !puzzle[s] && cur[s] !== sol[s] ? s : -1;
+    if (i < 0){ const libres = []; for (let k = 0; k < 81; k++) if (cur[k] !== sol[k]) libres.push(k); if (!libres.length) return; i = libres[Math.floor(Math.random() * libres.length)]; }
+    cur[i] = sol[i]; dada[i] = true; ayudas--; quitaNotas(i, sol[i]); s = i; pinta(); revisa(); }
+  box.addEventListener('keydown', e => { if (e.key >= '1' && e.key <= '9') poner(+e.key); else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') poner(0); else if (e.key === 'n' || e.key === 'N'){ apuntar = !apuntar; pinta(); } else if (s >= 0 && e.key.startsWith('Arrow')){ const d = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -9, ArrowDown: 9 }[e.key]; if (s + d >= 0 && s + d < 81){ s += d; pinta(); e.preventDefault(); } } });
   box.tabIndex = 0; pinta();
 }
 
