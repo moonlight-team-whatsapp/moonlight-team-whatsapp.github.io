@@ -179,15 +179,19 @@ function paint(){
   $('res').hidden = false; const um = Math.max(0, +$('umbral').value || 0), q = simp($('q').value.trim());
   const conMen = [...DATA.P.values()].filter(p => p.men.length);
   $('sum').textContent = `${DATA.total.toLocaleString('es-ES')} mensajes · ${f(DATA.ini)} → ${f(DATA.fin)} · ${DATA.P.size} personas · ${conMen.length} han sido etiquetadas.`;
-  let L = [...DATA.P.values()].filter(p => (p.msgs || p.men.length) && (p.men.length || q));
-  if (!$('chSalidos').checked) L = L.filter(p => !p.salio);
-  if (!$('chNunca').checked) L = L.filter(p => p.msgs);
+  if (q) miembros.forEach(m => { if (!DATA.P.has('m:' + m.id)) DATA.P.set('m:' + m.id, { id: 'm:' + m.id, msgs: 0, last: -1, lastT: null, men: [], salio: false }); });
+  let L = [...DATA.P.values()];
+  if (!q){
+    L = L.filter(p => (p.msgs || p.men.length) && p.men.length);
+    if (!$('chSalidos').checked) L = L.filter(p => !p.salio);
+    if (!$('chNunca').checked) L = L.filter(p => p.msgs);
+  }
   L = L.map(p => ({ p, e: etiqueta(p.id), n: desde(p).length }));
-  if (q) L = L.filter(x => simp(x.e.n + ' ' + x.e.s).includes(q));
+  if (q) L = L.filter(x => simp(x.e.n + ' ' + x.e.s + ' ' + (ETQ.get(x.p.id) || '')).includes(q));
   else L = L.filter(x => x.n >= um && x.n > 0);
   L.sort((a, b) => b.n - a.n || (a.p.lastT || 0) - (b.p.lastT || 0));
   $('pl').innerHTML = L.length ? L.map(({ p, e, n }) => { const ult = p.men.length ? p.men[p.men.length - 1] : null;
-    return `<li data-id="${esc(p.id)}" class="${n >= um && um > 0 ? 'aviso' : ''}"><div class="row"><div class="nm">${esc(e.n)}${p.salio ? '<span class="tag">salió del grupo</span>' : ''}${p.msgs ? '' : '<span class="tag">nunca ha hablado</span>'}<small>${esc(e.s)}</small><small>${p.msgs ? 'Habló por última vez: ' + f(p.lastT) + ' (hace ' + dias(p.lastT, DATA.fin) + ' d.)' : 'No aparece hablando en este chat'}${ult ? ' · Última etiqueta: ' + f(ult.t) : ''}</small></div><div class="cnt">${n}<small>desde que habló</small></div></div></li>`; }).join('')
+    return `<li data-id="${esc(p.id)}" class="${n >= um && um > 0 ? 'aviso' : ''}"><div class="row"><div class="nm">${esc(e.n)}${p.salio ? '<span class="tag">salió del grupo</span>' : ''}${p.msgs ? '' : '<span class="tag">nunca ha hablado</span>'}<small>${esc(e.s)}</small><small>${p.msgs ? 'Habló por última vez: ' + f(p.lastT) + ' (hace ' + dias(p.lastT, DATA.fin) + ' d.)' : 'No aparece en este chat'}${ult ? ' · Última etiqueta: ' + f(ult.t) : ''}</small></div><div class="cnt">${n}<small>desde que habló</small></div></div></li>`; }).join('')
     : `<li><div class="row"><div class="nm">${q ? 'Nadie coincide con esa búsqueda.' : um ? 'Nadie llega a ' + um + ' menciones sin hablar. 🎉' : 'Nadie tiene menciones pendientes.'}</div></div></li>`;
   $('nota2').textContent = DATA.sinResolver.length ? `No se pudo saber a quién se refería: ${DATA.sinResolver.slice(0, 12).map(x => '@' + x).join(', ')}${DATA.sinResolver.length > 12 ? '…' : ''}. Esas etiquetas no se cuentan.` : '';
 }
