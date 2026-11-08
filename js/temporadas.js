@@ -3,7 +3,11 @@
   var SB = 'https://stedlptzaukqewtkzotg.supabase.co', KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWRscHR6YXVrcWV3dGt6b3RnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzY3NzQsImV4cCI6MjEwODMxMjc3NH0.XArszBzP49sWHka1xIXJVTQQiC-QEHczafQ8G3mF7qc';
   var TEMAS = {
     navidad:   { n: 'Navidad',   ico: '❄️', d: '11-01', h: '01-06' },
-    halloween: { n: 'Halloween', ico: '🎃', d: '10-15', h: '11-02' }
+    halloween: { n: 'Halloween', ico: '🎃', d: '10-15', h: '11-02' },
+    sanvalentin: { n: 'San Valentín', ico: '💘', d: '02-01', h: '02-15' },
+    primavera: { n: 'Primavera', ico: '🌸', d: '03-21', h: '06-20' },
+    verano:    { n: 'Verano',    ico: '☀️', d: '06-21', h: '09-21' },
+    otono:     { n: 'Otoño',     ico: '🍂', d: '09-22', h: '10-14' }
   };
   window.MoonTemas = { TEMAS: TEMAS, KEY: KEY, SB: SB };
   function md(d){ return ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }

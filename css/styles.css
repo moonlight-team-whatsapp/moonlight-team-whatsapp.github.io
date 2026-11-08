@@ -949,6 +949,37 @@ html.halloween .moon{ filter:var(--tono-luna); box-shadow:0 0 28px 6px rgba(255,
 @media (max-width:600px){ .tela svg{ width:80px; height:80px; } .tela .ara{ --h:58px; left:50px; top:58px; transform-origin:50% -58px; } .calabazas{ font-size:26px; } }
 @media (prefers-reduced-motion:reduce){ .tela .ara, .murci{ animation:none; } }
 
+/* ---------- Temporadas: San Valentín, Primavera, Verano, Otoño ---------- */
+.fx{ position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:1; }
+.fx span{ position:absolute; }
+@media (prefers-reduced-motion:reduce){ .fx{ display:none; } }
+/* San Valentín */
+html.sanvalentin{ --tono-luna:sepia(.55) saturate(2.6) hue-rotate(300deg) brightness(1.08); }
+html.sanvalentin .moon{ filter:var(--tono-luna); box-shadow:0 0 28px 6px rgba(255,110,160,.5), 0 0 64px 18px rgba(255,90,150,.22); }
+.fx-sanvalentin span{ bottom:-34px; color:#ff6b9a; opacity:.85; text-shadow:0 0 8px rgba(255,107,154,.7); animation:svSube linear infinite, meceX ease-in-out infinite alternate; }
+@keyframes svSube{ from{ transform:translateY(0); } to{ transform:translateY(-112vh); } }
+html.sanvalentin .nav-card:nth-child(odd){ box-shadow:inset 0 2px 0 rgba(255,107,154,.6); } html.sanvalentin .nav-card:nth-child(even){ box-shadow:inset 0 2px 0 rgba(255,170,200,.5); }
+/* Primavera */
+html.primavera{ --tono-luna:sepia(.55) saturate(1.9) hue-rotate(55deg) brightness(1.1); }
+html.primavera .moon{ filter:var(--tono-luna); box-shadow:0 0 26px 6px rgba(255,170,210,.45), 0 0 60px 16px rgba(170,230,170,.2); }
+.fx-primavera span{ top:-20px; border-radius:80% 0 80% 0; background:linear-gradient(135deg,#ffd0e2,#ff9cc0); opacity:.85; animation:caePetalo linear infinite, meceX ease-in-out infinite alternate; }
+@keyframes caePetalo{ from{ transform:translateY(0) rotate(0); } to{ transform:translateY(112vh) rotate(540deg); } }
+html.primavera .nav-card:nth-child(odd){ box-shadow:inset 0 2px 0 rgba(255,156,192,.6); } html.primavera .nav-card:nth-child(even){ box-shadow:inset 0 2px 0 rgba(140,215,150,.55); }
+/* Verano */
+html.verano{ --tono-luna:sepia(.7) saturate(2) hue-rotate(-8deg) brightness(1.1); }
+html.verano .moon{ filter:var(--tono-luna); box-shadow:0 0 30px 8px rgba(255,210,90,.5), 0 0 70px 20px rgba(255,190,60,.2); }
+.fx-verano span{ width:5px; height:5px; border-radius:50%; background:#e8ff7a; box-shadow:0 0 10px 3px rgba(220,255,100,.75); opacity:0; animation:luciMueve ease-in-out infinite alternate, luciBrilla ease-in-out infinite; }
+@keyframes luciMueve{ from{ transform:translate(0,0); } to{ transform:translate(var(--dx),var(--dy)); } }
+@keyframes luciBrilla{ 0%,100%{ opacity:.08; } 50%{ opacity:1; } }
+html.verano .nav-card:nth-child(odd){ box-shadow:inset 0 2px 0 rgba(255,205,90,.6); } html.verano .nav-card:nth-child(even){ box-shadow:inset 0 2px 0 rgba(90,205,220,.55); }
+/* Otoño */
+html.otono{ --tono-luna:sepia(.85) saturate(2.2) hue-rotate(-26deg) brightness(1.05); }
+html.otono .moon{ filter:var(--tono-luna); box-shadow:0 0 28px 6px rgba(230,140,50,.5), 0 0 64px 18px rgba(200,100,30,.22); }
+.fx-otono span{ top:-30px; opacity:.88; animation:caeHoja linear infinite, meceX ease-in-out infinite alternate; }
+@keyframes caeHoja{ from{ transform:translateY(0) rotate(0); } to{ transform:translateY(114vh) rotate(480deg); } }
+html.otono .nav-card:nth-child(odd){ box-shadow:inset 0 2px 0 rgba(230,140,50,.6); } html.otono .nav-card:nth-child(even){ box-shadow:inset 0 2px 0 rgba(180,80,40,.55); }
+@keyframes meceX{ from{ margin-left:-16px; } to{ margin-left:16px; } }
+
 /* Puntito rojo con número: algo pendiente en esa página */
 .pend-badge{ position:absolute; top:-8px; left:-8px; min-width:22px; height:22px; padding:0 6px; box-sizing:border-box; border-radius:999px; background:#e5484d; color:#fff; font:700 .78rem/22px 'Crimson Pro',serif; text-align:center; box-shadow:0 0 0 2px #0b1024, 0 0 12px rgba(229,72,77,.6); pointer-events:none; z-index:3; animation:pendpulse 2.4s ease-in-out infinite; }
 @keyframes pendpulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.12); } }
