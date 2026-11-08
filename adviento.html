@@ -271,7 +271,7 @@ function juegoMemoria(box, dat, fin){
         if (x.dataset.k === y.dataset.k){ x.className = y.className = 'mc ok'; abiertas = []; if (++hechas === par.length) fin(); }
         else { bloq = true; setTimeout(() => { x.classList.remove('up'); y.classList.remove('up'); abiertas = []; bloq = false; }, 800); } } };
     g.appendChild(b); });
-  g.style.gridTemplateColumns = `repeat(${cartas.length > 12 ? 5 : 4},1fr)`;
+  g.style.gridTemplateColumns = `repeat(${cartas.length <= 16 ? 4 : cartas.length <= 20 ? 5 : 6},1fr)`;
 }
 
 /* ---------- Juego: sopa de letras ---------- */
