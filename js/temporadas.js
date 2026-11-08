@@ -7,7 +7,8 @@
     sanvalentin: { n: 'San Valentín', ico: '💘', d: '02-07', h: '02-15' },
     primavera: { n: 'Primavera', ico: '🌸', d: '03-21', h: '05-20' },
     verano:    { n: 'Verano',    ico: '☀️', d: '07-01', h: '08-31' },
-    otono:     { n: 'Otoño',     ico: '🍂', d: '10-01', h: '10-14' }
+    otono:     { n: 'Otoño',     ico: '🍂', d: '10-01', h: '10-14' },
+    invierno:  { n: 'Invierno',  ico: '🧊', d: '01-07', h: '01-31' }
   };
   window.MoonTemas = { TEMAS: TEMAS, KEY: KEY, SB: SB };
   function md(d){ return ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }

@@ -978,6 +978,11 @@ html.otono .moon{ filter:var(--tono-luna); box-shadow:0 0 28px 6px rgba(230,140,
 .fx-otono span{ top:-30px; opacity:.88; animation:caeHoja linear infinite, meceX ease-in-out infinite alternate; }
 @keyframes caeHoja{ from{ transform:translateY(0) rotate(0); } to{ transform:translateY(114vh) rotate(480deg); } }
 html.otono .nav-card:nth-child(odd){ box-shadow:inset 0 2px 0 rgba(230,140,50,.6); } html.otono .nav-card:nth-child(even){ box-shadow:inset 0 2px 0 rgba(180,80,40,.55); }
+/* Invierno */
+html.invierno{ --tono-luna:sepia(.5) saturate(2.2) hue-rotate(150deg) brightness(1.12); }
+html.invierno .moon{ filter:var(--tono-luna); box-shadow:0 0 28px 6px rgba(140,200,255,.5), 0 0 64px 18px rgba(120,180,255,.22); }
+.fx-invierno span{ top:-30px; color:#d6ecff; text-shadow:0 0 8px rgba(160,210,255,.8); opacity:.9; animation:caeHoja linear infinite, meceX ease-in-out infinite alternate; }
+html.invierno .nav-card:nth-child(odd){ box-shadow:inset 0 2px 0 rgba(140,200,255,.6); } html.invierno .nav-card:nth-child(even){ box-shadow:inset 0 2px 0 rgba(190,170,255,.5); }
 @keyframes meceX{ from{ margin-left:-16px; } to{ margin-left:16px; } }
 
 /* Puntito rojo con número: algo pendiente en esa página */
