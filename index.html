@@ -101,7 +101,7 @@
       <p class="subtitle">Elige a dónde quieres ir.
         <button class="rules-btn" id="rulesBtn" type="button" aria-haspopup="dialog" aria-label="Reglas del team" title="Reglas del team"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/></svg></button></p>
     </div>
-    <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
+    <div class="admin-acts"><button class="admin-toggle" id="ordenBtn" type="button" hidden title="Reordenar los botones del índice">✏️ Ordenar</button><button class="admin-toggle" id="adminToggleBtn">Acceso admin</button></div>
   </header>
 
   <div class="nav-sections" id="navGrid"></div>
@@ -425,6 +425,11 @@
   let discoveredFiles = null; // null = aún cargando
   let overrides = {};         // { 'archivo.html': { private: true/false } }
   let isAdmin = false;
+  let editOrden = false;      // modo «ordenar»: flechas y arrastrar en las tarjetas
+  async function guardaOrden(L){
+    try { await Promise.all(L.map((f, i) => setDoc(doc(db, 'paginas', f), { orden: i }, { merge: true }))); }
+    catch (e) { alert('No se pudo guardar el orden.'); }
+  }
 
   let hasRevealed = false;
 
@@ -465,7 +470,7 @@
     let i = 0;
     SECCIONES.forEach(([sid, stit, sdesc]) => {
     const items = visible.filter(p => (PAGINAS[p.filename]?.s || 'otras') === sid);
-    const ord = f => { const k = Object.keys(PAGINAS).indexOf(f); return k < 0 ? 999 : k; };
+    const ord = f => { const k = Object.keys(PAGINAS).indexOf(f); const o = overrides[f] && typeof overrides[f].orden === 'number' ? overrides[f].orden : null; return o !== null ? o : 1e6 + (k < 0 ? 999 : k); };
     items.sort((x, y) => ord(x.filename) - ord(y.filename));
     if (!items.length) return;
     const sec = document.createElement('section');
@@ -484,6 +489,7 @@
       const a = document.createElement('a');
       a.className = 'nav-card' + (p.private ? ' is-private' : '');
       a.href = p.filename;
+      if (editOrden && isAdmin) a.addEventListener('click', e => e.preventDefault());
       a.innerHTML = `<div class="nav-title">${escapeHtml(p.title)}</div><p class="nav-desc">${escapeHtml(PAGINAS[p.filename]?.d || p.filename)}</p>`;
       wrap.appendChild(a);
       if (PEND[p.filename] > 0){ const bd = document.createElement('span'); bd.className = 'pend-badge'; bd.textContent = PEND[p.filename]; bd.title = PEND[p.filename] === 1 ? 'Tienes 1 cosa pendiente' : 'Tienes ' + PEND[p.filename] + ' cosas pendientes'; wrap.appendChild(bd); }
@@ -504,6 +510,17 @@
         wrap.appendChild(eyeBtn);
       }
 
+      if (editOrden && isAdmin){
+        const idx = items.indexOf(p); wrap.classList.add('ordenando'); wrap.draggable = true; wrap.dataset.f = p.filename;
+        const bx = document.createElement('div'); bx.className = 'ord-btns';
+        [['‹', -1, 'Mover antes'], ['›', 1, 'Mover después']].forEach(([s, d, ti]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = s; b.title = ti; b.setAttribute('aria-label', ti); b.disabled = idx + d < 0 || idx + d >= items.length; b.addEventListener('click', ev => { ev.preventDefault(); ev.stopPropagation(); const L = items.map(x => x.filename); const [m] = L.splice(idx, 1); L.splice(idx + d, 0, m); guardaOrden(L); }); bx.appendChild(b); });
+        wrap.appendChild(bx);
+        wrap.addEventListener('dragstart', ev => { ev.dataTransfer.setData('text/plain', p.filename); ev.dataTransfer.effectAllowed = 'move'; wrap.classList.add('arrastrando'); });
+        wrap.addEventListener('dragend', () => wrap.classList.remove('arrastrando'));
+        wrap.addEventListener('dragover', ev => { ev.preventDefault(); wrap.classList.add('sobre'); });
+        wrap.addEventListener('dragleave', () => wrap.classList.remove('sobre'));
+        wrap.addEventListener('drop', ev => { ev.preventDefault(); wrap.classList.remove('sobre'); const f = ev.dataTransfer.getData('text/plain'); const L = items.map(x => x.filename); const from = L.indexOf(f), to = L.indexOf(p.filename); if (from < 0 || from === to) return; L.splice(to, 0, L.splice(from, 1)[0]); guardaOrden(L); });
+      }
       grid.appendChild(wrap);
     });
     navGrid.appendChild(sec);
@@ -520,6 +537,8 @@
     snap.docs.forEach(d => { overrides[d.id] = d.data(); });
     renderNav();
   });
+
+  $('ordenBtn').addEventListener('click', () => { editOrden = !editOrden; $('ordenBtn').classList.toggle('is-admin', editOrden); $('ordenBtn').textContent = editOrden ? '✔ Terminar' : '✏️ Ordenar'; document.body.classList.toggle('modo-orden', editOrden); renderNav(); });
 
   // ---------- Admin login (misma cuenta que en el resto de páginas) ----------
   const adminToggleBtn = $('adminToggleBtn');
@@ -555,6 +574,8 @@
     isAdmin = !!user;
     adminToggleBtn.textContent = isAdmin ? 'Salir del modo admin' : 'Acceso admin';
     adminToggleBtn.classList.toggle('is-admin', isAdmin);
+    if (!isAdmin) editOrden = false;
+    $('ordenBtn').hidden = !isAdmin; $('ordenBtn').classList.toggle('is-admin', editOrden); $('ordenBtn').textContent = editOrden ? '✔ Terminar' : '✏️ Ordenar';
     renderNav();
   });
 </script>

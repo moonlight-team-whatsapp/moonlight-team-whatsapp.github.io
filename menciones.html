@@ -65,7 +65,7 @@
       <p class="sum" id="sum"></p>
       <div class="ctl">
         <div class="grp"><span>Mínimo de menciones sin hablar</span><div class="stp"><button type="button" id="umMenos" aria-label="Menos">−</button><input type="number" id="umbral" min="0" max="99" value="3" aria-label="Mínimo de menciones"><button type="button" id="umMas" aria-label="Más">+</button></div></div>
-        <label class="chk"><input type="checkbox" id="chSalidos"><i>✓</i><span>Incluir a quien ya salió</span></label>
+        <label class="chk"><input type="checkbox" id="chSalidos"><i>✓</i><span>Incluir a quien ya no está</span></label>
         <label class="chk"><input type="checkbox" id="chNunca" checked><i>✓</i><span>Incluir a quien no habla en este chat</span></label>
         <input type="search" id="q" placeholder="Buscar a alguien (nombre, personaje, miembro)…">
       </div>
@@ -105,11 +105,17 @@ const digits = s => (String(s).match(/\d/g) || []).join('');
 const esTel = s => /^\+?[\d\s\-().]+$/.test(String(s).trim()) && digits(s).length >= 8;
 const personajesDe = id => ocupados.filter(o => o.miembroId === id).sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')) || (a.orden ?? 1e9) - (b.orden ?? 1e9)).map(o => o.nombre);
 const miembroPorTel = d => miembros.find(m => { const c = digits(m.contacto); return c && d && c.slice(-9) === d.slice(-9); });
+const activo = m => !(m && (m.baneado || m.activo === false));
 function miembroPorClave(k){
-  const al = miembros.find(m => (m.aliasesChat || []).map(chatKey).includes(k) || (m.aliasesChat || []).includes(k)); if (al) return al;
+  // Prioridad: alias de un miembro activo → quien ocupa ahora ese personaje → alias de alguien que ya no está → historial
+  const alias = miembros.filter(m => (m.aliasesChat || []).map(chatKey).includes(k) || (m.aliasesChat || []).includes(k));
+  const aa = alias.find(activo); if (aa) return aa;
   const t = k.split('|').map(s => s.trim());
-  const o = ocupados.find(o => o.miembroId && t.includes(chatKey(o.nombre))); if (o) return miembros.find(m => m.id === o.miembroId);
-  return miembros.find(m => (m.historialPersonajes || []).some(x => t.includes(chatKey(x.nombre))));
+  const oc = ocupados.filter(o => o.miembroId && t.includes(chatKey(o.nombre))).map(o => miembros.find(m => m.id === o.miembroId)).filter(Boolean);
+  const oa = oc.find(activo) || oc[0]; if (oa) return oa;
+  if (alias.length) return alias[0];
+  const hi = miembros.filter(m => (m.historialPersonajes || []).some(x => t.includes(chatKey(x.nombre))));
+  return hi.find(activo) || hi[0];
 }
 /* Identidad de un nombre del chat o de una mención → 'm:<miembro>' si lo conocemos, o 'k:<clave>' / 'p:<teléfono>' */
 const ETQ = new Map();   // id → nombre tal cual salió en el chat
@@ -179,6 +185,7 @@ function analiza(text){
 /* ---------- Pantalla ---------- */
 const f = d => d ? d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '—';
 const dias = (a, b) => Math.max(0, Math.round((b - a) / 864e5));
+const inactiva = p => p.id.startsWith('m:') && !activo(miembros.find(m => m.id === p.id.slice(2)));
 const desde = p => p.men.filter(x => x.i > p.last);
 function paint(){
   $('needAdmin').hidden = isAdmin; $('tools').hidden = !isAdmin; if (!isAdmin || !DATA){ $('res').hidden = true; return; }
@@ -189,7 +196,7 @@ function paint(){
   let L = [...DATA.P.values()];
   if (!q){
     L = L.filter(p => (p.msgs || p.men.length) && p.men.length);
-    if (!$('chSalidos').checked) L = L.filter(p => !p.salio);
+    if (!$('chSalidos').checked) L = L.filter(p => !p.salio && !inactiva(p));
     if (!$('chNunca').checked) L = L.filter(p => p.msgs);
   }
   L = L.map(p => ({ p, e: etiqueta(p.id), n: desde(p).length }));
@@ -197,7 +204,7 @@ function paint(){
   else L = L.filter(x => x.n >= um && x.n > 0);
   L.sort((a, b) => b.n - a.n || (a.p.lastT || 0) - (b.p.lastT || 0));
   $('pl').innerHTML = L.length ? L.map(({ p, e, n }) => { const ult = p.men.length ? p.men[p.men.length - 1] : null;
-    return `<li data-id="${esc(p.id)}" class="${n >= um && um > 0 ? 'aviso' : ''}"><div class="row"><div class="nm">${esc(e.n)}${p.salio ? '<span class="tag">salió del grupo</span>' : ''}${p.msgs ? '' : '<span class="tag">no habla en este chat</span>'}<small>${esc(e.s)}</small><small>${p.msgs ? 'Habló por última vez: ' + f(p.lastT) + ' (hace ' + dias(p.lastT, DATA.fin) + ' d.)' : 'No aparece en este chat'}${ult ? ' · Última etiqueta: ' + f(ult.t) : ''}</small></div><div class="cnt">${n}<small>desde que habló</small></div></div></li>`; }).join('')
+    return `<li data-id="${esc(p.id)}" class="${n >= um && um > 0 ? 'aviso' : ''}"><div class="row"><div class="nm">${esc(e.n)}${p.salio ? '<span class="tag">salió del grupo</span>' : inactiva(p) ? '<span class="tag">ya no está en el team</span>' : ''}${p.msgs ? '' : '<span class="tag">no habla en este chat</span>'}<small>${esc(e.s)}</small><small>${p.msgs ? 'Habló por última vez: ' + f(p.lastT) + ' (hace ' + dias(p.lastT, DATA.fin) + ' d.)' : 'No aparece en este chat'}${ult ? ' · Última etiqueta: ' + f(ult.t) : ''}</small></div><div class="cnt">${n}<small>desde que habló</small></div></div></li>`; }).join('')
     : `<li><div class="row"><div class="nm">${q ? 'Nadie coincide con esa búsqueda.' : um ? 'Nadie llega a ' + um + ' menciones sin hablar. 🎉' : 'Nadie tiene menciones pendientes.'}</div></div></li>`;
   $('nota2').textContent = DATA.sinResolver.length ? `No se pudo saber a quién se refería: ${DATA.sinResolver.slice(0, 12).map(x => '@' + x).join(', ')}${DATA.sinResolver.length > 12 ? '…' : ''}. Esas etiquetas no se cuentan.` : '';
 }

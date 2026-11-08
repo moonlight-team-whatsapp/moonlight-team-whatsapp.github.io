@@ -454,6 +454,8 @@
     white-space: nowrap;
     transition: border-color .15s ease, color .15s ease;
   }
+  .admin-acts{ display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap; justify-content:flex-end; }
+  .admin-toggle[hidden]{ display:none; }
   .admin-toggle:hover{ border-color: var(--silver); color: var(--silver); }
   .admin-toggle.is-admin{ border-color: var(--gold); color: var(--gold); }
 
@@ -869,6 +871,11 @@
     padding: 0;
     transition: color .15s ease, border-color .15s ease;
   }
+  .nav-card-wrap.ordenando .nav-card{ outline:1px dashed var(--gold-dim); cursor:grab; }
+  .nav-card-wrap.arrastrando{ opacity:.45; } .nav-card-wrap.sobre .nav-card{ outline:2px solid var(--gold); }
+  .ord-btns{ position:absolute; right:10px; bottom:10px; display:flex; gap:6px; z-index:3; }
+  .ord-btns button{ width:32px; height:32px; border-radius:50%; border:1px solid var(--gold-dim); background:rgba(14,19,38,.9); color:var(--gold); font-size:1.2rem; line-height:1; cursor:pointer; padding:0; }
+  .ord-btns button:hover:not(:disabled){ background:rgba(217,195,131,.25); } .ord-btns button:disabled{ opacity:.3; cursor:default; }
   .eye-toggle:hover{ border-color: var(--gold-dim); color: var(--gold); }
   .eye-toggle[disabled]{ opacity: 0.5; cursor: default; }
 
