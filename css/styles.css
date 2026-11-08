@@ -942,13 +942,12 @@ html.halloween .moon{ filter:var(--tono-luna); box-shadow:0 0 28px 6px rgba(255,
 @keyframes colgar{ from{ transform:rotate(-8deg); } to{ transform:rotate(8deg); } }
 .murci{ position:fixed; left:-60px; z-index:1; pointer-events:none; opacity:.85; animation:murciVuela linear infinite, murciAletea ease-in-out infinite alternate; }
 @keyframes murciVuela{ from{ transform:translateX(0); } to{ transform:translateX(calc(100vw + 120px)); } }
-@keyframes aleteo{ from{ transform:scaleY(1); } to{ transform:scaleY(.45); } }
-.murci svg{ display:block; transform-origin:50% 35%; animation:aleteo .22s ease-in-out infinite alternate; }
+.murci .mv{ display:inline-block; transform:scaleX(-1); }
 @keyframes murciAletea{ from{ margin-top:-8px; } to{ margin-top:10px; } }
 .calabazas{ position:fixed; right:10px; bottom:6px; z-index:4; pointer-events:none; font-size:34px; display:flex; gap:2px; filter:drop-shadow(0 0 10px rgba(255,140,30,.6)); }
 .calabazas span:nth-child(2){ font-size:24px; align-self:flex-end; }
 @media (max-width:600px){ .tela svg{ width:80px; height:80px; } .tela .ara{ --h:58px; left:50px; top:58px; transform-origin:50% -58px; } .calabazas{ font-size:26px; } }
-@media (prefers-reduced-motion:reduce){ .tela .ara, .murci, .murci svg{ animation:none; } }
+@media (prefers-reduced-motion:reduce){ .tela .ara, .murci{ animation:none; } }
 
 /* Puntito rojo con número: algo pendiente en esa página */
 .pend-badge{ position:absolute; top:-8px; left:-8px; min-width:22px; height:22px; padding:0 6px; box-sizing:border-box; border-radius:999px; background:#e5484d; color:#fff; font:700 .78rem/22px 'Crimson Pro',serif; text-align:center; box-shadow:0 0 0 2px #0b1024, 0 0 12px rgba(229,72,77,.6); pointer-events:none; z-index:3; animation:pendpulse 2.4s ease-in-out infinite; }
