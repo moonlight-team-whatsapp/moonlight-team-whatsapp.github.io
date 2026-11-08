@@ -22,7 +22,7 @@
 - [ ] Mensajes por fecha (cuenta atrás, 24-25 dic, Nochevieja con fuegos, Reyes)
 - [ ] Adornos y plantilla navideña en MoonCard
 - [ ] Detalles interactivos (pulsar el trineo, nieve acumulada en tarjetas), escarcha, títulos con brillo
-- [ ] Calendario de adviento: 24 puertas (1-24 dic), una sorpresa por día
+- [x] Calendario de adviento: 24 puertas (1-24 dic), una sorpresa por día
 - [ ] Nuevos temas a futuro (San Valentín, verano, cumpleaños del team…): se añaden en `temporadas.js` (lista TEMAS) + `tema-<id>.js` + CSS
 
 ## Resto de la web

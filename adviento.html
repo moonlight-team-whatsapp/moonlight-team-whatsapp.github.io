@@ -80,6 +80,14 @@
   .sp div.hall{ background:rgba(125,255,176,.22); color:#c8ffe0; }
   .sp-l{ display:flex; flex-wrap:wrap; gap:6px 12px; justify-content:center; margin-top:8px; color:var(--ink-soft); }
   .sp-l .f{ text-decoration:line-through; color:#7dffb0; }
+  /* wordle / adivina / laberinto */
+  .wd-g{ display:grid; gap:5px; margin:8px auto; } .wd-c{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:6px; font-family:'Cormorant',serif; font-weight:700; font-size:1.7rem; color:var(--ink); background:rgba(255,255,255,.03); }
+  .wd-c.c,.wd-k button.c{ background:#2f7d4f; border-color:#2f7d4f; color:#fff; } .wd-c.p,.wd-k button.p{ background:#a98531; border-color:#a98531; color:#fff; } .wd-c.a,.wd-k button.a{ background:#2a2f4a; border-color:#2a2f4a; color:var(--ink-soft); }
+  .wd-k{ display:flex; flex-direction:column; gap:5px; align-items:center; margin-top:8px; } .wd-k > div{ display:flex; gap:4px; justify-content:center; width:100%; }
+  .wd-k button{ flex:1; max-width:36px; min-width:0; height:42px; padding:0; border-radius:6px; border:1px solid var(--border); background:rgba(255,255,255,.06); color:var(--ink); font-size:.95rem; cursor:pointer; } .wd-k button.ancha{ max-width:54px; flex:1.4; }
+  .ad-pistas{ margin:6px 0 10px; padding-left:20px; } .ad-pistas li{ margin:4px 0; } .ad-fila{ display:flex; gap:8px; } .ad-in{ flex:1; min-width:0; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--ink); font:inherit; }
+  .lab{ display:block; width:100%; max-width:360px; aspect-ratio:1; margin:8px auto; border:1px solid var(--gold-dim); border-radius:8px; }
+  .dpad{ display:flex; flex-direction:column; align-items:center; gap:4px; margin:6px 0; } .dpad > div{ display:flex; gap:4px; } .dpad button{ width:52px; height:44px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.06); color:var(--gold); font-size:1.1rem; cursor:pointer; }
   /* editor */
   .ed label{ display:flex; flex-direction:column; gap:4px; margin:10px 0; color:var(--ink-soft); font-size:.92rem; }
   .ed input, .ed select, .ed textarea{ padding:8px 10px; font-family:inherit; font-size:1rem; color:var(--ink); background:#141b37; border:1px solid var(--border); border-radius:6px; color-scheme:dark; }
@@ -164,7 +172,7 @@ const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('s
 // Plan del calendario (lo que se sugiere por día) y qué tipos ya están construidos
 const PLAN = ['mensaje','memoria','frase','imagen','sopa','mensaje','sudoku','quiz','frase','puzle','wordle','mensaje','sopa','reto','memoria','sudoku','adivina','frase','imagen','laberinto','mensaje','quiz','wordle','mensaje'];
 const TIPOS = { mensaje:'Mensaje', imagen:'Imagen', frase:'Ordenar la frase', memoria:'Memoria de parejas', sopa:'Sopa de letras', sudoku:'Sudoku', quiz:'Quiz', puzle:'Puzle deslizante', wordle:'Wordle', adivina:'Adivina el personaje', laberinto:'Laberinto', reto:'Reto de la galería' };
-const HECHOS = ['mensaje','imagen','frase','memoria','sopa','sudoku','quiz','puzle'];
+const HECHOS = ['mensaje','imagen','frase','memoria','sopa','sudoku','quiz','puzle','wordle','adivina','laberinto','reto'];
 const PROG = 'mc_adv';
 const prog = () => { try { return JSON.parse(localStorage.getItem(PROG) || '{}'); } catch (e) { return {}; } };
 const marcar = (d, k) => { try { const p = prog(); p[d] = Object.assign(p[d] || {}, { [k]: 1 }); localStorage.setItem(PROG, JSON.stringify(p)); } catch (e) {} paint(); };
@@ -205,13 +213,13 @@ async function abrir(d){
   if (!r){ $('dT').textContent = 'Puerta sin contenido'; B.innerHTML = `<p class="pend">Esta puerta todavía no tiene sorpresa.${isAdmin ? ' Pulsa «Editar» para crearla.' : ''}</p>`; adminBar(B, d); $('dlg').showModal(); return; }
   $('dT').textContent = r.titulo || TIPOS[r.tipo];
   const premio = document.createElement('div'); premio.className = 'premio'; premio.innerHTML = premioHtml(r);
-  const esJuego = ['frase','memoria','sopa','sudoku','quiz','puzle'].includes(r.tipo);
+  const esJuego = ['frase','memoria','sopa','sudoku','quiz','puzle','wordle','adivina','laberinto','reto'].includes(r.tipo);
   const fin = () => { premio.hidden = false; const sk = B.querySelector('.gbtn.suave'); if (sk) sk.remove(); marcar(d, 'h'); };
   if (esJuego){
     const g = document.createElement('div'); B.appendChild(g);
-    const intro = document.createElement('p'); intro.textContent = { frase: 'Ordena las palabras para formar la frase.', memoria: 'Encuentra todas las parejas.', sopa: 'Encuentra las palabras: arrastra el dedo o el ratón sobre las letras.', sudoku: 'Rellena la cuadrícula: cada fila, columna y cuadro de 3×3 lleva los números del 1 al 9 sin repetir.', quiz: 'Responde las preguntas. Con un 60 % de aciertos abres la sorpresa.', puzle: 'Desliza las piezas para recomponer la imagen.' }[r.tipo]; g.appendChild(intro);
+    const intro = document.createElement('p'); intro.textContent = { wordle: 'Adivina la palabra en 6 intentos: verde = letra bien colocada, dorado = está en otro sitio, gris = no está.', adivina: 'Adivina el personaje con las pistas. Cuantas menos pistas uses, más mérito.', laberinto: 'Guía la luz hasta la estrella: flechas, WASD, los botones o desliza el dedo por el laberinto.', reto: 'Hoy toca un reto. Cuando lo cumplas, márcalo y abre la sorpresa.', frase: 'Ordena las palabras para formar la frase.', memoria: 'Encuentra todas las parejas.', sopa: 'Encuentra las palabras: arrastra el dedo o el ratón sobre las letras.', sudoku: 'Rellena la cuadrícula: cada fila, columna y cuadro de 3×3 lleva los números del 1 al 9 sin repetir.', quiz: 'Responde las preguntas. Con un 60 % de aciertos abres la sorpresa.', puzle: 'Desliza las piezas para recomponer la imagen.' }[r.tipo]; g.appendChild(intro);
     const area = document.createElement('div'); g.appendChild(area);
-    ({ frase: juegoFrase, memoria: juegoMemoria, sopa: juegoSopa, sudoku: juegoSudoku, quiz: juegoQuiz, puzle: juegoPuzle })[r.tipo](area, r.datos || {}, fin, d, r);
+    ({ frase: juegoFrase, memoria: juegoMemoria, sopa: juegoSopa, sudoku: juegoSudoku, quiz: juegoQuiz, puzle: juegoPuzle, wordle: juegoWordle, adivina: juegoAdivina, laberinto: juegoLaberinto, reto: juegoReto })[r.tipo](area, r.datos || {}, fin, d, r);
     premio.hidden = true; B.appendChild(premio);
     if (!(prog()[d] || {}).h){ const s = document.createElement('button'); s.type = 'button'; s.className = 'gbtn suave'; s.textContent = 'Ver la sorpresa sin jugar'; s.onclick = () => fin(); B.appendChild(s); }
     else premio.hidden = false;
@@ -336,6 +344,97 @@ function juegoQuiz(box, dat, fin){
   ver();
 }
 
+/* ---------- Juego: wordle ---------- */
+function juegoWordle(box, dat, fin){
+  const sa = s => String(s || '').toUpperCase().replace(/Ñ/g, '\u0001').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\u0001/g, 'Ñ').replace(/[^A-ZÑ]/g, '');
+  const W = sa(dat.palabra);
+  if (W.length < 4 || W.length > 8){ box.innerHTML = '<p class="pend">Este juego aún no está preparado.</p>'; return; }
+  const L = W.length, MAX = 6; let fila = 0, act = '', acabado = false, muerto = false; const est = {};
+  const grid = document.createElement('div'); grid.className = 'wd-g'; grid.style.gridTemplateColumns = `repeat(${L}, 1fr)`; grid.style.maxWidth = (L * 56) + 'px';
+  const cel = []; for (let i = 0; i < MAX * L; i++){ const c = document.createElement('div'); c.className = 'wd-c'; grid.appendChild(c); cel.push(c); }
+  const msg = document.createElement('p'); msg.className = 'pend'; msg.style.textAlign = 'center'; msg.textContent = dat.pista ? 'Pista: ' + dat.pista : `Palabra de ${L} letras. Tienes ${MAX} intentos.`;
+  const kb = document.createElement('div'); kb.className = 'wd-k'; const teclas = {};
+  [['Q','W','E','R','T','Y','U','I','O','P'], ['A','S','D','F','G','H','J','K','L','Ñ'], ['ENTER','Z','X','C','V','B','N','M','⌫']].forEach(fl => { const r = document.createElement('div'); fl.forEach(k => { const b = document.createElement('button'); b.type = 'button'; b.textContent = k === 'ENTER' ? '↵' : k; if (k.length > 1 || k === '⌫') b.className = 'ancha'; b.onclick = () => tecla(k); r.appendChild(b); teclas[k] = b; }); kb.appendChild(r); });
+  box.append(grid, msg, kb);
+  function pintar(){ for (let i = 0; i < L; i++) cel[fila * L + i].textContent = act[i] || ''; }
+  function tecla(k){ if (acabado) return; if (k === '⌫' || k === 'BACKSPACE'){ act = act.slice(0, -1); } else if (k === 'ENTER' || k === '↵'){ enviar(); return; } else if (/^[A-ZÑ]$/.test(k) && act.length < L) act += k; pintar(); }
+  function enviar(){
+    if (act.length < L){ msg.textContent = 'Faltan letras.'; return; }
+    const res = Array(L).fill('a'), resto = {}; for (let i = 0; i < L; i++){ if (act[i] === W[i]) res[i] = 'c'; else resto[W[i]] = (resto[W[i]] || 0) + 1; }
+    for (let i = 0; i < L; i++) if (res[i] === 'a' && resto[act[i]] > 0){ res[i] = 'p'; resto[act[i]]--; }
+    const rank = { a: 1, p: 2, c: 3 };
+    for (let i = 0; i < L; i++){ cel[fila * L + i].classList.add(res[i]); const t = teclas[act[i]]; if (t && (!est[act[i]] || rank[res[i]] > rank[est[act[i]]])){ est[act[i]] = res[i]; t.classList.remove('a', 'p', 'c'); t.classList.add(res[i]); } }
+    if (act === W){ acabado = true; msg.textContent = '¡Lo has adivinado!'; kb.remove(); fin(); return; }
+    if (fila === MAX - 1){ acabado = true; msg.textContent = `Era «${W}». ¡Casi!`; const b = document.createElement('button'); b.type = 'button'; b.className = 'gbtn'; b.textContent = 'Intentarlo de nuevo'; b.onclick = () => { muerto = true; box.innerHTML = ''; juegoWordle(box, dat, fin); }; box.appendChild(b); return; }
+    fila++; act = ''; msg.textContent = `Intento ${fila + 1} de ${MAX}`;
+  }
+  const h = e => { if (muerto || !box.isConnected){ document.removeEventListener('keydown', h); return; } if (e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target || {}).tagName)) return;
+    const k = e.key.length === 1 ? e.key.toUpperCase() : e.key === 'Enter' ? 'ENTER' : e.key === 'Backspace' ? 'BACKSPACE' : ''; if (!k) return; if (e.key === 'Enter' || e.key === 'Backspace') e.preventDefault(); tecla(k); };
+  document.addEventListener('keydown', h);
+}
+
+/* ---------- Juego: adivina el personaje ---------- */
+function juegoAdivina(box, dat, fin){
+  const P = (dat.personajes || []).filter(p => p && p.resp && (p.pistas || []).length).slice(0, 6);
+  if (!P.length){ box.innerHTML = '<p class="pend">Este juego aún no está preparado.</p>'; return; }
+  const nz = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9ñ]/g, '');
+  let i = 0;
+  function ver(){
+    const p = P[i]; let n = 1;
+    box.innerHTML = `<p class="vm" style="color:var(--ink-soft)">Personaje ${i + 1} de ${P.length}</p><ol class="ad-pistas"></ol><div class="fila ad-fila"><input class="ad-in" type="text" maxlength="40" placeholder="¿Quién es?" autocomplete="off"><button class="gbtn" type="button" data-c>Comprobar</button></div><div class="fila"><button class="gbtn suave" type="button" data-p>Otra pista</button></div><p class="pend" data-m></p>`;
+    const ol = box.querySelector('ol'), inp = box.querySelector('input'), m = box.querySelector('[data-m]'), bp = box.querySelector('[data-p]');
+    const mostrar = () => { ol.innerHTML = p.pistas.slice(0, n).map(x => `<li>${esc(x)}</li>`).join(''); bp.hidden = n >= p.pistas.length; };
+    mostrar(); bp.onclick = () => { n++; mostrar(); };
+    const comprobar = () => { const v = nz(inp.value); if (!v) return;
+      if (v === nz(p.resp) || (p.alt || []).some(a => nz(a) === v)){ inp.disabled = true; m.textContent = `¡Sí! Era ${p.resp}.`; box.querySelector('[data-c]').disabled = true; bp.hidden = true; setTimeout(() => { i++; if (i >= P.length){ box.innerHTML = '<p class="qz-q">¡Los conoces a todos!</p>'; fin(); } else ver(); }, 1200); }
+      else { m.textContent = 'Ese no es. Prueba con otra pista.'; inp.select(); } };
+    box.querySelector('[data-c]').onclick = comprobar; inp.onkeydown = e => { if (e.key === 'Enter') comprobar(); };
+  }
+  ver();
+}
+
+/* ---------- Juego: laberinto ---------- */
+function juegoLaberinto(box, dat, fin, dia){
+  const N = Math.min(16, Math.max(6, +dat.tam || 10)), rnd = semilla(dia * 9157 + N), M = new Array(N * N).fill(15);
+  const D = [{ dx: 0, dy: -1, b: 1, o: 4 }, { dx: 1, dy: 0, b: 2, o: 8 }, { dx: 0, dy: 1, b: 4, o: 1 }, { dx: -1, dy: 0, b: 8, o: 2 }];
+  const vis = new Array(N * N).fill(false), pila = [0]; vis[0] = true;
+  while (pila.length){ const c = pila[pila.length - 1], x = c % N, y = (c / N) | 0, v = D.filter(d => { const nx = x + d.dx, ny = y + d.dy; return nx >= 0 && ny >= 0 && nx < N && ny < N && !vis[ny * N + nx]; });
+    if (!v.length){ pila.pop(); continue; } const d = v[Math.floor(rnd() * v.length)], k = (y + d.dy) * N + x + d.dx; M[c] &= ~d.b; M[k] &= ~d.o; vis[k] = true; pila.push(k); }
+  const S = 360, cs = S / N, cv = document.createElement('canvas'); cv.width = cv.height = S; cv.className = 'lab'; const g = cv.getContext('2d');
+  const info = document.createElement('p'); info.className = 'pend'; info.style.textAlign = 'center'; info.textContent = 'Llega a la estrella ⭐ · Pasos: 0';
+  const pad = document.createElement('div'); pad.className = 'dpad'; pad.innerHTML = '<button type="button" data-d="0" aria-label="Arriba">▲</button><div><button type="button" data-d="3" aria-label="Izquierda">◀</button><button type="button" data-d="2" aria-label="Abajo">▼</button><button type="button" data-d="1" aria-label="Derecha">▶</button></div>';
+  box.append(cv, info, pad);
+  let px = 0, py = 0, pasos = 0, hecho = false; const rastro = new Set([0]);
+  function pintar(){ g.clearRect(0, 0, S, S); g.fillStyle = '#0c1130'; g.fillRect(0, 0, S, S);
+    g.fillStyle = 'rgba(217,195,131,.14)'; rastro.forEach(k => g.fillRect((k % N) * cs + 1, ((k / N) | 0) * cs + 1, cs - 2, cs - 2));
+    g.strokeStyle = '#d9c383'; g.lineWidth = 2; g.lineCap = 'round'; g.beginPath();
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++){ const m = M[y * N + x], X = x * cs, Y = y * cs; if (m & 1){ g.moveTo(X, Y); g.lineTo(X + cs, Y); } if (m & 2){ g.moveTo(X + cs, Y); g.lineTo(X + cs, Y + cs); } if (m & 4){ g.moveTo(X, Y + cs); g.lineTo(X + cs, Y + cs); } if (m & 8){ g.moveTo(X, Y); g.lineTo(X, Y + cs); } }
+    g.stroke(); g.font = Math.floor(cs * .7) + 'px serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#ffd866'; g.fillText('★', (N - .5) * cs, (N - .5) * cs + 1);
+    g.fillStyle = '#9fd0ff'; g.shadowColor = '#9fd0ff'; g.shadowBlur = 10; g.beginPath(); g.arc((px + .5) * cs, (py + .5) * cs, cs * .27, 0, 7); g.fill(); g.shadowBlur = 0; }
+  function mover(i){ if (hecho) return; const d = D[i]; if (M[py * N + px] & d.b) return; px += d.dx; py += d.dy; pasos++; rastro.add(py * N + px); info.textContent = 'Llega a la estrella ⭐ · Pasos: ' + pasos; pintar();
+    if (px === N - 1 && py === N - 1){ hecho = true; info.textContent = `¡Salida! Lo lograste en ${pasos} pasos.`; pad.remove(); fin(); } }
+  pad.onclick = e => { const b = e.target.closest('[data-d]'); if (b) mover(+b.dataset.d); };
+  const h = e => { if (hecho || !box.isConnected){ document.removeEventListener('keydown', h); return; } if (/^(INPUT|TEXTAREA|SELECT)$/.test((e.target || {}).tagName)) return;
+    const i = { ArrowUp: 0, w: 0, W: 0, ArrowRight: 1, d: 1, D: 1, ArrowDown: 2, s: 2, S: 2, ArrowLeft: 3, a: 3, A: 3 }[e.key]; if (i === undefined) return; e.preventDefault(); mover(i); };
+  document.addEventListener('keydown', h);
+  let t0 = null; cv.style.touchAction = 'none';
+  cv.addEventListener('pointerdown', e => { t0 = [e.clientX, e.clientY]; });
+  cv.addEventListener('pointermove', e => { if (!t0) return; const dx = e.clientX - t0[0], dy = e.clientY - t0[1]; if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return; mover(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0)); t0 = [e.clientX, e.clientY]; });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => cv.addEventListener(ev, () => { t0 = null; }));
+  pintar();
+}
+
+/* ---------- Juego: reto de la galería ---------- */
+function juegoReto(box, dat, fin){
+  const t = String(dat.reto || '').trim();
+  if (!t){ box.innerHTML = '<p class="pend">Este reto aún no está preparado.</p>'; return; }
+  const dest = dat.destino || 'ninguno', enl = [];
+  if (dest === 'mooncard' || dest === 'ambos') enl.push('<a class="gbtn" href="mooncard.html">🌙 Ir al creador de MoonCards</a>');
+  if (dest === 'galeria' || dest === 'ambos') enl.push('<a class="gbtn" href="galeria.html">🖼️ Ir a la galería</a>');
+  box.innerHTML = `<p class="qz-q" style="white-space:pre-line">${esc(t)}</p>${enl.length ? `<div class="fila">${enl.join(' ')}</div>` : ''}<div class="fila"><button class="gbtn" type="button" data-ok>✅ ¡Reto cumplido!</button></div>`;
+  box.querySelector('[data-ok]').onclick = function(){ this.parentNode.remove(); fin(); };
+}
+
 /* ---------- Juego: puzle deslizante ---------- */
 function juegoPuzle(box, dat, fin, dia, r){
   const N = dat.tam === 4 ? 4 : 3, T = N * N, img = r.imagen_path ? imgUrl(r.imagen_path) : (dat.img_local && /^[\w./-]+$/.test(dat.img_local) ? dat.img_local : null), rnd = semilla(dia * 7753 + N);
@@ -391,6 +490,10 @@ function editar(d){
       : t === 'sudoku' ? `<label>Dificultad<select id="fDif"><option value="facil" ${dat.dificultad !== 'medio' ? 'selected' : ''}>Fácil (40 números dados)</option><option value="medio" ${dat.dificultad === 'medio' ? 'selected' : ''}>Medio (32 números dados)</option></select></label><p class="nota">El tablero se genera solo y es el mismo para todos ese día.</p>`
       : t === 'quiz' ? `<label>Preguntas (una por línea: «Pregunta | opción | opción* | opción»; la correcta lleva un asterisco *)<textarea id="fQz" style="min-height:140px" placeholder="¿Quién es el Archonte de Mondstadt? | Zhongli | Venti* | Raiden">${esc((dat.preguntas || []).map(p => [p.q].concat(p.o.map((x, k) => x + (k === p.c ? '*' : ''))).join(' | ')).join('\n'))}</textarea></label><p class="nota">De 3 a 10 preguntas, con 2 a 5 opciones cada una. Se abre la sorpresa con un 60 % de aciertos.</p>`
       : t === 'puzle' ? `<label>Tamaño<select id="fTam"><option value="3" ${dat.tam !== 4 ? 'selected' : ''}>3 × 3 (8 piezas)</option><option value="4" ${dat.tam === 4 ? 'selected' : ''}>4 × 4 (15 piezas, más difícil)</option></select></label><p class="nota">Usa la imagen que subas abajo como puzle. Sin imagen, se juega con números.</p>`
+      : t === 'wordle' ? `<label>Palabra (4 a 8 letras; sin tildes ni espacios)<input id="fWd" maxlength="8" value="${esc(dat.palabra)}" placeholder="LUNAR"></label><label>Pista (opcional)<input id="fWp" maxlength="80" value="${esc(dat.pista)}" placeholder="Lo que nos mira cada noche"></label>`
+      : t === 'adivina' ? `<label>Personajes (una línea cada uno: «Respuesta | pista 1 | pista 2 | pista 3»; de 2 a 5 pistas, de la más difícil a la más fácil; hasta 6 personajes)<textarea id="fAd" style="min-height:140px" placeholder="Venti | Es de Mondstadt | Toca la lira | Es el Archonte Anemo">${esc((dat.personajes || []).map(p => [p.resp].concat(p.pistas).join(' | ')).join('\n'))}</textarea></label>`
+      : t === 'laberinto' ? `<label>Tamaño<select id="fLab">${[8, 10, 12, 15].map(n => `<option value="${n}" ${(+dat.tam || 10) === n ? 'selected' : ''}>${n} × ${n}</option>`).join('')}</select></label><p class="nota">El laberinto se genera solo y es el mismo para todos ese día.</p>`
+      : t === 'reto' ? `<label>Reto (qué tienen que hacer)<textarea id="fRet" style="min-height:90px" placeholder="Crea una MoonCard de tu personaje con un adorno navideño y publícala en la galería con la etiqueta #navidad.">${esc(dat.reto)}</textarea></label><label>Botones de acceso<select id="fDest">${[['ninguno', 'Ninguno'], ['mooncard', 'Ir al creador de MoonCards'], ['galeria', 'Ir a la galería'], ['ambos', 'Los dos']].map(([k, v]) => `<option value="${k}" ${(dat.destino || 'ninguno') === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label><p class="nota">Funciona por confianza: el jugador marca «Reto cumplido» para abrir la sorpresa.</p>`
       : HECHOS.includes(t) ? '' : '<p class="nota">Este juego aún no está construido. Puedes dejar preparada la sorpresa y se mostrará tal cual hasta entonces.</p>'; };
   $('fTipo').onchange = () => { esp(); montaMem(); }; esp(); montaMem();
   const q = $('fImgQ'); if (q) q.onclick = e => { e.preventDefault(); quitar = true; $('fImgN').textContent = 'La imagen se quitará al guardar.'; };
@@ -407,6 +510,10 @@ function editar(d){
     if (t === 'sopa'){ datos.palabras = lineas($('fPal').value).slice(0, 12); if (datos.palabras.length < 2) return toast('Pon al menos 2 palabras.'); }
     if (t === 'sudoku') datos.dificultad = $('fDif').value;
     if (t === 'puzle') datos.tam = +$('fTam').value;
+    if (t === 'wordle'){ datos.palabra = sinAc($('fWd').value).toUpperCase().replace(/[^A-ZÑ]/g, ''); if (datos.palabra.length < 4 || datos.palabra.length > 8) return toast('La palabra debe tener de 4 a 8 letras.'); if ($('fWp').value.trim()) datos.pista = $('fWp').value.trim(); }
+    if (t === 'adivina'){ const P = []; lineas($('fAd').value).forEach(l => { const pa = l.split('|').map(x => x.trim()).filter(Boolean); if (pa.length >= 3) P.push({ resp: pa[0], pistas: pa.slice(1, 6) }); }); if (!P.length) return toast('Pon al menos un personaje con 2 pistas (Respuesta | pista | pista).'); datos.personajes = P.slice(0, 6); }
+    if (t === 'laberinto') datos.tam = +$('fLab').value;
+    if (t === 'reto'){ datos.reto = $('fRet').value.trim(); if (!datos.reto) return toast('Escribe el reto.'); datos.destino = $('fDest').value; }
     if (t === 'quiz'){ const P = [], mal = []; lineas($('fQz').value).forEach(l => { const pa = l.split('|').map(x => x.trim()).filter(Boolean); if (pa.length < 3) return mal.push(l.slice(0, 20)); const o = pa.slice(1, 6), c = o.findIndex(x => x.endsWith('*')); if (c < 0) return mal.push(l.slice(0, 20)); P.push({ q: pa[0], o: o.map(x => x.replace(/\*$/, '').trim()), c }); });
       if (mal.length) return toast('Revisa estas líneas (faltan opciones o el *): ' + mal.join(' · ')); if (P.length < 3 || P.length > 10) return toast('El quiz necesita de 3 a 10 preguntas.'); datos.preguntas = P; }
     let path = quitar ? null : r.imagen_path; const f = $('fImg').files[0];
