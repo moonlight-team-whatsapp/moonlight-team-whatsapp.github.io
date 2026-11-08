@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Menciones · Moonlight Team</title>
+<meta name="robots" content="noindex, nofollow" data-auto>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .wrap{ max-width:900px; }
+  .dz{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:26px 16px; text-align:center; border:2px dashed var(--gold-dim); border-radius:12px; cursor:pointer; color:var(--ink-soft); background:rgba(16,22,48,.5); }
+  .dz.over{ background:rgba(217,195,131,.12); border-color:var(--gold); } .dz input{ display:none; } .dz b{ color:var(--gold); font-family:'Cormorant',serif; font-size:1.25rem; }
+  .ctl{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin:14px 0 10px; color:var(--ink-soft); }
+  .ctl input[type=number],.ctl input[type=search]{ padding:7px 10px; font:inherit; color:var(--ink); background:#141b37; border:1px solid var(--border); border-radius:6px; } .ctl input[type=number]{ width:70px; } .ctl input[type=search]{ flex:1; min-width:150px; }
+  .ctl label{ display:flex; gap:6px; align-items:center; }
+  .sum{ color:var(--ink-soft); margin:6px 0; }
+  .pl{ list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+  .pl > li{ border:1px solid var(--border); border-radius:10px; background:rgba(16,22,48,.7); overflow:hidden; }
+  .pl .row{ display:grid; grid-template-columns:1fr auto; gap:4px 12px; align-items:center; padding:10px 14px; cursor:pointer; }
+  .pl .row:hover{ background:rgba(217,195,131,.07); }
+  .pl .nm{ color:var(--ink); } .pl .nm small{ display:block; color:var(--ink-soft); }
+  .cnt{ font-family:'Cormorant',serif; font-size:1.6rem; font-weight:600; color:var(--gold); text-align:right; line-height:1; } .cnt small{ display:block; font-family:inherit; font-size:.75rem; font-weight:400; color:var(--ink-soft); }
+  .pl li.aviso .cnt{ color:#ff9b9b; } .pl li.aviso{ border-color:rgba(255,155,155,.45); }
+  .tag{ font-size:.78rem; padding:1px 8px; border-radius:999px; border:1px solid var(--border); color:var(--ink-soft); margin-left:6px; }
+  .det{ padding:4px 14px 12px; border-top:1px solid var(--border); font-size:.95rem; }
+  .det .m{ padding:6px 0; border-bottom:1px solid rgba(255,255,255,.05); } .det .m:last-child{ border:none; }
+  .det .m .w{ color:var(--ink-soft); font-size:.85rem; } .det .m.viejo{ opacity:.5; } .det .m q{ display:block; color:var(--ink); quotes:none; white-space:pre-line; word-break:break-word; }
+  .det h4{ margin:10px 0 4px; color:var(--gold); font-family:'Cormorant',serif; font-size:1.15rem; }
+  .nota2{ color:var(--ink-soft); font-size:.9rem; margin:10px 0; }
+</style>
+<script src="js/temporadas.js"></script>
+</head><body>
+<div class="stars" id="starsLayer" aria-hidden="true"></div>
+<div class="mist m1" aria-hidden="true"></div>
+<div class="mist m2" aria-hidden="true"></div>
+<div class="moon" aria-hidden="true"></div>
+<div class="wrap">
+  <a class="back-link" href="index.html">← Volver al índice</a>
+  <header class="top">
+    <div>
+      <div class="title-wrap"><h1>Menciones</h1></div>
+      <p class="subtitle">Sube el chat exportado de WhatsApp y mira cuántas veces han etiquetado a cada persona desde la última vez que habló. El archivo se lee en tu navegador: no se sube a ningún sitio.</p>
+    </div>
+    <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
+  </header>
+  <p class="empty-note" id="needAdmin">Esta página es solo para admins. Pulsa «Acceso admin» para entrar.</p>
+  <div id="tools" hidden>
+    <label class="dz" id="dz"><input type="file" id="fileIn" accept=".txt"><b>Suelta aquí el chat.txt</b><span id="dzSub">o toca para elegirlo</span></label>
+    <div id="res" hidden>
+      <p class="sum" id="sum"></p>
+      <div class="ctl">
+        <label>Mostrar a quien lleve <input type="number" id="umbral" min="0" value="3"> o más menciones sin hablar</label>
+        <label><input type="checkbox" id="chSalidos"> Incluir a quien ya salió</label>
+        <label><input type="checkbox" id="chNunca"> Incluir a quien nunca habló</label>
+        <input type="search" id="q" placeholder="Buscar a alguien (nombre, personaje, miembro)…">
+      </div>
+      <ul class="pl" id="pl"></ul>
+      <p class="nota2" id="nota2"></p>
+    </div>
+  </div>
+</div>
+<dialog id="loginDialog">
+  <div class="dialog-inner">
+    <h3>Acceso admin</h3>
+    <div class="dialog-field"><label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username"></div>
+    <div class="dialog-field"><label for="loginPass">Contraseña</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+    <p class="dialog-error" id="loginError"></p>
+    <div class="dialog-actions">
+      <button class="btn-primary" id="loginSubmit" type="button">Entrar</button>
+      <button class="btn-ghost" id="loginCancel" type="button">Cancelar</button>
+    </div>
+  </div>
+</dialog>
+<script type="module">
+import { sb } from './js/supabase-sesion.js';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+(function(){ const l = $('starsLayer'), fr = document.createDocumentFragment(); for (let i = 0; i < 30; i++){ const s = document.createElement('span'); s.className = 'star'; const z = (Math.random()*1.6+.8).toFixed(2); s.style.cssText = `top:${(Math.random()*100).toFixed(2)}%;left:${(Math.random()*100).toFixed(2)}%;width:${z}px;height:${z}px`; s.style.setProperty('--dur', (Math.random()*3+2).toFixed(2)+'s'); s.style.setProperty('--delay', (Math.random()*5).toFixed(2)+'s'); s.style.setProperty('--o-min', '.2'); s.style.setProperty('--o-max', '.9'); fr.appendChild(s); } l.appendChild(fr); })();
+
+let isAdmin = false, miembros = [], ocupados = [], DATA = null;
+/* ---------- Nombres y miembros (misma lógica que registros.html) ---------- */
+const CORR = [['kazus','Kazuha|Shogun'],['mary','Wriothesley'],['lynn','Xiao'],['erisboreasgreyratt','Qiqi'],['miyako','Yae Miko']];
+const simp = s => String(s ?? '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase();
+function chatKey(raw){
+  const k = simp(raw).replace(/\s*\/\s*moo?nlight\s*$/, '').replace(/[^\p{L}\p{N}|]+/gu, ' ').trim();
+  const c = CORR.find(([s]) => k === s || (s.length > 5 && k.includes(s)));
+  return c ? simp(c[1]) : k;
+}
+const digits = s => (String(s).match(/\d/g) || []).join('');
+const esTel = s => /^\+?[\d\s\-().]+$/.test(String(s).trim()) && digits(s).length >= 8;
+const personajesDe = id => ocupados.filter(o => o.miembroId === id).sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')) || (a.orden ?? 1e9) - (b.orden ?? 1e9)).map(o => o.nombre);
+const miembroPorTel = d => miembros.find(m => { const c = digits(m.contacto); return c && d && c.slice(-9) === d.slice(-9); });
+function miembroPorClave(k){
+  const al = miembros.find(m => (m.aliasesChat || []).map(chatKey).includes(k) || (m.aliasesChat || []).includes(k)); if (al) return al;
+  const t = k.split('|').map(s => s.trim());
+  const o = ocupados.find(o => o.miembroId && t.includes(chatKey(o.nombre))); if (o) return miembros.find(m => m.id === o.miembroId);
+  return miembros.find(m => (m.historialPersonajes || []).some(x => t.includes(chatKey(x.nombre))));
+}
+/* Identidad de un nombre del chat o de una mención → 'm:<miembro>' si lo conocemos, o 'k:<clave>' / 'p:<teléfono>' */
+const ETQ = new Map();   // id → nombre tal cual salió en el chat
+function idDe(raw){
+  raw = String(raw).replace(/[⁦-⁩‎‏]/g, '').trim(); if (!raw) return null;
+  let id;
+  if (esTel(raw)){ const d = digits(raw), m = miembroPorTel(d); id = m ? 'm:' + m.id : 'p:' + d.slice(-9); }
+  else { const k = chatKey(raw); if (!k) return null; const m = miembroPorClave(k); id = m ? 'm:' + m.id : 'k:' + k; }
+  if (!ETQ.has(id)) ETQ.set(id, raw);
+  return id;
+}
+function etiqueta(id){
+  if (id.startsWith('m:')){ const m = miembros.find(x => x.id === id.slice(2)); const p = personajesDe(id.slice(2)); return { n: (m && (m.apodoInterno || m.contacto)) || id, s: p.join(', ') }; }
+  return { n: ETQ.get(id) || id.slice(2), s: id.startsWith('p:') ? 'Número sin asociar a ningún miembro' : 'Sin asociar a ningún miembro' };
+}
+/* ---------- Lectura del chat ---------- */
+function parseChat(text){
+  const re = /^\[?(\d{1,2})\/(\d{1,2})\/(\d{2,4}),? (\d{1,2}):(\d{2})(?::\d{2})?(?:\s?([ap])\.?\s?m\.?)?\]?(?: -)? (.*)$/i;
+  const L = []; let f13 = false, s13 = false, ap = false, last = null;
+  for (const raw of text.replace(/ /g, ' ').replace(/[‎‏]/g, '').split('\n')){
+    const line = raw.replace(/\r$/, ''), m = re.exec(line);
+    if (!m){ if (last) last.rest += '\n' + line; continue; }
+    if (+m[1] > 12) f13 = true; if (+m[2] > 12) s13 = true; if (m[6]) ap = true;
+    last = { a: +m[1], b: +m[2], y: +m[3], h: +m[4], mi: +m[5], p: (m[6] || '').toLowerCase(), rest: m[7], sys: /^\[[^\]]*\] - /.test(line) }; L.push(last);
+  }
+  const mf = (s13 && !f13) || (!f13 && !s13 && ap);
+  return L.map((x, i) => { let h = x.h; if (x.p === 'p' && h < 12) h += 12; if (x.p === 'a' && h === 12) h = 0;
+    return { i, t: new Date(x.y < 100 ? 2000 + x.y : x.y, (mf ? x.a : x.b) - 1, mf ? x.b : x.a, h, x.mi), rest: x.rest, sys: x.sys }; });
+}
+function sysEvents(t){
+  t = t.replace(/^-\s*/, '').replace(/\.$/, '').trim(); let m;
+  if ((m = /^(.+?) (?:añadió a|added) (.+)$/i.exec(t))) return m[2].split(/, /).map(x => ['join', x.trim()]);
+  if ((m = /^(.+?) se unió(?: .*)?$/i.exec(t)) || (m = /^(.+?) joined(?: .*)?$/i.exec(t))) return [['join', m[1]]];
+  if ((m = /^(.+?) (?:eliminó a|removed) (.+)$/i.exec(t))) return [['leave', m[2]]];
+  if ((m = /^(.+?) (?:salió(?: del grupo)?|left)$/i.exec(t))) return [['leave', m[1]]];
+  return [];
+}
+function analiza(text){
+  ETQ.clear(); const msgs = parseChat(text), P = new Map(), sinResolver = new Set(); let total = 0;
+  const get = id => { let p = P.get(id); if (!p){ p = { id, msgs: 0, last: -1, lastT: null, men: [], salio: false }; P.set(id, p); } return p; };
+  // 1.ª pasada: quién habla (para poder resolver «@Nombre» sueltos)
+  const aut = msgs.map(m => { if (m.sys) return null; const k = m.rest.indexOf(': '); if (k < 1 || k > 70) return null; const id = idDe(m.rest.slice(0, k)); return id ? { id, k } : null; });
+  const hablan = [...new Set(aut.filter(Boolean).map(a => a.id))];
+  const resolverPalabra = w => { const k = chatKey(w); if (!k) return null;
+    const ex = hablan.filter(id => id.startsWith('k:') && (id.slice(2) === k)); if (ex.length === 1) return ex[0];
+    const m = miembroPorClave(k); if (m) return 'm:' + m.id;
+    const pr = hablan.filter(id => { const n = id.startsWith('m:') ? '' : id.slice(2); return n.split(' ')[0] === k || n.startsWith(k + ' '); }); return pr.length === 1 ? pr[0] : null; };
+  msgs.forEach((m, n) => {
+    if (m.sys){ return; }
+    const a = aut[n];
+    if (!a){ sysEvents(m.rest).forEach(([tipo, nom]) => { const id = idDe(nom); if (id) get(id).salio = tipo === 'leave'; }); return; }
+    total++; const p = get(a.id); p.msgs++; p.last = m.i; p.lastT = m.t; p.salio = false;
+    const cuerpo = m.rest.slice(a.k + 2), vistos = new Set(); let resto = cuerpo;
+    const poner = id => { if (!id || id === a.id || vistos.has(id)) return; vistos.add(id); get(id).men.push({ i: m.i, t: m.t, by: a.id, txt: cuerpo.replace(/[⁦-⁩]/g, '') }); };
+    resto = resto.replace(/@⁨([^⁩]*)⁩/g, (_, x) => { const id = idDe(x); if (!id) sinResolver.add(x); poner(id); return ' '; });
+    resto = resto.replace(/@(\+?\d[\d\s\-]{6,}\d)/g, (_, x) => { poner(idDe(x)); return ' '; });
+    resto.replace(/@([\p{L}][\p{L}\p{N}_.]{1,30})/gu, (_, w) => { const id = resolverPalabra(w); if (id) poner(id); else sinResolver.add(w); return ' '; });
+  });
+  return { P, total, fin: msgs.length ? msgs[msgs.length - 1].t : null, ini: msgs.length ? msgs[0].t : null, sinResolver: [...sinResolver] };
+}
+/* ---------- Pantalla ---------- */
+const f = d => d ? d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '—';
+const dias = (a, b) => Math.max(0, Math.round((b - a) / 864e5));
+const desde = p => p.men.filter(x => x.i > p.last);
+function paint(){
+  $('needAdmin').hidden = isAdmin; $('tools').hidden = !isAdmin; if (!isAdmin || !DATA){ $('res').hidden = true; return; }
+  $('res').hidden = false; const um = Math.max(0, +$('umbral').value || 0), q = simp($('q').value.trim());
+  const conMen = [...DATA.P.values()].filter(p => p.men.length);
+  $('sum').textContent = `${DATA.total.toLocaleString('es-ES')} mensajes · ${f(DATA.ini)} → ${f(DATA.fin)} · ${DATA.P.size} personas · ${conMen.length} han sido etiquetadas.`;
+  let L = [...DATA.P.values()].filter(p => (p.msgs || p.men.length) && (p.men.length || q));
+  if (!$('chSalidos').checked) L = L.filter(p => !p.salio);
+  if (!$('chNunca').checked) L = L.filter(p => p.msgs);
+  L = L.map(p => ({ p, e: etiqueta(p.id), n: desde(p).length }));
+  if (q) L = L.filter(x => simp(x.e.n + ' ' + x.e.s).includes(q));
+  else L = L.filter(x => x.n >= um && x.n > 0);
+  L.sort((a, b) => b.n - a.n || (a.p.lastT || 0) - (b.p.lastT || 0));
+  $('pl').innerHTML = L.length ? L.map(({ p, e, n }) => { const ult = p.men.length ? p.men[p.men.length - 1] : null;
+    return `<li data-id="${esc(p.id)}" class="${n >= um && um > 0 ? 'aviso' : ''}"><div class="row"><div class="nm">${esc(e.n)}${p.salio ? '<span class="tag">salió del grupo</span>' : ''}${p.msgs ? '' : '<span class="tag">nunca ha hablado</span>'}<small>${esc(e.s)}</small><small>${p.msgs ? 'Habló por última vez: ' + f(p.lastT) + ' (hace ' + dias(p.lastT, DATA.fin) + ' d.)' : 'No aparece hablando en este chat'}${ult ? ' · Última etiqueta: ' + f(ult.t) : ''}</small></div><div class="cnt">${n}<small>desde que habló</small></div></div></li>`; }).join('')
+    : `<li><div class="row"><div class="nm">${q ? 'Nadie coincide con esa búsqueda.' : um ? 'Nadie llega a ' + um + ' menciones sin hablar. 🎉' : 'Nadie tiene menciones pendientes.'}</div></div></li>`;
+  $('nota2').textContent = DATA.sinResolver.length ? `No se pudo saber a quién se refería: ${DATA.sinResolver.slice(0, 12).map(x => '@' + x).join(', ')}${DATA.sinResolver.length > 12 ? '…' : ''}. Esas etiquetas no se cuentan.` : '';
+}
+function detalle(li){
+  const open = li.querySelector('.det'); if (open){ open.remove(); return; }
+  const p = DATA.P.get(li.dataset.id), men = p.men.slice().reverse(), nuevos = men.filter(x => x.i > p.last);
+  const fila = x => `<div class="m ${x.i > p.last ? '' : 'viejo'}"><span class="w">${f(x.t)} · de ${esc(etiqueta(x.by).n)}</span><q>${esc(x.txt.length > 280 ? x.txt.slice(0, 280) + '…' : x.txt)}</q></div>`;
+  const d = document.createElement('div'); d.className = 'det';
+  d.innerHTML = `<h4>Etiquetas sin respuesta (${nuevos.length})</h4>${nuevos.map(fila).join('') || '<div class="w" style="color:var(--ink-soft)">Ninguna: habló después de que la etiquetaran.</div>'}<h4>Etiquetas anteriores a su último mensaje (${men.length - nuevos.length})</h4>${men.filter(x => x.i <= p.last).slice(0, 15).map(fila).join('') || '<div style="color:var(--ink-soft)">Ninguna.</div>'}`;
+  li.appendChild(d);
+}
+$('pl').addEventListener('click', e => { const r = e.target.closest('.row'); if (r) detalle(r.parentNode); });
+['umbral', 'chSalidos', 'chNunca', 'q'].forEach(id => $(id).addEventListener('input', paint));
+async function leer(file){
+  if (!/\.txt$/i.test(file.name)){ $('dzSub').textContent = 'Eso no es un .txt. Usa «Exportar chat» de WhatsApp (sin multimedia).'; return; }
+  $('dzSub').textContent = 'Leyendo…'; DATA = analiza(await file.text());
+  $('dzSub').textContent = DATA.total ? file.name + ' · cargado' : 'No he encontrado mensajes. ¿Seguro que es un chat exportado de WhatsApp?'; paint();
+}
+$('fileIn').addEventListener('change', e => { if (e.target.files[0]) leer(e.target.files[0]); e.target.value = ''; });
+['dragenter', 'dragover'].forEach(t => $('dz').addEventListener(t, e => { e.preventDefault(); $('dz').classList.add('over'); }));
+['dragleave', 'drop'].forEach(t => $('dz').addEventListener(t, e => { e.preventDefault(); $('dz').classList.remove('over'); if (t === 'drop' && e.dataTransfer.files[0]) leer(e.dataTransfer.files[0]); }));
+async function cargaMiembros(){
+  const [mi, oc] = await Promise.all([sb.from('miembros').select('id,data'), sb.from('ocupados').select('id,data'), ]);
+  miembros = (mi.data || []).map(r => ({ id: r.id, ...(r.data || {}) })); ocupados = (oc.data || []).map(r => ({ id: r.id, ...(r.data || {}) }));
+}
+$('adminToggleBtn').addEventListener('click', () => {
+  if (isAdmin) sb.auth.signOut();
+  else { $('loginError').textContent = ''; $('loginEmail').value = ''; $('loginPass').value = ''; $('loginDialog').showModal(); }
+});
+$('loginCancel').addEventListener('click', () => $('loginDialog').close());
+$('loginSubmit').addEventListener('click', async () => {
+  const { error } = await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPass').value });
+  if (error) $('loginError').textContent = 'Email o contraseña incorrectos.'; else $('loginDialog').close();
+});
+sb.auth.onAuthStateChange(async (_e, session) => { isAdmin = !!session; $('adminToggleBtn').textContent = isAdmin ? 'Cerrar sesión admin' : 'Acceso admin'; if (isAdmin) await cargaMiembros(); else { DATA = null; miembros = []; ocupados = []; } paint(); });
+</script>
+</body>
+</html>
