@@ -66,7 +66,7 @@
       <div class="ctl">
         <div class="grp"><span>Mínimo de menciones sin hablar</span><div class="stp"><button type="button" id="umMenos" aria-label="Menos">−</button><input type="number" id="umbral" min="0" max="99" value="3" aria-label="Mínimo de menciones"><button type="button" id="umMas" aria-label="Más">+</button></div></div>
         <label class="chk"><input type="checkbox" id="chSalidos"><i>✓</i><span>Incluir a quien ya salió</span></label>
-        <label class="chk"><input type="checkbox" id="chNunca"><i>✓</i><span>Incluir a quien nunca habló</span></label>
+        <label class="chk"><input type="checkbox" id="chNunca" checked><i>✓</i><span>Incluir a quien no habla en este chat</span></label>
         <input type="search" id="q" placeholder="Buscar a alguien (nombre, personaje, miembro)…">
       </div>
       <ul class="pl" id="pl"></ul>
@@ -166,7 +166,13 @@ function analiza(text){
     const poner = id => { if (!id || id === a.id || vistos.has(id)) return; vistos.add(id); get(id).men.push({ i: m.i, t: m.t, by: a.id, txt: cuerpo.replace(/[⁦-⁩]/g, '') }); };
     resto = resto.replace(/@⁨([^⁩]*)⁩/g, (_, x) => { const id = idDe(x); if (!id) sinResolver.add(x); poner(id); return ' '; });
     resto = resto.replace(/@(\+?\d[\d\s\-]{6,}\d)/g, (_, x) => { poner(idDe(x)); return ' '; });
-    resto.replace(/@([\p{L}][\p{L}\p{N}_.]{1,30})/gu, (_, w) => { const id = resolverPalabra(w); if (id) poner(id); else sinResolver.add(w); return ' '; });
+    resto.replace(/@([^\n@]+)/g, (_, cola) => {
+      // WhatsApp escribe «@Nombre /Moonlight»: el nombre puede llevar espacios
+      const mm = /^([^\n@]{1,45}?)\s*\/\s*moo?nlight/i.exec(cola);
+      if (mm && mm[1].trim().split(/\s+/).length <= 4){ poner(idDe(mm[1].trim())); return ' '; }
+      const tk = cola.split(/\s+/).filter(Boolean).slice(0, 5);
+      for (let n = tk.length; n >= 1; n--){ const id = resolverPalabra(tk.slice(0, n).join(' ').replace(/[.,;:!?¡¿)]+$/, '')); if (id){ poner(id); return ' '; } }
+      if (tk[0]) sinResolver.add(tk[0]); return ' '; });
   });
   return { P, total, fin: msgs.length ? msgs[msgs.length - 1].t : null, ini: msgs.length ? msgs[0].t : null, sinResolver: [...sinResolver] };
 }
@@ -191,7 +197,7 @@ function paint(){
   else L = L.filter(x => x.n >= um && x.n > 0);
   L.sort((a, b) => b.n - a.n || (a.p.lastT || 0) - (b.p.lastT || 0));
   $('pl').innerHTML = L.length ? L.map(({ p, e, n }) => { const ult = p.men.length ? p.men[p.men.length - 1] : null;
-    return `<li data-id="${esc(p.id)}" class="${n >= um && um > 0 ? 'aviso' : ''}"><div class="row"><div class="nm">${esc(e.n)}${p.salio ? '<span class="tag">salió del grupo</span>' : ''}${p.msgs ? '' : '<span class="tag">nunca ha hablado</span>'}<small>${esc(e.s)}</small><small>${p.msgs ? 'Habló por última vez: ' + f(p.lastT) + ' (hace ' + dias(p.lastT, DATA.fin) + ' d.)' : 'No aparece en este chat'}${ult ? ' · Última etiqueta: ' + f(ult.t) : ''}</small></div><div class="cnt">${n}<small>desde que habló</small></div></div></li>`; }).join('')
+    return `<li data-id="${esc(p.id)}" class="${n >= um && um > 0 ? 'aviso' : ''}"><div class="row"><div class="nm">${esc(e.n)}${p.salio ? '<span class="tag">salió del grupo</span>' : ''}${p.msgs ? '' : '<span class="tag">no habla en este chat</span>'}<small>${esc(e.s)}</small><small>${p.msgs ? 'Habló por última vez: ' + f(p.lastT) + ' (hace ' + dias(p.lastT, DATA.fin) + ' d.)' : 'No aparece en este chat'}${ult ? ' · Última etiqueta: ' + f(ult.t) : ''}</small></div><div class="cnt">${n}<small>desde que habló</small></div></div></li>`; }).join('')
     : `<li><div class="row"><div class="nm">${q ? 'Nadie coincide con esa búsqueda.' : um ? 'Nadie llega a ' + um + ' menciones sin hablar. 🎉' : 'Nadie tiene menciones pendientes.'}</div></div></li>`;
   $('nota2').textContent = DATA.sinResolver.length ? `No se pudo saber a quién se refería: ${DATA.sinResolver.slice(0, 12).map(x => '@' + x).join(', ')}${DATA.sinResolver.length > 12 ? '…' : ''}. Esas etiquetas no se cuentan.` : '';
 }
