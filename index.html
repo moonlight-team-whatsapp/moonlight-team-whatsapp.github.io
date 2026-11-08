@@ -101,7 +101,7 @@
       <p class="subtitle">Elige a dónde quieres ir.
         <button class="rules-btn" id="rulesBtn" type="button" aria-haspopup="dialog" aria-label="Reglas del team" title="Reglas del team"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/></svg></button></p>
     </div>
-    <div class="admin-acts"><button class="admin-toggle" id="ordenBtn" type="button" hidden title="Reordenar los botones del índice">✏️ Ordenar</button><button class="admin-toggle" id="adminToggleBtn">Acceso admin</button></div>
+    <div class="admin-acts"><button class="admin-toggle ord-circ" id="ordenBtn" type="button" hidden title="Reordenar los botones del índice" aria-label="Reordenar los botones del índice"></button><button class="admin-toggle" id="adminToggleBtn">Acceso admin</button></div>
   </header>
 
   <div class="nav-sections" id="navGrid"></div>
@@ -425,10 +425,41 @@
   let discoveredFiles = null; // null = aún cargando
   let overrides = {};         // { 'archivo.html': { private: true/false } }
   let isAdmin = false;
+  const ICO_LAPIZ = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l4.2-1 10.3-10.3a2 2 0 0 0 0-2.8l-.4-.4a2 2 0 0 0-2.8 0L5 15.8 4 20z"/><path d="M13.5 7.5l3 3"/></svg>', ICO_OK = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   let editOrden = false;      // modo «ordenar»: flechas y arrastrar en las tarjetas
   async function guardaOrden(L){
     try { await Promise.all(L.map((f, i) => setDoc(doc(db, 'paginas', f), { orden: i }, { merge: true }))); }
-    catch (e) { alert('No se pudo guardar el orden.'); }
+    catch (e) { alert('No se pudo guardar el orden.'); renderNav(); }
+  }
+  // Arrastrar como en la pantalla de inicio del móvil: la tarjeta sigue al dedo y las demás se apartan con animación
+  let arrastrando = false;
+  document.addEventListener('touchmove', e => { if (arrastrando) e.preventDefault(); }, { passive: false });
+  function armaArrastre(ev, wrap, grid, names){
+    if ((ev.pointerType === 'mouse' && ev.button !== 0) || ev.target.closest('.eye-toggle')) return;
+    const touch = ev.pointerType !== 'mouse', x0 = ev.clientX, y0 = ev.clientY, wraps = [...grid.children].filter(w => w.dataset.f), idx = wraps.indexOf(wrap);
+    let activo = false, timer = null, rects = [], order = [];
+    const empieza = () => { activo = true; arrastrando = true; rects = wraps.map(w => w.getBoundingClientRect()); order = wraps.map((_, i) => i);
+      wraps.forEach(w => { if (w !== wrap) w.style.transition = 'transform .28s cubic-bezier(.2,.8,.2,1)'; }); wrap.classList.add('arrastrando'); wrap.style.transition = 'none'; if (navigator.vibrate) try { navigator.vibrate(12); } catch (e) {} };
+    const limpiaTodo = () => wraps.forEach(w => { w.style.transition = ''; w.style.transform = ''; w.classList.remove('arrastrando'); });
+    const mueve = e => {
+      if (!activo){ if (Math.hypot(e.clientX - x0, e.clientY - y0) > (touch ? 9 : 5)){ if (touch){ clearTimeout(timer); suelta(true); } else empieza(); } return; }
+      e.preventDefault(); wrap.style.transform = `translate(${e.clientX - x0}px,${e.clientY - y0}px) scale(1.05)`;
+      let k = 0, md = Infinity; rects.forEach((r, i) => { const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2)); if (d < md){ md = d; k = i; } });
+      const cur = order.indexOf(idx); if (k === cur) return;
+      order.splice(cur, 1); order.splice(k, 0, idx);
+      order.forEach((orig, pos) => { if (orig === idx) return; const w = wraps[orig], f = rects[orig], to = rects[pos]; w.style.transform = (f.left === to.left && f.top === to.top) ? '' : `translate(${to.left - f.left}px,${to.top - f.top}px)`; });
+    };
+    const suelta = cancelar => {
+      window.removeEventListener('pointermove', mueve); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); clearTimeout(timer);
+      if (!activo) return; activo = false; arrastrando = false;
+      const cur = order.indexOf(idx), f = rects[idx], to = rects[cur];
+      wrap.style.transition = 'transform .24s cubic-bezier(.2,.8,.2,1)'; wrap.style.transform = `translate(${to.left - f.left}px,${to.top - f.top}px)`; wrap.classList.remove('arrastrando');
+      if (cancelar || cur === idx){ setTimeout(limpiaTodo, 260); return; }
+      const L = order.map(o => names[o]); setTimeout(() => guardaOrden(L), 250);
+    };
+    const up = () => suelta(false);
+    window.addEventListener('pointermove', mueve); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+    if (touch) timer = setTimeout(empieza, 280);
   }
 
   let hasRevealed = false;
@@ -511,15 +542,8 @@
       }
 
       if (editOrden && isAdmin){
-        const idx = items.indexOf(p); wrap.classList.add('ordenando'); wrap.draggable = true; wrap.dataset.f = p.filename;
-        const bx = document.createElement('div'); bx.className = 'ord-btns';
-        [['‹', -1, 'Mover antes'], ['›', 1, 'Mover después']].forEach(([s, d, ti]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = s; b.title = ti; b.setAttribute('aria-label', ti); b.disabled = idx + d < 0 || idx + d >= items.length; b.addEventListener('click', ev => { ev.preventDefault(); ev.stopPropagation(); const L = items.map(x => x.filename); const [m] = L.splice(idx, 1); L.splice(idx + d, 0, m); guardaOrden(L); }); bx.appendChild(b); });
-        wrap.appendChild(bx);
-        wrap.addEventListener('dragstart', ev => { ev.dataTransfer.setData('text/plain', p.filename); ev.dataTransfer.effectAllowed = 'move'; wrap.classList.add('arrastrando'); });
-        wrap.addEventListener('dragend', () => wrap.classList.remove('arrastrando'));
-        wrap.addEventListener('dragover', ev => { ev.preventDefault(); wrap.classList.add('sobre'); });
-        wrap.addEventListener('dragleave', () => wrap.classList.remove('sobre'));
-        wrap.addEventListener('drop', ev => { ev.preventDefault(); wrap.classList.remove('sobre'); const f = ev.dataTransfer.getData('text/plain'); const L = items.map(x => x.filename); const from = L.indexOf(f), to = L.indexOf(p.filename); if (from < 0 || from === to) return; L.splice(to, 0, L.splice(from, 1)[0]); guardaOrden(L); });
+        wrap.classList.add('ordenando'); wrap.dataset.f = p.filename; a.draggable = false; a.style.setProperty('--w', (Math.random() * 3).toFixed(2));
+        wrap.addEventListener('pointerdown', ev => armaArrastre(ev, wrap, grid, items.map(x => x.filename)));
       }
       grid.appendChild(wrap);
     });
@@ -538,7 +562,7 @@
     renderNav();
   });
 
-  $('ordenBtn').addEventListener('click', () => { editOrden = !editOrden; $('ordenBtn').classList.toggle('is-admin', editOrden); $('ordenBtn').textContent = editOrden ? '✔ Terminar' : '✏️ Ordenar'; document.body.classList.toggle('modo-orden', editOrden); renderNav(); });
+  $('ordenBtn').addEventListener('click', () => { editOrden = !editOrden; $('ordenBtn').classList.toggle('is-admin', editOrden); $('ordenBtn').innerHTML = editOrden ? ICO_OK : ICO_LAPIZ; document.body.classList.toggle('modo-orden', editOrden); renderNav(); });
 
   // ---------- Admin login (misma cuenta que en el resto de páginas) ----------
   const adminToggleBtn = $('adminToggleBtn');
