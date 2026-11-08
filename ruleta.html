@@ -25,7 +25,7 @@
   .gbtn{ padding:6px 14px; border-radius:999px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1rem; cursor:pointer; color:var(--gold); border:1px solid rgba(217,195,131,.5); background:rgba(217,195,131,.08); }
   .gbtn:hover{ background:rgba(217,195,131,.22); } .gbtn:disabled{ opacity:.5; cursor:default; }
   .ganador{ min-height:2.4em; text-align:center; font-family:'Cormorant',serif; font-size:clamp(1.5rem,5vw,2.1rem); color:var(--gold); margin:14px 0 4px; }
-  .hist{ margin:0; padding-left:20px; color:var(--ink-soft); max-height:160px; overflow:auto; }
+  .hist{ margin:0; padding-left:2.6em; color:var(--ink-soft); max-height:160px; overflow:auto; }
   .cnt2{ color:var(--ink-soft); font-size:.9rem; }
 </style>
 <script src="js/temporadas.js"></script>
@@ -74,7 +74,7 @@
     }
     g.beginPath(); g.arc(c, c, r, 0, 7); g.strokeStyle = '#d9c383'; g.lineWidth = 8; g.stroke();
   }
-  function pinta(){ var n = opciones().length; $('cnt').textContent = n + (n === 1 ? ' opción' : ' opciones') + (n >= MAX ? ' (máximo)' : ''); $('gira').disabled = girando || n < 2; $('hist').innerHTML = hist.map(function(x){ return '<li></li>'; }).join(''); [].forEach.call($('hist').children, function(li, i){ li.textContent = hist[i]; }); dibuja(); }
+  function pinta(){ var n = opciones().length; $('cnt').textContent = n + (n === 1 ? ' opción' : ' opciones') + (n >= MAX ? ' (máximo)' : ''); $('gira').disabled = girando || n < 2; $('hist').innerHTML = hist.map(function(x){ return '<li></li>'; }).join(''); [].forEach.call($('hist').children, function(li, i){ li.textContent = hist[i]; }); $('hist').scrollTop = $('hist').scrollHeight; dibuja(); }
   function gira(){
     var O = opciones(), n = O.length; if (girando || n < 2) return; girando = true; $('gan').textContent = ''; $('gira').disabled = true;
     var a = 2 * Math.PI / n, gana = Math.floor(Math.random() * n);
@@ -83,7 +83,7 @@
     var dur = 4800 + Math.random() * 1200, t0 = performance.now(), ease = function(x){ return 1 - Math.pow(1 - x, 4); };
     (function paso(ts){ var x = Math.min(1, (ts - t0) / dur); ang = ini + (fin - ini) * ease(x); dibuja();
       if (x < 1) return requestAnimationFrame(paso);
-      girando = false; var ganador = O[gana]; $('gan').textContent = '✨ ' + ganador + ' ✨'; hist.unshift(ganador); hist = hist.slice(0, 50);
+      girando = false; var ganador = O[gana]; $('gan').textContent = '✨ ' + ganador + ' ✨'; hist.push(ganador); hist = hist.slice(-50);
       if ($('quita').checked){ var L = $('ops').value.split('\n'), k = -1, vis = 0; for (var j = 0; j < L.length; j++){ if (L[j].trim()){ if (vis === gana){ k = j; break; } vis++; } } if (k >= 0){ L.splice(k, 1); $('ops').value = L.join('\n'); } }
       guarda(); pinta(); })(t0);
   }
