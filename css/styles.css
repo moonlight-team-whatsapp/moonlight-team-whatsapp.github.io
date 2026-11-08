@@ -156,9 +156,9 @@
       moonGlow 7s ease-in-out 2.2s infinite;
   }
   @keyframes moonRise{
-    0%{ opacity: 0; transform: translate(-50%,-50%) scale(2.6) translateY(-30px); filter: blur(10px); }
-    55%{ opacity: 1; filter: blur(0); }
-    100%{ opacity: 1; transform: translate(-50%,-50%) scale(1) translateY(0); }
+    0%{ opacity: 0; transform: translate(-50%,-50%) scale(2.6) translateY(-30px); filter: blur(10px) var(--tono-luna,brightness(1)); }
+    55%{ opacity: 1; filter: blur(0) var(--tono-luna,brightness(1)); }
+    100%{ opacity: 1; transform: translate(-50%,-50%) scale(1) translateY(0); filter: blur(0) var(--tono-luna,brightness(1)); }
   }
 
   /* Destello que "hace nacer" la luna */
@@ -933,7 +933,8 @@ html.navidad-barra .app > .bar{ margin-top:26px; }
 .deco-btn[aria-pressed="false"]{ opacity:.55; }
 
 /* ---------- Halloween ---------- */
-html.halloween .moon{ filter:sepia(.9) saturate(3.2) hue-rotate(-14deg) brightness(1.05); box-shadow:0 0 28px 6px rgba(255,140,40,.5), 0 0 64px 18px rgba(255,110,20,.22); }
+html.halloween{ --tono-luna:sepia(.9) saturate(3.2) hue-rotate(-14deg) brightness(1.05); }
+html.halloween .moon{ filter:var(--tono-luna); box-shadow:0 0 28px 6px rgba(255,140,40,.5), 0 0 64px 18px rgba(255,110,20,.22); }
 .tela{ position:fixed; top:0; z-index:5; pointer-events:none; }
 .tela.izq{ left:0; } .tela.der{ right:0; transform:scaleX(-1); }
 .tela .ara .hilo{ position:absolute; left:50%; top:calc(var(--h) * -1); width:0; height:var(--h); border-left:1px solid rgba(235,235,245,.55); }
