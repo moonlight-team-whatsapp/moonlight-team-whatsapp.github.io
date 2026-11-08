@@ -34,6 +34,7 @@
   @keyframes tin{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
   @media (prefers-reduced-motion:reduce){ .tc{ animation:none; } }
 </style>
+<script src="js/temporadas.js"></script>
 </head>
 <body>
 <div class="stars" id="starsLayer" aria-hidden="true"></div>
@@ -66,7 +67,6 @@
 </dialog>
 
 <div id="toast" role="status"></div>
-<script src="js/temporadas.js" defer></script>
 <script type="module">
 import { sb } from './js/supabase-sesion.js';
 const $ = id => document.getElementById(id);

@@ -47,5 +47,5 @@
     if (document.body) crear(); else document.addEventListener('DOMContentLoaded', crear);
   }
   if (cache){ arrancar(cache); pedir(); }
-  else { var hecho = false, go = function(c){ if (hecho) return; hecho = true; arrancar(c); }; pedir().then(go); setTimeout(function(){ go(null); }, 900); }
+  else { arrancar(null); pedir(); }
 })();

@@ -936,8 +936,8 @@ html.navidad-barra .app > .bar{ margin-top:26px; }
 html.halloween .moon{ filter:sepia(.9) saturate(3.2) hue-rotate(-14deg) brightness(1.05); box-shadow:0 0 28px 6px rgba(255,140,40,.5), 0 0 64px 18px rgba(255,110,20,.22); }
 .tela{ position:fixed; top:0; z-index:5; pointer-events:none; }
 .tela.izq{ left:0; } .tela.der{ right:0; transform:scaleX(-1); }
-.tela .ara .hilo{ position:absolute; left:50%; top:-80px; width:0; height:80px; border-left:1px solid rgba(235,235,245,.55); }
-.tela .ara{ position:absolute; left:84px; top:96px; font-size:18px; transform-origin:50% -80px; animation:colgar 4s ease-in-out infinite alternate; }
+.tela .ara .hilo{ position:absolute; left:50%; top:calc(var(--h) * -1); width:0; height:var(--h); border-left:1px solid rgba(235,235,245,.55); }
+.tela .ara{ --h:96px; position:absolute; left:84px; top:96px; font-size:18px; transform-origin:50% -96px; animation:colgar 4s ease-in-out infinite alternate; }
 @keyframes colgar{ from{ transform:rotate(-8deg); } to{ transform:rotate(8deg); } }
 .murci{ position:fixed; left:-60px; z-index:1; pointer-events:none; opacity:.85; animation:murciVuela linear infinite, murciAletea ease-in-out infinite alternate; }
 @keyframes murciVuela{ from{ transform:translateX(0); } to{ transform:translateX(calc(100vw + 120px)); } }
@@ -946,7 +946,7 @@ html.halloween .moon{ filter:sepia(.9) saturate(3.2) hue-rotate(-14deg) brightne
 @keyframes murciAletea{ from{ margin-top:-8px; } to{ margin-top:10px; } }
 .calabazas{ position:fixed; right:10px; bottom:6px; z-index:4; pointer-events:none; font-size:34px; display:flex; gap:2px; filter:drop-shadow(0 0 10px rgba(255,140,30,.6)); }
 .calabazas span:nth-child(2){ font-size:24px; align-self:flex-end; }
-@media (max-width:600px){ .tela svg{ width:80px; height:80px; } .tela .ara{ left:50px; top:58px; } .calabazas{ font-size:26px; } }
+@media (max-width:600px){ .tela svg{ width:80px; height:80px; } .tela .ara{ --h:58px; left:50px; top:58px; transform-origin:50% -58px; } .calabazas{ font-size:26px; } }
 @media (prefers-reduced-motion:reduce){ .tela .ara, .murci, .murci svg{ animation:none; } }
 
 /* Puntito rojo con número: algo pendiente en esa página */
