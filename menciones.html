@@ -193,7 +193,7 @@ $('pl').addEventListener('click', e => { const r = e.target.closest('.row'); if 
 ['umbral', 'chSalidos', 'chNunca', 'q'].forEach(id => $(id).addEventListener('input', paint));
 async function leer(file){
   if (!/\.txt$/i.test(file.name)){ $('dzSub').textContent = 'Eso no es un .txt. Usa «Exportar chat» de WhatsApp (sin multimedia).'; return; }
-  $('dzSub').textContent = 'Leyendo…'; DATA = analiza(await file.text());
+  $('dzSub').textContent = 'Leyendo…'; const txt = await file.text(); DATA = analiza(txt); DATA.texto = txt;
   $('dzSub').textContent = DATA.total ? file.name + ' · cargado' : 'No he encontrado mensajes. ¿Seguro que es un chat exportado de WhatsApp?'; paint();
 }
 $('fileIn').addEventListener('change', e => { if (e.target.files[0]) leer(e.target.files[0]); e.target.value = ''; });
@@ -212,7 +212,7 @@ $('loginSubmit').addEventListener('click', async () => {
   const { error } = await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPass').value });
   if (error) $('loginError').textContent = 'Email o contraseña incorrectos.'; else $('loginDialog').close();
 });
-sb.auth.onAuthStateChange(async (_e, session) => { isAdmin = !!session; $('adminToggleBtn').textContent = isAdmin ? 'Cerrar sesión admin' : 'Acceso admin'; if (isAdmin) await cargaMiembros(); else { DATA = null; miembros = []; ocupados = []; } paint(); });
+sb.auth.onAuthStateChange((_e, session) => { isAdmin = !!session; $('adminToggleBtn').textContent = isAdmin ? 'Cerrar sesión admin' : 'Acceso admin'; if (!isAdmin){ DATA = null; miembros = []; ocupados = []; } paint(); if (isAdmin) setTimeout(() => cargaMiembros().then(() => { if (DATA) DATA = analiza(DATA.texto); paint(); }).catch(() => {}), 0); });
 </script>
 </body>
 </html>
