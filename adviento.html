@@ -352,9 +352,10 @@ function juegoSudoku(box, dat, fin, dia){
     if (apuntar){ if (!v){ nota[s] = 0; } else if (!cur[s]) nota[s] ^= (1 << v); pinta(); return; }
     if (!v){ cur[s] = 0; pinta(); return; }
     if (cur[s] === v) return;
-    cur[s] = v; nota[s] = 0;
-    if (v === sol[s]) quitaNotas(s, v); else { err++; msg.textContent = 'Ese número no va ahí.'; setTimeout(() => { if (msg.textContent === 'Ese número no va ahí.') msg.textContent = ''; }, 1500); }
-    pinta(); revisa(); }
+    const i = s, antes = nota[i]; cur[i] = v; nota[i] = 0;
+    if (v === sol[i]){ quitaNotas(i, v); pinta(); revisa(); return; }
+    err++; msg.textContent = 'Ese número no va ahí.'; pinta(); revisa();
+    setTimeout(() => { if (cur[i] === v && !dada[i]){ cur[i] = 0; nota[i] = antes; if (!acabado) pinta(); } if (msg.textContent === 'Ese número no va ahí.') msg.textContent = ''; }, 700); }
   function pista(){
     if (acabado || ayudas <= 0) return;
     let i = s >= 0 && !puzzle[s] && cur[s] !== sol[s] ? s : -1;
