@@ -16,6 +16,13 @@
   #unlinkedList li{ flex-wrap:wrap; gap:8px; }
   #unlinkedList .li-actions.contact-edit{ flex:1 1 100%; flex-wrap:wrap; align-items:center; gap:8px; min-width:0; }
   #unlinkedList .contact-edit > input[type=text]{ flex:1 1 100%; width:100%; min-width:0; }
+  .gone-sum{ cursor:pointer; list-style:none; display:flex; align-items:center; gap:10px; }
+  .gone-sum::-webkit-details-marker{ display:none; }
+  .gone-sum h2{ margin:0; }
+  .gone-sum::before{ content:'▾'; color:var(--gold); font-size:1.2rem; transition:transform .2s; }
+  details:not([open]) > .gone-sum::before{ transform:rotate(-90deg); }
+  .gone-count{ font-size:.9rem; color:var(--ink-soft); font-family:'Crimson Pro',serif; font-weight:400; }
+  #goneList li{ opacity:.78; }
 </style>
 <script src="js/temporadas.js"></script>
 </head>
@@ -50,6 +57,14 @@
     <p class="panel-desc" id="panelDesc">Cada fila es una persona, con el personaje (o personajes) que ocupa ahora mismo.</p>
     <ul class="simple-list" id="memberList"></ul>
     <p class="empty-note" id="memberEmpty" hidden></p>
+  </section>
+
+  <section class="panel" id="gonePanel" hidden>
+    <details id="goneDet" open>
+      <summary class="gone-sum"><h2>Ya no están <span class="gone-count" id="goneCount"></span></h2></summary>
+      <p class="panel-desc">Miembros expulsados o dados de baja. Se muestran aparte para que no estorben.</p>
+      <ul class="simple-list" id="goneList"></ul>
+    </details>
   </section>
 
   <section class="panel" id="unlinkedPanel" hidden>
@@ -443,6 +458,7 @@
       li.appendChild(meta);
       memberList.appendChild(li);
     });
+    $('gonePanel').hidden = true;
   }
 
   // Cambiar el teléfono/usuario de un miembro sin tocar su identificador interno
@@ -463,8 +479,10 @@
     } catch (e) { statusLine.textContent = 'No se pudo cambiar el contacto: ' + (e.code || e.message); }
   }
 
+  try { if (localStorage.getItem('mc_gone_closed') === '1') $('goneDet').open = false; } catch (e) {}
+  $('goneDet').addEventListener('toggle', () => { try { localStorage.setItem('mc_gone_closed', $('goneDet').open ? '0' : '1'); } catch (e) {} });
   function renderAdmin(roles){
-    memberList.innerHTML = '';
+    memberList.innerHTML = ''; $('goneList').innerHTML = '';
     const sorted = [...miembrosCache].sort(orderComparator);
     const rows = sorted.map(m => ({
       id: m.id,
@@ -473,6 +491,7 @@
       nacimiento: m.nacimiento || '',
       cambiosDisponibles: typeof m.cambiosDisponibles === 'number' ? m.cambiosDisponibles : 1,
       salidasDisponibles: typeof m.salidasDisponibles === 'number' ? m.salidasDisponibles : 3,
+      fuera: !!(m.baneado || m.activo === false),
       roles: roles[m.id] || [],
       historialPersonajes: Array.isArray(m.historialPersonajes) ? m.historialPersonajes : []
     }));
@@ -491,13 +510,13 @@
       memberEmpty.hidden = true;
     }
 
-    filtered.forEach(r => {
+    const pintar = (r, destino) => {
       const li = document.createElement('li');
       li.dataset.id = r.id;
 
       const left = document.createElement('span');
       left.className = 'li-left';
-      left.appendChild(makeHandle(!searchTerm));
+      if (!r.fuera) left.appendChild(makeHandle(!searchTerm));
 
       const textWrap = document.createElement('div');
       const name = document.createElement('div');
@@ -509,8 +528,8 @@
       meta.className = 'li-meta';
       const rolesTxt = r.roles.length ? r.roles.join(', ') : 'Sin rol actual';
       const pastNames = [...new Set(r.historialPersonajes.map(h => h.nombre))].filter(n => !r.roles.includes(n));
-      let metaHtml = `Ocupa: <b>${escapeHtml(rolesTxt)}</b>`;
-      if (pastNames.length) metaHtml += ` — Ocupaba: ${escapeHtml(pastNames.join(', '))}`;
+      let metaHtml = r.fuera ? `Ocupaba: <b>${escapeHtml([...new Set([...r.roles, ...pastNames])].join(', ') || '—')}</b>` : `Ocupa: <b>${escapeHtml(rolesTxt)}</b>`;
+      if (!r.fuera && pastNames.length) metaHtml += ` — Ocupaba: ${escapeHtml(pastNames.join(', '))}`;
       metaHtml += ` — ${escapeHtml(r.apodoInterno)}`;
       meta.innerHTML = metaHtml;
       textWrap.appendChild(meta);
@@ -545,8 +564,11 @@
       actions.appendChild(chBtn);
       li.appendChild(actions);
 
-      memberList.appendChild(li);
-    });
+      destino.appendChild(li);
+    };
+    filtered.filter(r => !r.fuera).forEach(r => pintar(r, memberList));
+    const idos = filtered.filter(r => r.fuera); idos.forEach(r => pintar(r, $('goneList')));
+    $('gonePanel').hidden = !idos.length; $('goneCount').textContent = idos.length ? '(' + idos.length + ')' : '';
   }
 
   function renderUnlinked(){
