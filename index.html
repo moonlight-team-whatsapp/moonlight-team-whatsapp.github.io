@@ -599,7 +599,7 @@
     adminToggleBtn.textContent = isAdmin ? 'Salir del modo admin' : 'Acceso admin';
     adminToggleBtn.classList.toggle('is-admin', isAdmin);
     if (!isAdmin) editOrden = false;
-    $('ordenBtn').hidden = !isAdmin; $('ordenBtn').classList.toggle('is-admin', editOrden); $('ordenBtn').textContent = editOrden ? '✔ Terminar' : '✏️ Ordenar';
+    $('ordenBtn').hidden = !isAdmin; $('ordenBtn').classList.toggle('is-admin', editOrden); $('ordenBtn').innerHTML = editOrden ? ICO_OK : ICO_LAPIZ;
     renderNav();
   });
 </script>
