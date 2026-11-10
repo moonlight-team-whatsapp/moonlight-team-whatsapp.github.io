@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fichas · Moonlight Team</title>
+<meta name="description" content="Ficha de cada personaje de Moonlight Team: familia, MoonCards y datos.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500;1,600&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .wrap{ max-width:820px; }
+  .top h1{ font-size:clamp(1.9rem,8vw,3rem); line-height:1.1; }
+  .busca{ width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:rgba(16,22,48,.72); color:var(--ink); font:inherit; margin-bottom:14px; }
+  .dir{ display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:12px; }
+  .pj{ display:block; text-decoration:none; color:var(--ink); border:1px solid var(--border); border-radius:14px; background:rgba(16,22,48,.72); padding:10px; text-align:center; transition:border-color .2s, transform .2s; }
+  .pj:hover{ border-color:var(--gold-dim); transform:translateY(-2px); }
+  .pj .im{ aspect-ratio:3/4; border-radius:10px; background:linear-gradient(160deg,#1c2350,#3a2b5a); background-size:cover; background-position:center; display:grid; place-items:center; font-family:'Cormorant',serif; font-size:2.2rem; color:var(--gold); margin-bottom:8px; }
+  .pj b{ display:block; font-family:'Cormorant',serif; font-size:1.15rem; color:var(--gold); }
+  .pj small{ color:var(--ink-soft); }
+  .hero{ display:grid; grid-template-columns:160px 1fr; gap:20px; border:1px solid var(--border); border-radius:18px; background:rgba(16,22,48,.72); padding:18px; }
+  .hero .im{ aspect-ratio:3/4; border-radius:12px; border:1px solid var(--gold-dim); background:linear-gradient(160deg,#1c2350,#3a2b5a); background-size:cover; background-position:center; display:grid; place-items:center; text-align:center; padding:8px; color:var(--ink-soft); font-size:.85rem; }
+  .hero h1{ margin:0; font-family:'Cormorant',serif; font-style:italic; font-size:clamp(1.9rem,7vw,2.6rem); color:var(--gold); line-height:1.1; }
+  .chips{ display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
+  .chip{ font-size:.82rem; padding:2px 10px; border-radius:999px; border:1px solid var(--border); color:var(--ink-soft); }
+  .chip.g{ color:var(--gold); border-color:rgba(217,195,131,.5); }
+  .bio{ margin:8px 0; white-space:pre-wrap; }
+  .fila{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; align-items:center; }
+  .gbtn{ padding:6px 14px; border-radius:999px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1rem; cursor:pointer; color:var(--gold); border:1px solid rgba(217,195,131,.5); background:rgba(217,195,131,.1); text-decoration:none; display:inline-block; }
+  .gbtn:hover{ background:rgba(217,195,131,.22); }
+  .gbtn.suave{ color:var(--ink-soft); border-color:var(--border); background:none; font-size:.92rem; }
+  h2.s{ margin:26px 0 8px; font-family:'Cormorant',serif; font-style:italic; font-size:1.4rem; color:var(--gold); }
+  .box{ border:1px solid var(--border); border-radius:14px; background:rgba(16,22,48,.72); padding:12px 16px; }
+  .box.adm{ border-style:dashed; border-color:rgba(199,154,208,.5); }
+  h2.s.adm{ color:#c79ad0; }
+  .fam{ display:flex; flex-wrap:wrap; gap:8px; }
+  .fm{ text-decoration:none; color:var(--ink); border:1px solid var(--border); border-radius:999px; padding:5px 14px; }
+  .fm small{ display:block; font-size:.72rem; color:var(--ink-soft); line-height:1.1; }
+  .fm.out{ opacity:.55; }
+  a.fm:hover{ border-color:var(--gold-dim); }
+  .r{ display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-bottom:1px solid var(--border); }
+  .r:last-child{ border:0; } .r span{ color:var(--ink-soft); } .r div{ text-align:right; white-space:pre-wrap; }
+  .gal{ display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; }
+  .gal a{ aspect-ratio:3/4; border-radius:10px; border:1px solid var(--border); background-size:cover; background-position:center; position:relative; }
+  .gal a.p{ border-color:var(--gold); }
+  .gal a i{ position:absolute; left:4px; top:4px; font-style:normal; background:rgba(8,12,30,.8); border-radius:99px; padding:0 6px; font-size:.75rem; color:var(--gold); }
+  .tl{ border-left:2px solid var(--border); margin-left:6px; padding-left:14px; }
+  .tl div{ margin:10px 0; } .tl i{ display:block; font-style:normal; font-size:.8rem; color:var(--gold); }
+  .vacio{ color:var(--ink-soft); font-style:italic; }
+  .priv{ text-align:center; padding:40px 10px; color:var(--ink-soft); }
+  .edf{ display:grid; gap:4px; margin:8px 0; } .edf label{ font-size:.88rem; color:var(--ink-soft); }
+  .edf input[type=text],.edf textarea,.edf select,.edf input[type=number]{ padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--ink); font:inherit; }
+  .edf textarea{ min-height:80px; resize:vertical; }
+  .chk{ display:flex; gap:8px; align-items:center; margin:8px 0; cursor:pointer; }
+  .cumple{ display:flex; gap:8px; margin:4px 0 8px 26px; }
+  dialog.fdlg{ background:#10173a; color:var(--ink); border:1px solid var(--gold-dim); border-radius:14px; max-width:min(480px,92vw); width:100%; padding:18px; }
+  dialog.fdlg::backdrop{ background:rgba(4,7,20,.7); }
+  dialog.fdlg h3{ margin:0 0 6px; font-family:'Cormorant',serif; font-style:italic; color:var(--gold); font-size:1.5rem; }
+  .nota{ font-size:.82rem; color:var(--ink-soft); margin:4px 0; }
+  @media(max-width:520px){ .hero{ grid-template-columns:1fr; } .hero .im{ max-width:170px; } }
+  #toast{ position:fixed; left:50%; bottom:20px; transform:translate(-50%,20px); background:#141b37; border:1px solid var(--gold-dim); color:var(--ink); padding:9px 16px; border-radius:8px; opacity:0; transition:all .3s; pointer-events:none; }
+  #toast.show{ opacity:1; transform:translate(-50%,0); }
+</style>
+<script src="js/temporadas.js"></script>
+</head><body>
+<div class="stars" id="starsLayer" aria-hidden="true"></div>
+<div class="mist m1" aria-hidden="true"></div>
+<div class="mist m2" aria-hidden="true"></div>
+<div class="moon" aria-hidden="true"></div>
+<div class="wrap">
+  <a class="back-link" id="back" href="index.html">← Volver al índice</a>
+  <header class="top">
+    <div>
+      <div class="title-wrap"><h1 id="tit">Fichas</h1></div>
+      <p class="subtitle" id="sub">Un personaje, una ficha: familia, MoonCards y datos.</p>
+    </div>
+    <button class="admin-toggle" id="adminToggleBtn">Acceso admin</button>
+  </header>
+  <div id="main"></div>
+</div>
+<dialog class="fdlg" id="edDlg">
+  <h3>Editar ficha</h3>
+  <div class="edf"><label for="fBio">Sobre el personaje (máx. 400)</label><textarea id="fBio" maxlength="400"></textarea></div>
+  <div class="edf"><label for="fProc">Procedencia</label><input id="fProc" type="text" maxlength="60" placeholder="Ej: Inazuma"></div>
+  <div class="edf"><label for="fEdad">Edad</label><input id="fEdad" type="text" maxlength="30" placeholder="Ej: 22"></div>
+  <div class="edf"><label for="fNotas">Relaciones y notas (máx. 300)</label><textarea id="fNotas" maxlength="300" placeholder="Amigo de…, rival de…"></textarea></div>
+  <label class="chk"><input type="checkbox" id="fCumpleOn"> Registrar mi cumpleaños</label>
+  <div id="fCumpleBox" hidden>
+    <div class="cumple"><input id="fDia" type="number" min="1" max="31" placeholder="Día" style="width:80px"><select id="fMes"></select></div>
+    <label class="chk" style="margin-left:26px"><input type="checkbox" id="fCumpleNo"> Mi personaje no tiene cumpleaños</label>
+  </div>
+  <label class="chk"><input type="checkbox" id="fOculta"> Ocultar mi ficha (solo se verá tu nombre)</label>
+  <p class="nota" id="edMsg" role="status"></p>
+  <div class="fila"><button class="gbtn" id="edOk" type="button">Guardar</button><button class="gbtn suave" id="edNo" type="button">Cancelar</button></div>
+</dialog>
+<dialog id="loginDialog">
+  <div class="dialog-inner">
+    <h3>Acceso admin</h3>
+    <div class="dialog-field"><label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username"></div>
+    <div class="dialog-field"><label for="loginPass">Contraseña</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+    <p class="dialog-error" id="loginError"></p>
+    <div class="dialog-actions">
+      <button class="btn-primary" id="loginSubmit" type="button">Entrar</button>
+      <button class="btn-ghost" id="loginCancel" type="button">Cancelar</button>
+    </div>
+  </div>
+</dialog>
+<div id="toast" role="status"></div>
+<script type="module">
+import { sb } from './js/supabase-sesion.js';
+import { tokenActual, miMiembro } from './js/carnet.js';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clave = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const ROM = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+(function(){ const l = $('starsLayer'), fr = document.createDocumentFragment(); for (let i = 0; i < 30; i++){ const s = document.createElement('span'); s.className = 'star'; const z = (Math.random()*1.6+.8).toFixed(2); s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;width:${z}px;height:${z}px;animation-delay:${(Math.random()*4).toFixed(2)}s`; fr.appendChild(s); } l.appendChild(fr); })();
+const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), 3500); };
+const url = p => sb.storage.from('mooncards').getPublicUrl(p).data.publicUrl;
+const fmtF = d => d ? new Date(d).toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', day: 'numeric', month: 'short', year: 'numeric' }) : '';
+$('fMes').innerHTML = MESES.map((m, i) => `<option value="${String(i + 1).padStart(2, '0')}">${m}</option>`).join('');
+
+let isAdmin = false, yo = null, OC = [], AR = [], MC = [], FI = {}, MI = {}, cargando = false, otra = false;
+const quien = () => new URLSearchParams(location.search).get('p');
+
+async function load(){
+  if (cargando){ otra = true; return; } cargando = true; otra = false;
+  try {
+    yo = await miMiembro();
+    const [oc, ar, mc, fi] = await Promise.all([
+      sb.from('ocupados').select('id,data'), sb.from('arbol').select('id,data'),
+      sb.from('mooncards').select('id,personaje,personaje_key,titulo,etiquetas,img_path,principal,creada').eq('aprobada', true).order('creada'),
+      sb.from('fichas').select('personaje_key,data,actualizada')]);
+    OC = (oc.data || []).map(r => r.data || {}).filter(d => d.nombre);
+    AR = (ar.data || []).map(r => ({ id: r.id, ...(r.data || {}) }));
+    MC = mc.data || []; FI = {}; (fi.data || []).forEach(r => FI[r.personaje_key] = r.data || {});
+    MI = {};
+    if (isAdmin){ const m = await sb.from('miembros').select('id,data'); (m.data || []).forEach(r => MI[r.id] = r.data || {}); }
+  } finally { cargando = false; }
+  if (otra) return load();
+  pinta();
+}
+const principal = k => { const l = MC.filter(c => c.personaje_key === k); return l.find(c => c.principal) || null; };
+const soyDe = pj => !!pj && ((yo && pj.miembroId === yo) || isAdmin);
+
+function pinta(){
+  const p = quien();
+  if (!p) return directorio();
+  const pj = OC.find(d => clave(d.nombre) === clave(p));
+  if (!pj){ $('tit').textContent = 'Ficha'; $('sub').textContent = ''; $('back').href = 'ficha.html'; $('back').textContent = '← Todas las fichas';
+    $('main').innerHTML = '<p class="priv">No hemos encontrado a ese personaje.</p>'; return; }
+  ficha(pj);
+}
+
+function directorio(){
+  document.title = 'Fichas · Moonlight Team';
+  $('tit').textContent = 'Fichas'; $('sub').textContent = 'Un personaje, una ficha: familia, MoonCards y datos.';
+  $('back').href = 'index.html'; $('back').textContent = '← Volver al índice';
+  const lista = OC.slice().sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  $('main').innerHTML = `<input class="busca" id="q" type="search" placeholder="Buscar personaje…" autocomplete="off"><div class="dir" id="dir"></div>`;
+  const draw = () => {
+    const q = clave($('q').value);
+    $('dir').innerHTML = lista.filter(d => !q || clave(d.nombre).includes(q)).map(d => {
+      const k = clave(d.nombre), pr = principal(k), f = FI[k] || {};
+      return `<a class="pj" href="ficha.html?p=${encodeURIComponent(d.nombre)}"><div class="im" ${pr ? `style="background-image:url('${esc(url(pr.img_path))}')"` : ''}>${pr ? '' : esc(d.nombre.charAt(0))}</div><b>${esc(d.nombre)}</b>${f.oculta ? '<small>Ficha privada</small>' : ''}</a>`;
+    }).join('') || '<p class="vacio">Sin resultados.</p>';
+  };
+  $('q').oninput = draw; draw();
+}
+
+function ficha(pj){
+  const k = clave(pj.nombre), f = FI[k] || {}, pr = principal(k);
+  document.title = pj.nombre + ' · Ficha · Moonlight Team';
+  $('tit').textContent = 'Ficha'; $('sub').textContent = ''; $('back').href = 'ficha.html'; $('back').textContent = '← Todas las fichas';
+  const edita = soyDe(pj);
+  const img = pr ? `style="background-image:url('${esc(url(pr.img_path))}')"` : '';
+  if (f.oculta && !isAdmin && !soyDe(pj)){
+    $('main').innerHTML = `<div class="hero"><div class="im" ${img}>${pr ? '' : 'Sin MoonCard principal'}</div><div><h1>${esc(pj.nombre)}</h1><p class="vacio">Este miembro ha ocultado su ficha.</p></div></div>`; return;
+  }
+  const nodo = AR.find(a => clave(a.nombre) === k);
+  const byId = {}; AR.forEach(a => byId[a.id] = a);
+  const dep = (a, seen = new Set()) => { if (!a || seen.has(a.id)) return 0; seen.add(a.id); const ps = (a.padres || []).map(i => byId[i]).filter(Boolean); return ps.length ? 1 + Math.max(...ps.map(x => dep(x, seen))) : 0; };
+  const fam = [];
+  if (nodo){
+    (nodo.padres || []).forEach(i => byId[i] && fam.push(['Padre/madre', byId[i]]));
+    (nodo.parejas || []).forEach(i => byId[i] && fam.push(['Pareja', byId[i]]));
+    AR.filter(a => (a.padres || []).includes(nodo.id)).forEach(a => fam.push([a.genero === 'f' ? 'Hija' : a.genero === 'm' ? 'Hijo' : 'Hijo/a', a]));
+  }
+  const chips = [pj.createdAt ? `<span class="chip">En el team desde ${esc(fmtF(pj.createdAt))}</span>` : '', nodo ? `<span class="chip g">Gen. ${ROM[dep(nodo)] || dep(nodo) + 1}${nodo.genero === 'f' ? ' ♀' : nodo.genero === 'm' ? ' ♂' : ''}</span>` : ''].join('');
+  const filas = [];
+  if (f.procedencia) filas.push(['Procedencia', f.procedencia]);
+  if (f.edad) filas.push(['Edad', f.edad]);
+  if (f.cumpleNo) filas.push(['Cumpleaños', 'No tiene cumpleaños']);
+  else if (f.cumple){ const [m, d] = f.cumple.split('-'); filas.push(['Cumpleaños', `${+d} de ${MESES[+m - 1]}`]); }
+  if (f.notas) filas.push(['Relaciones', f.notas]);
+  const cartas = MC.filter(c => c.personaje_key === k).sort((a, b) => (b.principal ? 1 : 0) - (a.principal ? 1 : 0));
+  const tl = [];
+  if (pj.createdAt) tl.push([pj.createdAt, 'Entra al team']);
+  if (nodo && nodo.createdAt) tl.push([nodo.createdAt, 'Se añade al árbol']);
+  cartas.forEach(c => tl.push([c.creada, `MoonCard${c.titulo ? ' «' + esc(c.titulo) + '»' : ''} publicada`]));
+  tl.sort((a, b) => String(b[0]).localeCompare(String(a[0])));
+  let admin = '';
+  if (isAdmin){
+    const m = MI[pj.miembroId] || {};
+    const otros = (m.historialPersonajes || []).map(h => esc(h.nombre) + ' (' + esc(fmtF(h.fecha)) + ')').join(', ');
+    admin = `<h2 class="s adm">Solo admin</h2><div class="box adm">
+      <div class="r"><span>Miembro</span><div>${esc(m.apodoInterno || pj.miembroId || '—')}${m.activo === false ? ' · inactivo' : ''}</div></div>
+      ${otros ? `<div class="r"><span>Personajes anteriores</span><div>${otros}</div></div>` : ''}
+      ${(m.aliasesChat || []).length ? `<div class="r"><span>Alias en el chat</span><div>${esc(m.aliasesChat.join(', '))}</div></div>` : ''}
+      <div class="r"><span>Última vez que habló</span><div class="vacio">Pendiente de enlazar con Menciones</div></div></div>`;
+  }
+  $('main').innerHTML = `
+    <div class="hero"><div class="im" ${img}>${pr ? '' : 'Sin MoonCard principal'}</div>
+      <div><h1>${esc(pj.nombre)}</h1><div class="chips">${chips}${f.oculta ? '<span class="chip">Ficha oculta</span>' : ''}</div>
+        ${f.bio ? `<p class="bio">${esc(f.bio)}</p>` : '<p class="vacio">Todavía no hay descripción.</p>'}
+        <div class="fila">${nodo ? `<a class="gbtn" href="arbol.html">Ver en el árbol</a>` : ''}${cartas.length ? `<a class="gbtn" href="galeria.html">Ver en la galería (${cartas.length})</a>` : ''}${edita ? '<button class="gbtn suave" id="editar" type="button">✏️ Editar ficha</button>' : ''}</div>
+      </div></div>
+    <h2 class="s">Familia</h2>
+    <div class="box">${fam.length ? `<div class="fam">${fam.map(([r, a]) => `<a class="fm${a.fuera ? ' out' : ''}" href="ficha.html?p=${encodeURIComponent(a.nombre)}"><small>${r}</small>${esc(a.nombre)}</a>`).join('')}</div>` : '<span class="vacio">Sin familia registrada en el árbol.</span>'}</div>
+    ${filas.length ? `<h2 class="s">Sobre el personaje</h2><div class="box">${filas.map(([a, b]) => `<div class="r"><span>${a}</span><div>${esc(b)}</div></div>`).join('')}</div>` : ''}
+    <h2 class="s">MoonCards</h2>
+    ${cartas.length ? `<div class="gal">${cartas.map(c => `<a class="${c.principal ? 'p' : ''}" href="galeria.html" title="${esc(c.titulo || '')}" style="background-image:url('${esc(url(c.img_path))}')">${c.principal ? '<i>★</i>' : ''}</a>`).join('')}</div>` : '<div class="box"><span class="vacio">Aún no hay MoonCards de este personaje.</span></div>'}
+    <h2 class="s">Línea de tiempo</h2>
+    <div class="box"><div class="tl">${tl.map(([d, t]) => `<div><i>${esc(fmtF(d))}</i>${t}</div>`).join('') || '<span class="vacio">Sin datos.</span>'}</div></div>
+    ${admin}`;
+  const b = $('editar'); if (b) b.onclick = () => abreEd(pj, f);
+}
+
+let EDP = null;
+function abreEd(pj, f){
+  EDP = pj;
+  $('fBio').value = f.bio || ''; $('fProc').value = f.procedencia || ''; $('fEdad').value = f.edad || ''; $('fNotas').value = f.notas || '';
+  const on = !!(f.cumple || f.cumpleNo); $('fCumpleOn').checked = on; $('fCumpleBox').hidden = !on;
+  $('fCumpleNo').checked = !!f.cumpleNo;
+  if (f.cumple){ const [m, d] = f.cumple.split('-'); $('fMes').value = m; $('fDia').value = +d; } else { $('fDia').value = ''; $('fMes').value = '01'; }
+  $('fOculta').checked = !!f.oculta; $('edMsg').textContent = ''; $('edOk').disabled = false;
+  $('edDlg').showModal();
+}
+$('fCumpleOn').onchange = () => { $('fCumpleBox').hidden = !$('fCumpleOn').checked; };
+$('fCumpleNo').onchange = () => { const n = $('fCumpleNo').checked; $('fDia').disabled = n; $('fMes').disabled = n; };
+$('edNo').onclick = () => $('edDlg').close();
+$('edOk').onclick = async () => {
+  const d = { bio: $('fBio').value.trim(), procedencia: $('fProc').value.trim(), edad: $('fEdad').value.trim(), notas: $('fNotas').value.trim(), oculta: $('fOculta').checked };
+  if ($('fCumpleOn').checked){
+    if ($('fCumpleNo').checked) d.cumpleNo = true;
+    else { const dia = +$('fDia').value; if (!(dia >= 1 && dia <= 31)){ $('edMsg').textContent = 'Pon un día válido (1–31).'; return; } d.cumple = $('fMes').value + '-' + String(dia).padStart(2, '0'); }
+  }
+  $('edOk').disabled = true; $('edMsg').textContent = 'Guardando…';
+  const k = clave(EDP.nombre); let ok = false;
+  if (isAdmin){
+    const o = d.oculta ? { oculta: true } : Object.fromEntries(Object.entries(d).filter(([, v]) => v && v !== false));
+    const r = await sb.from('fichas').upsert({ personaje_key: k, data: o, actualizada: new Date().toISOString() }); ok = !r.error;
+  } else {
+    const r = await sb.rpc('ficha_guardar', { token: tokenActual(), per: EDP.nombre, d }); ok = r.data === 'ok';
+  }
+  if (!ok){ $('edMsg').textContent = 'No se pudo guardar. Comprueba que has entrado con tu carnet.'; $('edOk').disabled = false; return; }
+  $('edDlg').close(); toast('Ficha guardada'); load();
+};
+
+$('adminToggleBtn').addEventListener('click', () => {
+  if (isAdmin) sb.auth.signOut();
+  else { $('loginError').textContent = ''; $('loginEmail').value = ''; $('loginPass').value = ''; $('loginDialog').showModal(); }
+});
+$('loginCancel').addEventListener('click', () => $('loginDialog').close());
+$('loginSubmit').addEventListener('click', async () => {
+  const { error } = await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPass').value });
+  if (error) $('loginError').textContent = 'Email o contraseña incorrectos.'; else $('loginDialog').close();
+});
+sb.auth.onAuthStateChange((_e, session) => { isAdmin = !!session; $('adminToggleBtn').textContent = isAdmin ? 'Cerrar sesión admin' : 'Acceso admin'; setTimeout(load, 0); });
+</script>
+</body>
+</html>

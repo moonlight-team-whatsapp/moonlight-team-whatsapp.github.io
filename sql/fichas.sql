@@ -1,0 +1,4 @@
+-- Fichas de personaje (referencia; ya aplicado). Una sola página ficha.html?p=<nombre> para todos.
+-- fichas(personaje_key, data jsonb): lectura pública; escribe el admin directo o el dueño por carnet con ficha_guardar(token, per, d).
+-- Campos de data: bio, procedencia, edad, notas, cumple (MM-DD, solo si el miembro lo activa), cumpleNo, oculta.
+-- Si oculta, solo se guarda {"oculta":true}.
