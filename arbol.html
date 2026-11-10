@@ -280,6 +280,7 @@
       parents: (a.padres || []).filter(x => ids.has(x) && x !== a.id),
       partners: (a.parejas || []).filter(x => ids.has(x) && x !== a.id),
       ord: typeof a.orden === 'number' ? a.orden : 1e9,
+      ford: typeof a.forden === 'number' ? a.forden : 1e9,
       fam: a.familia || ''
     }));
   }
@@ -479,7 +480,7 @@
     TP.forEach(p => uf[p.id] = p.id);
     TP.forEach(p => [...p.parents, ...p.partners].forEach(x => { if (x in uf) uf[fd(p.id)] = fd(x); }));
     const groups = {}; TP.forEach(p => (groups[fd(p.id)] = groups[fd(p.id)] || []).push(p));
-    const comps = Object.values(groups).sort((x, y) => y.length - x.length || Math.min(...x.map(p => p.ord)) - Math.min(...y.map(p => p.ord)));
+    const comps = Object.values(groups).sort((x, y) => Math.min(...x.map(p => p.ford)) - Math.min(...y.map(p => p.ford)) || y.length - x.length || Math.min(...x.map(p => p.ord)) - Math.min(...y.map(p => p.ord)));
     const X = {}, rows = []; for (let i = 0; i <= max; i++) rows.push([]);
     let cur = 0; const GAP = mob ? 30 : 56;
     comps.forEach((cp, ci) => {
@@ -698,6 +699,13 @@
       try { n.setPointerCapture(e.pointerId); } catch (x) {}
       return;
     }
+    const allU = LAY.rows.flat().filter(q => q.comp === u.comp);
+    const alone = LAY.rows[LAY.g[id]].filter(q => q !== u && q.comp === u.comp).length === 0;
+    if (alone && LAY.rows.flat().some(q => q.comp !== u.comp)){
+      DR = { id, comp: u.comp, u, allU, x0: e.clientX, dx: 0, moved: false, els: allU.flatMap(q => q.ids).map(i => document.querySelector(`.n[data-id="${CSS.escape(i)}"]`)).filter(Boolean) };
+      try { n.setPointerCapture(e.pointerId); } catch (x) {}
+      return;
+    }
     DR = { id, u, x0: e.clientX, dx: 0, moved: false, els: u.ids.map(i => document.querySelector(`.n[data-id="${CSS.escape(i)}"]`)).filter(Boolean) };
     try { n.setPointerCapture(e.pointerId); } catch (x) {}
   });
@@ -723,6 +731,19 @@
       try {
         const batch = writeBatch(db);
         order.forEach((q, k) => batch.update(doc(db, 'arbol', q.p.id), { orden: k }));
+        await batch.commit();
+      } catch (e) { $('statusLine').textContent = 'No se pudo guardar el nuevo orden.'; }
+      render(); return;
+    }
+    if (d.comp !== undefined){
+      const all = LAY.rows.flat(), cs = [...new Set(all.map(q => q.comp))];
+      const ctr = c => { const l = all.filter(q => q.comp === c).map(q => q.c); return (Math.min(...l) + Math.max(...l)) / 2; };
+      const me = ctr(d.comp) + d.dx, rest = cs.filter(c => c !== d.comp).sort((a, b) => ctr(a) - ctr(b));
+      const idx = rest.filter(c => ctr(c) < me).length;
+      const order = [...rest.slice(0, idx), d.comp, ...rest.slice(idx)];
+      try {
+        const batch = writeBatch(db);
+        order.forEach((c, k) => all.filter(q => q.comp === c).forEach(q => q.ids.forEach(i => batch.update(doc(db, 'arbol', i), { forden: k }))));
         await batch.commit();
       } catch (e) { $('statusLine').textContent = 'No se pudo guardar el nuevo orden.'; }
       render(); return;
