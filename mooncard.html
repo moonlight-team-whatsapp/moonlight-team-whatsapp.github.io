@@ -285,11 +285,12 @@
 </script>
 
 <dialog id="pubDlg" class="pubdlg"><h3>Publicar en la galería</h3>
-  <p>Se subirán la imagen de tu tarjeta y su <b>diseño editable</b> (con tus fotos), para que otros puedan usarlo como plantilla. Un admin la revisa antes de mostrarla. Máximo 3 tarjetas por personaje.</p>
+  <p>Se subirán la imagen de tu tarjeta y su <b>diseño editable</b> (con tus fotos), para que otros puedan usarlo como plantilla. Un admin la revisa antes de mostrarla. Máximo 5 tarjetas por personaje (si ya tiene 5 y entraste con tu carnet, podrás reemplazar una).</p>
   <label for="pubPer">Personaje al que pertenece</label><select id="pubPer"><option value="">Cargando personajes…</option></select>
   <label for="pubName">Nombre de la tarjeta (opcional)</label><input id="pubName" type="text" maxlength="40" placeholder="Ej: Kazu navideño" autocomplete="off">
   <label for="pubTags">Etiquetas (opcional, hasta 5)</label><input id="pubTags" type="text" maxlength="90" placeholder="#navidad #verano #acromatico" autocomplete="off">
   <div id="pubTagSug" class="tagsug" aria-label="Etiquetas existentes"></div>
+  <div id="pubRep" hidden><p class="cc-note">Este personaje ya tiene 5 tarjetas. Elige cuál reemplazar (se borrará):</p><div id="pubRepList"></div></div>
   <p id="pubMsg" class="cc-note" role="status"></p>
   <div class="acts"><button class="btn-primary" id="pubOk" type="button">Publicar</button><button class="btn-ghost" id="pubNo" type="button">Cancelar</button></div>
 </dialog>
@@ -711,7 +712,7 @@
       var m = names.filter(function(n){ return n.toLowerCase() === want; })[0]; if (m) sel.value = m;
     });
   }
-  $('bPub').onclick = function(){ fillPer(); $('pubMsg').textContent = ''; $('pubOk').disabled = false; $('pubName').value = ''; $('pubTags').value = ''; $('pubDlg').showModal(); cargaSug(); };
+  $('bPub').onclick = function(){ fillPer(); $('pubMsg').textContent = ''; $('pubRep').hidden = true; $('pubOk').hidden = false; $('pubNo').textContent = 'Cancelar'; $('pubOk').disabled = false; $('pubName').value = ''; $('pubTags').value = ''; $('pubDlg').showModal(); cargaSug(); };
   function normTags(s){ var seen = {}, out = [];
     String(s || '').toLowerCase().replace(/ñ/g, '\u0001').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\u0001/g, 'ñ').split(/[\s,;#]+/).forEach(function(x){ x = x.replace(/[^a-z0-9ñ_]/g, ''); if (x.length >= 2 && !seen[x]){ seen[x] = 1; out.push(x.slice(0, 24)); } });
     return out.slice(0, 5); }
@@ -719,7 +720,42 @@
     sb.from('mooncards').select('etiquetas').eq('aprobada', true).then(function(r){ var c = {}; (r.data || []).forEach(function(x){ (x.etiquetas || []).forEach(function(e){ c[e] = (c[e] || 0) + 1; }); });
       Object.keys(c).sort(function(a, b){ return c[b] - c[a]; }).slice(0, 20).forEach(function(e){ var b = document.createElement('button'); b.type = 'button'; b.className = 'tagchip'; b.textContent = '#' + e;
         b.onclick = function(){ var cur = normTags($('pubTags').value); if (cur.indexOf(e) < 0 && cur.length < 5) cur.push(e); $('pubTags').value = cur.map(function(x){ return '#' + x; }).join(' '); }; box.appendChild(b); }); }); }
-  $('pubNo').onclick = function(){ $('pubDlg').close(); };
+  var PEND = null;
+  function miToken(){ try { var u = new URLSearchParams(location.search).get('c'); if (u){ localStorage.setItem('mc_carnet', u); return u; } return localStorage.getItem('mc_carnet'); } catch (e) { return null; } }
+  function ofreceReemplazo(){
+    var sb = sbp(), pm = $('pubMsg'), tk = miToken(), P = PEND;
+    var fin = function(t){ pm.textContent = t; $('pubOk').disabled = false; sb.storage.from('mooncards').remove([P.pi, P.pd]); PEND = null; return { pendiente: true }; };
+    if (!tk) return fin('Este personaje ya tiene 5 tarjetas. Para reemplazar una, abre tu carnet (tu enlace personal) en este navegador.');
+    return sb.rpc('carnet_miembro', { token: tk }).then(function(r){
+      if (!r.data) return fin('No se reconoce tu carnet. Pide uno nuevo a un admin.');
+      return sb.from('ocupados').select('data').eq('data->>miembroId', r.data).then(function(o){
+        var mine = (o.data || []).some(function(x){ return String(x.data && x.data.nombre || '').trim().toLowerCase().replace(/\s+/g, ' ') === P.per.trim().toLowerCase().replace(/\s+/g, ' '); });
+        if (!mine) return fin('Este personaje ya tiene 5 tarjetas y no es de tu carnet, así que no puedes reemplazar ninguna.');
+        return sb.from('mooncards').select('id,titulo,img_path,principal,creada').eq('personaje', P.per).eq('aprobada', true).order('creada').then(function(c){
+          var rows = (c.data || []).filter(function(x){ return !x.principal; });
+          if (!rows.length) return fin('Todas las tarjetas aprobadas de este personaje son la principal o están pendientes. Inténtalo más tarde.');
+          var box = $('pubRepList'); box.innerHTML = '';
+          rows.forEach(function(x){
+            var b = document.createElement('button'); b.type = 'button'; b.className = 'btn-ghost'; b.style.cssText = 'display:flex;align-items:center;gap:8px;width:100%;margin:4px 0;text-align:left';
+            var im = document.createElement('img'); im.src = sb.storage.from('mooncards').getPublicUrl(x.img_path).data.publicUrl; im.style.cssText = 'width:36px;height:48px;object-fit:cover;border-radius:6px';
+            var t = document.createElement('span'); t.textContent = 'Reemplazar «' + (x.titulo || 'Sin nombre') + '»';
+            b.appendChild(im); b.appendChild(t);
+            b.onclick = function(){
+              box.querySelectorAll('button').forEach(function(z){ z.disabled = true; }); pm.textContent = 'Reemplazando…';
+              sb.rpc('mooncard_reemplazar', { token: tk, viejo: x.id, nuevo: P.id, per: P.per, tit: P.tit, tags: P.tags, img: P.pi, dis: P.pd }).then(function(rr){
+                if (rr.data === 'ok'){ $('pubRep').hidden = true; pm.textContent = '¡Hecho! La anterior se ha borrado y la nueva aparecerá cuando la apruebe un admin.'; $('pubOk').hidden = true; $('pubNo').textContent = 'Cerrar'; PEND = null; }
+                else { box.querySelectorAll('button').forEach(function(z){ z.disabled = false; }); pm.textContent = 'No se pudo reemplazar (' + (rr.data || 'error') + ').'; }
+              });
+            };
+            box.appendChild(b);
+          });
+          $('pubRep').hidden = false; pm.textContent = '';
+          return { pendiente: true };
+        });
+      });
+    });
+  }
+  $('pubNo').onclick = function(){ if (PEND){ sbp().storage.from('mooncards').remove([PEND.pi, PEND.pd]); PEND = null; } $('pubRep').hidden = true; $('pubDlg').close(); };
   $('pubOk').onclick = function(){
     var sb = sbp(), pm = $('pubMsg'); if (!sb){ pm.textContent = 'No se pudo conectar. Prueba otra vez en un momento.'; return; }
     var per = $('pubPer').value; if (!per){ pm.textContent = 'Elige a qué personaje pertenece la tarjeta.'; return; }
@@ -738,11 +774,12 @@
       if (e2.error) throw e2.error;
       return sb.from('mooncards').insert({ id: id, personaje: per, titulo: $('pubName').value.trim().slice(0, 40) || null, etiquetas: normTags($('pubTags').value), img_path: pi, diseno_path: pd });
     }).then(function(r){
-      if (r.error){ sb.storage.from('mooncards').remove([pi, pd]); throw r.error; }
+      if (r.error){ if (/limite_personaje/.test(r.error.message || '')){ PEND = { id: id, pi: pi, pd: pd, per: per, tit: $('pubName').value.trim().slice(0, 40), tags: normTags($('pubTags').value) }; return ofreceReemplazo(); } sb.storage.from('mooncards').remove([pi, pd]); throw r.error; }
+      if (r && r.pendiente) return;
       pm.textContent = '¡Enviada! Aparecerá en la galería cuando la apruebe un admin.'; $('pubOk').hidden = true; $('pubNo').textContent = 'Cerrar';
     }).catch(function(e){
       $('pubOk').disabled = false;
-      pm.textContent = /limite_personaje/.test(e && e.message || '') ? 'Este personaje ya tiene 3 tarjetas en la galería (máximo).' : 'No se pudo publicar. Prueba con un diseño con fotos más ligeras.';
+      pm.textContent = /limite_personaje/.test(e && e.message || '') ? 'Este personaje ya tiene 5 tarjetas en la galería (máximo). Para reemplazar una, abre tu carnet (tu enlace personal) en este navegador.' : 'No se pudo publicar. Prueba con un diseño con fotos más ligeras.';
     });
   };
   cur = snap(); histBtns(); loadSaved();

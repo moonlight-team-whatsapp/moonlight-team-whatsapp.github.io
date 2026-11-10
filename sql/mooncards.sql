@@ -14,7 +14,7 @@ create table public.mooncards(
 alter table public.mooncards enable row level security;
 create index on public.mooncards (personaje_key);
 create unique index mooncards_una_principal on public.mooncards (personaje_key) where principal;
--- Trigger mooncards_limite: máx. 3 tarjetas por personaje, fuerza aprobada=false/principal=false al insertar
+-- Trigger mooncards_limite: máx. 5 tarjetas (reemplazo vía mooncard_reemplazar) por personaje, fuerza aprobada=false/principal=false al insertar
 -- y quita «principal» si se cambia el personaje.
 create policy mc_ver on public.mooncards for select using (aprobada or public.es_admin());
 create policy mc_publicar on public.mooncards for insert to anon, authenticated with check (aprobada = false);

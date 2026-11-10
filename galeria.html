@@ -129,7 +129,7 @@ $('edSave').onclick = async () => {
   let err = (await sb.from('mooncards').update({ etiquetas: normTags($('edTags').value) }).eq('id', r.id)).error;
   if (!err && $('edPer').value !== r.personaje) err = (await sb.from('mooncards').update({ personaje: $('edPer').value }).eq('id', r.id)).error;
   $('edSave').disabled = false;
-  if (err){ $('edMsg').textContent = /limite/.test(err.message) ? 'Ese personaje ya tiene 3 tarjetas.' : 'No se pudo guardar.'; return; }
+  if (err){ $('edMsg').textContent = /limite/.test(err.message) ? 'Ese personaje ya tiene 5 tarjetas.' : 'No se pudo guardar.'; return; }
   $('edDlg').close(); load(); };
 $('edMain').onclick = async () => { const r = rows.find(x => x.id === edId); if (!r) return; $('edMain').disabled = true;
   await sb.from('mooncards').update({ principal: false }).eq('personaje_key', r.personaje_key); await sb.from('mooncards').update({ principal: true }).eq('id', r.id);
