@@ -510,7 +510,7 @@
     $('emptyNote').hidden = !!L;
     if (!L){ t.innerHTML = ''; t.style.width = t.style.height = ''; return; }
     const { P, TP, g, max, X, W, H, sh, wd, ht, RY, sl, soloHead } = L, RH = L.RH;
-    LAY = { rows: L.rows, g };
+    LAY = { rows: L.rows, g, sl };
     t.className = isAdmin ? 'adm' : '';
     $('dragHint').hidden = !isAdmin;
     const by = {}; P.forEach(p => by[p.id] = p);
@@ -691,7 +691,13 @@
   $('tree').addEventListener('pointerdown', (e) => {
     if (!isAdmin || !LAY || e.button > 0) return;
     const n = e.target.closest('.n'); if (!n) return;
-    const id = n.dataset.id, u = (LAY.rows[LAY.g[id]] || []).find(x => x.ids.includes(id)); if (!u) return;
+    const id = n.dataset.id, u = (LAY.rows[LAY.g[id]] || []).find(x => x.ids.includes(id));
+    if (!u){
+      const o = (LAY.sl || []).find(q => q.p.id === id); if (!o) return;
+      DR = { id, solo: o, x0: e.clientX, y0: e.clientY, dx: 0, dy: 0, moved: false, els: [n] };
+      try { n.setPointerCapture(e.pointerId); } catch (x) {}
+      return;
+    }
     DR = { id, u, x0: e.clientX, dx: 0, moved: false, els: u.ids.map(i => document.querySelector(`.n[data-id="${CSS.escape(i)}"]`)).filter(Boolean) };
     try { n.setPointerCapture(e.pointerId); } catch (x) {}
   });
@@ -700,6 +706,7 @@
     const dx = e.clientX - DR.x0;
     if (!DR.moved && Math.abs(dx) < 6) return;
     DR.moved = true; DR.dx = dx / SC;
+    if (DR.solo){ DR.dy = (e.clientY - DR.y0) / SC; DR.els[0].style.transform = `translate(${DR.dx}px,${DR.dy}px)`; DR.els[0].classList.add('drag'); return; }
     DR.els.forEach(el => { el.style.transform = `translateX(${dx / SC}px)`; el.classList.add('drag'); });
   });
   addEventListener('pointerup', async () => {
@@ -707,6 +714,19 @@
     const d = DR; DR = null;
     if (!d.moved) return;
     SUP = Date.now();
+    if (d.solo){
+      const o = d.solo, cx = o.x + o.w / 2 + d.dx, cy = o.y + o.h / 2 + d.dy;
+      const rest = LAY.sl.filter(q => q !== o);
+      let idx = rest.findIndex(q => (cy < q.y + q.h + 6 && cy < q.y) || (Math.abs(cy - (q.y + q.h / 2)) < q.h / 2 + 6 && cx < q.x + q.w / 2) || cy < q.y);
+      if (idx < 0) idx = rest.length;
+      const order = [...rest.slice(0, idx), o, ...rest.slice(idx)];
+      try {
+        const batch = writeBatch(db);
+        order.forEach((q, k) => batch.update(doc(db, 'arbol', q.p.id), { orden: k }));
+        await batch.commit();
+      } catch (e) { $('statusLine').textContent = 'No se pudo guardar el nuevo orden.'; }
+      render(); return;
+    }
     const row = LAY.rows[LAY.g[d.id]], others = row.filter(x => x !== d.u && x.comp === d.u.comp), dropC = d.u.c + d.dx;
     const idx = others.filter(x => x.c < dropC).length;
     const order = [...others.slice(0, idx), d.u, ...others.slice(idx)];
