@@ -226,7 +226,7 @@
 </script>
 
 <script type="module">
-  import { cargarPrincipales, clave, avatarCss } from './js/mooncard-principal.js';
+  import { cargarPrincipales, clave, avatarCss, cargaImagen, dibujaAvatar } from './js/mooncard-principal.js';
   import { initializeApp } from "./js/supa-compat.js";
   import {
     getFirestore, collection, doc, onSnapshot, writeBatch, arrayUnion, arrayRemove, serverTimestamp
@@ -555,6 +555,8 @@
     if (!L){ $('statusLine').textContent = 'No hay nada que exportar todavía.'; return null; }
     try { await Promise.all([document.fonts.load("600 16px 'Crimson Pro'"), document.fonts.load("italic 600 44px 'Cormorant'"), document.fonts.load("italic 13px 'Cormorant'")]); } catch (e) {}
     const { P, TP, g, max, X, W, H, RH, sh, wd, ht, RY, sl, soloHead } = L;
+    const IMG = new Map();
+    await Promise.all([...new Set([...TP, ...sl.map(o => o.p)].map(p => clave(p.name)))].map(async k0 => { const pr0 = PRIN.get(k0); if (pr0) IMG.set(k0, await cargaImagen(pr0.url)); }));
     const pad = 56, head = 120, cw = wd + pad * 2, ch = ht + head + pad;
     // Resolución lo más alta que aguantan los navegadores (también el móvil): ~16 Mpx y 16000 px de lado
     const k = Math.max(0.5, Math.min(3, Math.sqrt(16e6 / (cw * ch)), 16000 / Math.max(cw, ch)));
@@ -607,12 +609,14 @@
       c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.arc(x + w - r, y + r, r, -Math.PI / 2, Math.PI / 2);
       c.lineTo(x + r, y + h); c.arc(x + r, y + r, r, Math.PI / 2, Math.PI * 1.5); c.closePath(); c.fill(); c.restore();
       c.strokeStyle = '#b9c6ef'; c.lineWidth = 1.5; c.stroke();
-      c.textAlign = 'center';
+      const im = IMG.get(clave(name)), ad = h - 14, off = im ? ad + 4 : 0;
+      if (im){ c.strokeStyle = '#d9c383'; c.beginPath(); c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.arc(x + w - r, y + r, r, -Math.PI / 2, Math.PI / 2); c.lineTo(x + r, y + h); c.arc(x + r, y + r, r, Math.PI / 2, Math.PI * 1.5); c.closePath(); c.stroke(); dibujaAvatar(c, im, x + 7 + ad / 2, y + h / 2, ad); }
+      c.textAlign = 'center'; const tx = x + off + (w - off) / 2;
       let nm = name; c.font = "600 16px 'Crimson Pro', serif";
-      while (nm.length > 1 && c.measureText(nm).width > w - 26) nm = nm.slice(0, -1);
+      while (nm.length > 1 && c.measureText(nm).width > w - off - 26) nm = nm.slice(0, -1);
       if (nm !== name) nm = nm.trimEnd() + '…';
-      c.fillStyle = '#eef0fb'; c.fillText(nm, x + w / 2, y + h / 2 + (sub ? -1 : 5));
-      if (sub){ c.fillStyle = '#a3adce'; c.font = "italic 13px 'Cormorant', serif"; c.fillText(sub, x + w / 2, y + h / 2 + 15); }
+      c.fillStyle = '#eef0fb'; c.fillText(nm, tx, y + h / 2 + (sub ? -1 : 5));
+      if (sub){ c.fillStyle = '#a3adce'; c.font = "italic 13px 'Cormorant', serif"; c.fillText(sub, tx, y + h / 2 + 15); }
       c.textAlign = 'left';
     };
     TP.forEach(p => pill(X[p.id] + sh - W / 2, RY(g[p.id]) - H / 2, W, H, p.name, 'Gen. ' + (ROM[g[p.id]] || g[p.id] + 1) + (p.g === 'f' ? ' ♀' : p.g === 'm' ? ' ♂' : '')));
