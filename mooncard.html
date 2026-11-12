@@ -742,7 +742,7 @@
             b.appendChild(im); b.appendChild(t);
             b.onclick = function(){
               box.querySelectorAll('button').forEach(function(z){ z.disabled = true; }); pm.textContent = 'Reemplazando…';
-              sb.rpc('mooncard_reemplazar', { token: tk, viejo: x.id, nuevo: P.id, per: P.per, tit: P.tit, tags: P.tags, img: P.pi, dis: P.pd }).then(function(rr){
+              sb.rpc('mooncard_reemplazar', { token: tk, viejo: x.id, nuevo: P.id, per: P.per, tit: P.tit, tags: P.tags, img: P.pi, dis: P.pd, fm: S.shape }).then(function(rr){
                 if (rr.data === 'ok'){ $('pubRep').hidden = true; pm.textContent = '¡Hecho! La anterior se ha borrado y la nueva aparecerá cuando la apruebe un admin.'; $('pubOk').hidden = true; $('pubNo').textContent = 'Cerrar'; PEND = null; }
                 else { box.querySelectorAll('button').forEach(function(z){ z.disabled = false; }); pm.textContent = 'No se pudo reemplazar (' + (rr.data || 'error') + ').'; }
               });
@@ -772,7 +772,7 @@
       });
     }).then(function(e2){
       if (e2.error) throw e2.error;
-      return sb.from('mooncards').insert({ id: id, personaje: per, titulo: $('pubName').value.trim().slice(0, 40) || null, etiquetas: normTags($('pubTags').value), img_path: pi, diseno_path: pd });
+      return sb.from('mooncards').insert({ id: id, personaje: per, titulo: $('pubName').value.trim().slice(0, 40) || null, etiquetas: normTags($('pubTags').value), img_path: pi, diseno_path: pd, forma: S.shape });
     }).then(function(r){
       if (r.error){ if (/limite_personaje/.test(r.error.message || '')){ PEND = { id: id, pi: pi, pd: pd, per: per, tit: $('pubName').value.trim().slice(0, 40), tags: normTags($('pubTags').value) }; return ofreceReemplazo(); } sb.storage.from('mooncards').remove([pi, pd]); throw r.error; }
       if (r && r.pendiente) return;

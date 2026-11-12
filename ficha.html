@@ -18,7 +18,8 @@
   .dir{ display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:12px; }
   .pj{ display:block; text-decoration:none; color:var(--ink); border:1px solid var(--border); border-radius:14px; background:rgba(16,22,48,.72); padding:10px; text-align:center; transition:border-color .2s, transform .2s; }
   .pj:hover{ border-color:var(--gold-dim); transform:translateY(-2px); }
-  .pj .im{ width:96px; aspect-ratio:1; border-radius:50%; border:1.5px solid var(--gold-dim); margin:4px auto 10px; background:linear-gradient(160deg,#1c2350,#3a2b5a); background-repeat:no-repeat; display:grid; place-items:center; font-family:'Cormorant',serif; font-size:2.2rem; color:var(--gold); }
+  .pj .imw{ width:96px; margin:4px auto 10px; }
+  .pj .im{ width:96px; aspect-ratio:1; border-radius:50%; border:1.5px solid var(--gold-dim); background:linear-gradient(160deg,#1c2350,#3a2b5a); background-repeat:no-repeat; display:grid; place-items:center; font-family:'Cormorant',serif; font-size:2.2rem; color:var(--gold); }
   .pj b{ display:block; font-family:'Cormorant',serif; font-size:1.15rem; color:var(--gold); }
   .pj small{ color:var(--ink-soft); }
   .hero{ display:grid; grid-template-columns:minmax(0,340px) 1fr; gap:20px; border:1px solid var(--border); border-radius:18px; background:rgba(16,22,48,.72); padding:18px; }
@@ -127,7 +128,7 @@ async function load(){
     yo = await miMiembro();
     const [oc, ar, mc, fi] = await Promise.all([
       sb.from('ocupados').select('id,data'), sb.from('arbol').select('id,data'),
-      sb.from('mooncards').select('id,personaje,personaje_key,titulo,etiquetas,img_path,principal,creada').eq('aprobada', true).order('creada'),
+      sb.from('mooncards').select('id,personaje,personaje_key,titulo,etiquetas,img_path,diseno_path,forma,principal,creada').eq('aprobada', true).order('creada'),
       sb.from('fichas').select('personaje_key,data,actualizada')]);
     OC = (oc.data || []).map(r => r.data || {}).filter(d => d.nombre);
     AR = (ar.data || []).map(r => ({ id: r.id, ...(r.data || {}) }));
@@ -137,6 +138,36 @@ async function load(){
   } finally { cargando = false; }
   if (otra) return load();
   pinta();
+  if (isAdmin) rellenaFormas();
+}
+
+// Forma de la foto de la MoonCard (circle, hex, star, diamond, heart, square) como clip-path
+function clipForma(f){
+  if (!f || f === 'circle') return 'border-radius:50%;';
+  if (f === 'square') return 'border-radius:8%;';
+  const pts = [];
+  if (f === 'hex' || f === 'diamond' || f === 'star'){
+    const n = f === 'hex' ? 6 : f === 'diamond' ? 4 : 10;
+    for (let i = 0; i < n; i++){ const a = -Math.PI / 2 + i * 2 * Math.PI / n, r = f === 'star' ? (i % 2 ? 24 : 50) : 50; pts.push([50 + Math.cos(a) * r, 50 + Math.sin(a) * r]); }
+  } else if (f === 'heart'){
+    const bz = (p0, p1, p2, p3, t) => { const u = 1 - t; return [u*u*u*p0[0] + 3*u*u*t*p1[0] + 3*u*t*t*p2[0] + t*t*t*p3[0], u*u*u*p0[1] + 3*u*u*t*p1[1] + 3*u*t*t*p2[1] + t*t*t*p3[1]]; };
+    const segs = [[[0,.46],[-.78,-.04],[-.44,-.56],[0,-.2]], [[0,-.2],[.44,-.56],[.78,-.04],[0,.46]]];
+    segs.forEach(s2 => { for (let i = 0; i < 20; i++) pts.push(bz(...s2.map(p => [p[0], p[1]]), i / 20)); });
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), k = Math.max(x1 - x0, y1 - y0);
+    pts.forEach(p => { p[0] = 50 + (p[0] - (x0 + x1) / 2) / k * 100; p[1] = 50 + (p[1] - (y0 + y1) / 2) / k * 100; });
+  }
+  return pts.length ? `clip-path:polygon(${pts.map(p => p[0].toFixed(1) + '% ' + p[1].toFixed(1) + '%').join(',')});border-color:transparent;` : 'border-radius:50%;';
+}
+// Una sola vez (admin): lee la forma del diseño de las principales que aún no la tienen y la guarda
+async function rellenaFormas(){
+  const falta = MC.filter(c => c.principal && !c.forma && c.diseno_path); let hecho = false;
+  for (const c of falta){
+    try {
+      const t = await (await fetch(url(c.diseno_path))).text(), sh = (JSON.parse(t).d || {}).shape || 'circle';
+      const r = await sb.from('mooncards').update({ forma: sh }).eq('id', c.id); if (!r.error){ c.forma = sh; hecho = true; }
+    } catch (e) {}
+  }
+  if (hecho) pinta();
 }
 const principal = k => { const l = MC.filter(c => c.personaje_key === k); return l.find(c => c.principal) || null; };
 const soyDe = pj => !!pj && ((yo && pj.miembroId === yo) || isAdmin);
@@ -160,7 +191,7 @@ function directorio(){
     const q = clave($('q').value);
     $('dir').innerHTML = lista.filter(d => !q || clave(d.nombre).includes(q)).map(d => {
       const k = clave(d.nombre), pr = principal(k), f = FI[k] || {};
-      return `<a class="pj" href="ficha.html?p=${encodeURIComponent(d.nombre)}"><div class="im" ${pr ? `style="background-image:url('${esc(url(pr.img_path))}');background-size:312.5% auto;background-position:10.3% 50%"` : ''}>${pr ? '' : esc(d.nombre.charAt(0))}</div><b>${esc(d.nombre)}</b>${f.oculta ? '<small>Ficha privada</small>' : ''}</a>`;
+      return `<a class="pj" href="ficha.html?p=${encodeURIComponent(d.nombre)}"><div class="imw" ${pr && pr.forma && pr.forma !== 'circle' && pr.forma !== 'square' ? 'style="filter:drop-shadow(0 0 1px rgba(217,195,131,.9))"' : ''}><div class="im" ${pr ? `style="background-image:url('${esc(url(pr.img_path))}');background-size:312.5% auto;background-position:10.3% 50%;${clipForma(pr.forma)}"` : ''}>${pr ? '' : esc(d.nombre.charAt(0))}</div></div><b>${esc(d.nombre)}</b>${f.oculta ? '<small>Ficha privada</small>' : ''}</a>`;
     }).join('') || '<p class="vacio">Sin resultados.</p>';
   };
   $('q').oninput = draw; draw();
