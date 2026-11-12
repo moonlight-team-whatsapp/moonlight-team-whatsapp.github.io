@@ -57,8 +57,17 @@
   .edf{ display:grid; gap:4px; margin:8px 0; } .edf label{ font-size:.88rem; color:var(--ink-soft); }
   .edf input[type=text],.edf textarea,.edf select,.edf input[type=number]{ padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--ink); font:inherit; }
   .edf textarea{ min-height:80px; resize:vertical; }
-  .chk{ display:flex; gap:8px; align-items:center; margin:8px 0; cursor:pointer; }
-    dialog.fdlg{ background:#10173a; color:var(--ink); border:1px solid var(--gold-dim); border-radius:14px; max-width:min(480px,92vw); width:100%; padding:18px; }
+  label.chk{ display:flex; align-items:center; justify-content:space-between; gap:14px; width:100%; margin:6px 0; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.03); cursor:pointer; color:var(--ink); font-size:1rem; }
+  label.chk span{ flex:1; line-height:1.25; }
+  label.chk small{ display:block; color:var(--ink-soft); font-size:.8rem; margin-top:2px; }
+  label.chk input[type=checkbox]{ -webkit-appearance:none; appearance:none; flex:none; width:44px !important; height:24px; margin:0; padding:0; border-radius:99px; border:1px solid var(--border); background:rgba(255,255,255,.1); position:relative; cursor:pointer; transition:background .2s,border-color .2s; }
+  label.chk input[type=checkbox]::after{ content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:var(--ink-soft); transition:transform .2s, background .2s; }
+  label.chk input[type=checkbox]:checked{ background:rgba(217,195,131,.3); border-color:var(--gold); }
+  label.chk input[type=checkbox]:checked::after{ transform:translateX(20px); background:var(--gold); }
+  label.chk input[type=checkbox]:disabled{ opacity:.45; cursor:not-allowed; }
+  .cnt{ text-align:right; font-size:.75rem; color:var(--ink-soft); margin-top:-2px; }
+  .edsec{ margin:14px 0 4px; font-size:.78rem; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); }
+    dialog.fdlg{ max-height:90vh; overflow:auto; background:#10173a; color:var(--ink); border:1px solid var(--gold-dim); border-radius:14px; max-width:min(480px,92vw); width:100%; padding:18px; }
   dialog.fdlg::backdrop{ background:rgba(4,7,20,.7); }
   dialog.fdlg h3{ margin:0 0 6px; font-family:'Cormorant',serif; font-style:italic; color:var(--gold); font-size:1.5rem; }
   .nota{ font-size:.82rem; color:var(--ink-soft); margin:4px 0; }
@@ -85,13 +94,13 @@
 </div>
 <dialog class="fdlg" id="edDlg">
   <h3>Editar ficha</h3>
-  <div class="edf"><label for="fBio">Sobre el personaje (máx. 400)</label><textarea id="fBio" maxlength="400"></textarea></div>
+  <div class="edf"><label for="fBio">Sobre el personaje</label><textarea id="fBio" maxlength="400" placeholder="Una frase, tu historia, cómo es…"></textarea><div class="cnt" id="cBio"></div></div>
   <div class="edf"><label for="fProc">Procedencia</label><input id="fProc" type="text" maxlength="60" placeholder="Ej: Inazuma"></div>
   <div class="edf"><label for="fEdad">Edad</label><input id="fEdad" type="text" maxlength="30" placeholder="Ej: 22"></div>
-  <div class="edf"><label for="fNotas">Relaciones y notas (máx. 300)</label><textarea id="fNotas" maxlength="300" placeholder="Amigo de…, rival de…"></textarea></div>
-  <label class="chk"><input type="checkbox" id="fCumpleOn"> Registrar mi cumpleaños</label>
-  <p class="nota" id="fCumpleNota">Se usa la fecha que ya tiene el team. Si no lo activas, no se muestra.</p>
-  <label class="chk"><input type="checkbox" id="fOculta"> Ocultar mi ficha (solo se verá tu nombre)</label>
+  <div class="edf"><label for="fNotas">Relaciones y notas</label><textarea id="fNotas" maxlength="300" placeholder="Amigo de…, rival de…"></textarea><div class="cnt" id="cNotas"></div></div>
+  <div class="edsec">Privacidad</div>
+  <label class="chk"><span>Registrar mi cumpleaños<small id="fCumpleNota">Se usa la fecha que ya tiene el team.</small></span><input type="checkbox" id="fCumpleOn"></label>
+  <label class="chk"><span>Ocultar mi ficha<small>Solo se verá tu nombre.</small></span><input type="checkbox" id="fOculta"></label>
   <p class="nota" id="edMsg" role="status"></p>
   <div class="fila"><button class="gbtn" id="edOk" type="button">Guardar</button><button class="gbtn suave" id="edNo" type="button">Cancelar</button></div>
 </dialog>
@@ -263,10 +272,12 @@ function abreEd(pj, f){
   $('fBio').value = f.bio || ''; $('fProc').value = f.procedencia || ''; $('fEdad').value = f.edad || ''; $('fNotas').value = f.notas || '';
   EDF = f; const no = !!f.cumpleNo;
   $('fCumpleOn').checked = !no && !!f.cumple; $('fCumpleOn').disabled = no;
-  $('fCumpleNota').textContent = no ? 'Este personaje no tiene cumpleaños, así que no se puede registrar.' : 'Se usa la fecha que ya tiene el team. Si no lo activas, no se muestra.';
+  $('fCumpleNota').textContent = no ? 'Este personaje no tiene cumpleaños, así que no se puede registrar.' : 'Se usa la fecha que ya tiene el team.';
   $('fOculta').checked = !!f.oculta; $('edMsg').textContent = ''; $('edOk').disabled = false;
-  $('edDlg').showModal();
+  fcB(); fcN(); $('edDlg').showModal();
 }
+const cuenta = (t, c) => { const f = () => { c.textContent = t.value.length + ' / ' + t.maxLength; }; t.addEventListener('input', f); f(); return f; };
+const fcB = cuenta($('fBio'), $('cBio')), fcN = cuenta($('fNotas'), $('cNotas'));
 $('edNo').onclick = () => $('edDlg').close();
 $('edOk').onclick = async () => {
   const d = { bio: $('fBio').value.trim(), procedencia: $('fProc').value.trim(), edad: $('fEdad').value.trim(), notas: $('fNotas').value.trim(), oculta: $('fOculta').checked };
