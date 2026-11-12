@@ -54,8 +54,7 @@
   .edf input[type=text],.edf textarea,.edf select,.edf input[type=number]{ padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--ink); font:inherit; }
   .edf textarea{ min-height:80px; resize:vertical; }
   .chk{ display:flex; gap:8px; align-items:center; margin:8px 0; cursor:pointer; }
-  .cumple{ display:flex; gap:8px; margin:4px 0 8px 26px; }
-  dialog.fdlg{ background:#10173a; color:var(--ink); border:1px solid var(--gold-dim); border-radius:14px; max-width:min(480px,92vw); width:100%; padding:18px; }
+    dialog.fdlg{ background:#10173a; color:var(--ink); border:1px solid var(--gold-dim); border-radius:14px; max-width:min(480px,92vw); width:100%; padding:18px; }
   dialog.fdlg::backdrop{ background:rgba(4,7,20,.7); }
   dialog.fdlg h3{ margin:0 0 6px; font-family:'Cormorant',serif; font-style:italic; color:var(--gold); font-size:1.5rem; }
   .nota{ font-size:.82rem; color:var(--ink-soft); margin:4px 0; }
@@ -87,10 +86,7 @@
   <div class="edf"><label for="fEdad">Edad</label><input id="fEdad" type="text" maxlength="30" placeholder="Ej: 22"></div>
   <div class="edf"><label for="fNotas">Relaciones y notas (máx. 300)</label><textarea id="fNotas" maxlength="300" placeholder="Amigo de…, rival de…"></textarea></div>
   <label class="chk"><input type="checkbox" id="fCumpleOn"> Registrar mi cumpleaños</label>
-  <div id="fCumpleBox" hidden>
-    <div class="cumple"><input id="fDia" type="number" min="1" max="31" placeholder="Día" style="width:80px"><select id="fMes"></select></div>
-    <label class="chk" style="margin-left:26px"><input type="checkbox" id="fCumpleNo"> Mi personaje no tiene cumpleaños</label>
-  </div>
+  <p class="nota" id="fCumpleNota">Se usa la fecha que ya tiene el team. Si no lo activas, no se muestra.</p>
   <label class="chk"><input type="checkbox" id="fOculta"> Ocultar mi ficha (solo se verá tu nombre)</label>
   <p class="nota" id="edMsg" role="status"></p>
   <div class="fila"><button class="gbtn" id="edOk" type="button">Guardar</button><button class="gbtn suave" id="edNo" type="button">Cancelar</button></div>
@@ -120,7 +116,6 @@ const ROM = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
 const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), 3500); };
 const url = p => sb.storage.from('mooncards').getPublicUrl(p).data.publicUrl;
 const fmtF = d => d ? new Date(d).toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', day: 'numeric', month: 'short', year: 'numeric' }) : '';
-$('fMes').innerHTML = MESES.map((m, i) => `<option value="${String(i + 1).padStart(2, '0')}">${m}</option>`).join('');
 
 let isAdmin = false, yo = null, OC = [], AR = [], MC = [], FI = {}, MI = {}, cargando = false, otra = false;
 const quien = () => new URLSearchParams(location.search).get('p');
@@ -228,32 +223,31 @@ function ficha(pj){
   const b = $('editar'); if (b) b.onclick = () => abreEd(pj, f);
 }
 
-let EDP = null;
+let EDP = null, EDF = {};
 function abreEd(pj, f){
   EDP = pj;
   $('fBio').value = f.bio || ''; $('fProc').value = f.procedencia || ''; $('fEdad').value = f.edad || ''; $('fNotas').value = f.notas || '';
-  const on = !!(f.cumple || f.cumpleNo); $('fCumpleOn').checked = on; $('fCumpleBox').hidden = !on;
-  $('fCumpleNo').checked = !!f.cumpleNo;
-  if (f.cumple){ const [m, d] = f.cumple.split('-'); $('fMes').value = m; $('fDia').value = +d; } else { $('fDia').value = ''; $('fMes').value = '01'; }
+  EDF = f; const no = !!f.cumpleNo;
+  $('fCumpleOn').checked = !no && !!f.cumple; $('fCumpleOn').disabled = no;
+  $('fCumpleNota').textContent = no ? 'Este personaje no tiene cumpleaños, así que no se puede registrar.' : 'Se usa la fecha que ya tiene el team. Si no lo activas, no se muestra.';
   $('fOculta').checked = !!f.oculta; $('edMsg').textContent = ''; $('edOk').disabled = false;
   $('edDlg').showModal();
 }
-$('fCumpleOn').onchange = () => { $('fCumpleBox').hidden = !$('fCumpleOn').checked; };
-$('fCumpleNo').onchange = () => { const n = $('fCumpleNo').checked; $('fDia').disabled = n; $('fMes').disabled = n; };
 $('edNo').onclick = () => $('edDlg').close();
 $('edOk').onclick = async () => {
   const d = { bio: $('fBio').value.trim(), procedencia: $('fProc').value.trim(), edad: $('fEdad').value.trim(), notas: $('fNotas').value.trim(), oculta: $('fOculta').checked };
-  if ($('fCumpleOn').checked){
-    if ($('fCumpleNo').checked) d.cumpleNo = true;
-    else { const dia = +$('fDia').value; if (!(dia >= 1 && dia <= 31)){ $('edMsg').textContent = 'Pon un día válido (1–31).'; return; } d.cumple = $('fMes').value + '-' + String(dia).padStart(2, '0'); }
-  }
+  d.cumpleOn = $('fCumpleOn').checked;
   $('edOk').disabled = true; $('edMsg').textContent = 'Guardando…';
   const k = clave(EDP.nombre); let ok = false;
   if (isAdmin){
+    const nac = (MI[EDP.miembroId] || {}).nacimiento, cum = d.cumpleOn && /^\d{4}-\d{2}-\d{2}$/.test(nac || '') ? nac.slice(5) : '';
+    if (d.cumpleOn && !cum && !EDF.cumpleNo){ $('edMsg').textContent = 'Ese miembro no tiene fecha de nacimiento en Contactos.'; $('edOk').disabled = false; return; }
+    delete d.cumpleOn; if (cum) d.cumple = cum; if (EDF.cumpleNo) d.cumpleNo = true;
     const o = d.oculta ? { oculta: true } : Object.fromEntries(Object.entries(d).filter(([, v]) => v && v !== false));
     const r = await sb.from('fichas').upsert({ personaje_key: k, data: o, actualizada: new Date().toISOString() }); ok = !r.error;
   } else {
     const r = await sb.rpc('ficha_guardar', { token: tokenActual(), per: EDP.nombre, d }); ok = r.data === 'ok';
+    if (r.data === 'sin_fecha'){ $('edMsg').textContent = 'No tenemos tu fecha de nacimiento, así que no se puede registrar.'; $('edOk').disabled = false; return; }
   }
   if (!ok){ $('edMsg').textContent = 'No se pudo guardar. Comprueba que has entrado con tu carnet.'; $('edOk').disabled = false; return; }
   $('edDlg').close(); toast('Ficha guardada'); load();

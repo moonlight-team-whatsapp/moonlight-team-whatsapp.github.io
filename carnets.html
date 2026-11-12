@@ -45,6 +45,7 @@
   </header>
   <p class="empty-note" id="needAdmin">Esta página es solo para admins. Pulsa «Acceso admin» para entrar.</p>
   <div id="tools" hidden><div class="bar2"><input id="q" placeholder="Buscar miembro o personaje…"><button class="gbtn" id="genAll" type="button">Generar todos los que faltan</button><button class="gbtn" id="cpAll" type="button">Copiar todos los nuevos</button></div><p class="empty-note" id="count"></p></div>
+<div id="avisos"></div>
 <ul class="cl" id="cl"></ul>
 </div>
 <dialog id="loginDialog">
@@ -69,7 +70,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 (function(){ const l = $('starsLayer'), fr = document.createDocumentFragment(); for (let i = 0; i < 30; i++){ const s = document.createElement('span'); s.className = 'star'; const z = (Math.random()*1.6+.8).toFixed(2); s.style.cssText = `top:${Math.random()*100}%;left:${Math.random()*100}%;width:${z}px;height:${z}px`; s.style.setProperty('--dur', (Math.random()*3+2).toFixed(2)+'s'); s.style.setProperty('--delay', (Math.random()*5).toFixed(2)+'s'); s.style.setProperty('--o-min', '.2'); s.style.setProperty('--o-max', '.85'); fr.appendChild(s); } l.appendChild(fr); })();
 const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), 3000); };
-let isAdmin = false, M = [], carn = {}, nuevos = {};
+let isAdmin = false, M = [], carn = {}, nuevos = {}, huerfanos = [], sobran = [];
 const base = () => location.origin + location.pathname.replace(/[^/]*$/, '');
 const enlace = t => base() + 'index.html?c=' + t;
 const mensaje = (m, t) => `Hola ${m.n}. Este es tu carnet personal de Moonlight Team: ${enlace(t)}\nGuárdalo, es solo tuyo (no lo compartas). Con él podrás votar y participar en eventos desde la web.`;
@@ -78,14 +79,20 @@ async function load(){
   const per = {};
   (oc.data || []).slice().sort((a, b) => String((a.data || {}).createdAt || '').localeCompare(String((b.data || {}).createdAt || '')) || ((a.data || {}).orden || 0) - ((b.data || {}).orden || 0)).forEach(o => { const d = o.data || {}; if (d.miembroId) (per[d.miembroId] = per[d.miembroId] || []).push(d.nombre); });
   M = (mi.data || []).filter(r => !(r.data && (r.data.baneado || r.data.activo === false))).map(r => { const d = r.data || {}; return { id: r.id, n: d.apodoInterno || r.id, p: per[r.id] || [], o: d.orden || 0 }; }).filter(m => m.p.length).sort((a, b) => a.o - b.o);
-  carn = {}; (ca.data || []).forEach(c => carn[c.miembro_id] = c.creado); paint();
+  carn = {}; (ca.data || []).forEach(c => carn[c.miembro_id] = c.creado);
+  const ids = new Set(M.map(m => m.id));
+  sobran = Object.keys(carn).filter(id => !ids.has(id));
+  huerfanos = (oc.data || []).map(o => o.data || {}).filter(d => d.nombre && !d.miembroId).map(d => d.nombre);
+  paint();
 }
 function paint(){
   $('needAdmin').hidden = isAdmin; $('tools').hidden = !isAdmin;
   if (!isAdmin){ $('cl').innerHTML = ''; return; }
   const q = $('q').value.trim().toLowerCase();
   const L = M.filter(m => !q || (m.n + ' ' + m.p.join(' ')).toLowerCase().includes(q));
-  $('count').textContent = `${Object.keys(carn).length} de ${M.length} con carnet`;
+  $('count').textContent = `${M.filter(m => carn[m.id]).length} de ${M.length} con carnet`;
+  $('avisos').innerHTML = (huerfanos.length ? `<p class="nuevo">⚠️ Sin miembro asociado (no se les puede generar carnet): <b>${esc(huerfanos.join(', '))}</b>. Asígnales su miembro desde Lista o Contactos.</p>` : '') +
+    (sobran.length ? `<p class="nuevo">🗑️ Hay ${sobran.length} carnet${sobran.length > 1 ? 's' : ''} de miembros que ya no están. <button class="gbtn" id="limpia" type="button">Eliminar</button></p>` : '');
   $('cl').innerHTML = L.map(m => { const t = nuevos[m.id], tiene = !!carn[m.id];
     return `<li data-id="${esc(m.id)}"><div class="nm">${esc(m.n)}<small>${esc(m.p.join(', ') || 'Sin personaje')}</small></div><span class="chip ${tiene ? 'on' : ''}">${tiene ? 'Con carnet' : 'Sin carnet'}</span><button class="gbtn" data-gen="1" type="button">${tiene ? 'Regenerar' : 'Generar'}</button>${t ? `<div class="nuevo">Enlace nuevo (solo se muestra ahora):<code>${esc(enlace(t))}</code><button class="gbtn" data-cp="l" type="button">Copiar enlace</button> <button class="gbtn" data-cp="m" type="button">Copiar mensaje</button></div>` : ''}</li>`; }).join('') || '<li>No hay miembros.</li>';
 }
@@ -105,6 +112,13 @@ $('cl').addEventListener('click', async e => {
   const c = e.target.closest('[data-cp]'); if (c) copiar(c.dataset.cp === 'l' ? enlace(nuevos[id]) : mensaje(m, nuevos[id]));
 });
 $('q').addEventListener('input', paint);
+$('avisos').addEventListener('click', async e => {
+  if (!e.target.closest('#limpia')) return;
+  if (!confirm('Se eliminarán ' + sobran.length + ' carnet(s) de miembros que ya no están. ¿Continuar?')) return;
+  const { error } = await sb.from('carnets').delete().in('miembro_id', sobran);
+  if (error){ toast('No se pudo eliminar.'); return; }
+  sobran.forEach(id => delete carn[id]); sobran = []; paint(); toast('Carnets eliminados.');
+});
 $('genAll').addEventListener('click', async () => {
   const f = M.filter(m => !carn[m.id]); if (!f.length){ toast('Todos tienen carnet.'); return; }
   for (const m of f) await generar(m.id);
