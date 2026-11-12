@@ -241,8 +241,8 @@ function ficha(pj){
     const pid = new Set(padres.map(x => x.id));
     const herm = AR.filter(x => x.id !== nodo.id && P(x).some(p => pid.has(p.id)));
     add('Hermanos', x => { const mismos = P(x).length === padres.length && P(x).every(p => pid.has(p.id)); return mismos ? G(x, 'Hermano', 'Hermana', 'Hermano/a') : G(x, 'Medio hermano', 'Media hermana', 'Medio/a hermano/a'); }, herm);
-    add('Familia política', x => G(x, 'Padrastro', 'Madrastra', 'Padrastro/madrastra'), padres.flatMap(p => PA(p)).filter(x => !pid.has(x.id)));
-    add('Familia política', x => G(x, 'Hijastro', 'Hijastra', 'Hijastro/a'), pareja.flatMap(p => H(p)));
+    add('Padres', x => G(x, 'Padrastro', 'Madrastra', 'Padrastro/madrastra'), padres.flatMap(p => PA(p)).filter(x => !pid.has(x.id)));
+    add('Hijos', x => G(x, 'Hijastro', 'Hijastra', 'Hijastro/a'), pareja.flatMap(p => H(p)));
     add('Familia política', x => G(x, 'Suegro', 'Suegra', 'Suegro/a'), pareja.flatMap(p => P(p)));
     add('Familia política', x => G(x, 'Yerno', 'Nuera', 'Yerno/nuera'), hijos.flatMap(h => PA(h)));
     add('Familia política', x => G(x, 'Cuñado', 'Cuñada', 'Cuñado/a'), [...pareja.flatMap(p => AR.filter(y => y.id !== p.id && P(y).some(q => P(p).some(r => r.id === q.id)))), ...herm.flatMap(h => PA(h))]);
