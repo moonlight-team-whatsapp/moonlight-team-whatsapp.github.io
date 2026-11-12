@@ -276,7 +276,7 @@ $('edOk').onclick = async () => {
     if (d.cumpleOn && !cum && !EDF.cumpleNo){ $('edMsg').textContent = 'Ese miembro no tiene fecha de nacimiento en Contactos.'; $('edOk').disabled = false; return; }
     delete d.cumpleOn; if (cum) d.cumple = cum; if (EDF.cumpleNo) d.cumpleNo = true;
     const o = d.oculta ? { oculta: true } : Object.fromEntries(Object.entries(d).filter(([, v]) => v && v !== false));
-    const r = await sb.from('fichas').upsert({ personaje_key: k, data: o, actualizada: new Date().toISOString() }); ok = !r.error;
+    const r = await sb.from('fichas').upsert({ personaje_key: k, data: o, actualizada: new Date().toISOString() }); ok = !r.error; if (r.error){ $('edMsg').textContent = 'No se pudo guardar: ' + (r.error.message || 'error') + ' (¿sigues con la sesión de admin iniciada?)'; $('edOk').disabled = false; return; }
   } else {
     const r = await sb.rpc('ficha_guardar', { token: tokenActual(), per: EDP.nombre, d }); ok = r.data === 'ok';
     if (r.data === 'sin_fecha'){ $('edMsg').textContent = 'No tenemos tu fecha de nacimiento, así que no se puede registrar.'; $('edOk').disabled = false; return; }
