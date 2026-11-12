@@ -762,7 +762,7 @@
     $('pubOk').disabled = true; pm.textContent = 'Subiendo…';
     var id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2)), pi = 'mc/' + id + '.jpg', pd = 'mc/' + id + '.json';
     ensureFont().then(function(){
-      var k = 1.5, out = document.createElement('canvas'); out.width = W * k; out.height = H * k; var c = out.getContext('2d'); c.scale(k, k); draw(c, false);
+      var k = 2, out = document.createElement('canvas'); out.width = W * k; out.height = H * k; var c = out.getContext('2d'); c.scale(k, k); draw(c, false);
       var t = document.createElement('canvas'); t.width = out.width; t.height = out.height; var tc = t.getContext('2d'); tc.fillStyle = THEMES[S.theme].b; tc.fillRect(0, 0, t.width, t.height); tc.drawImage(out, 0, 0);
       return Promise.all([new Promise(function(r){ t.toBlob(r, 'image/jpeg', .88); }), designJson()]);
     }).then(function(r){

@@ -23,6 +23,8 @@
   .pj b{ display:block; font-family:'Cormorant',serif; font-size:1.15rem; color:var(--gold); }
   .pj small{ color:var(--ink-soft); }
   .hero{ display:grid; grid-template-columns:minmax(0,340px) 1fr; gap:20px; border:1px solid var(--border); border-radius:18px; background:rgba(16,22,48,.72); padding:18px; }
+  .hero .im:has(img){ padding:0; overflow:hidden; }
+  .hero .im img, .gal a img{ width:100%; height:100%; object-fit:cover; display:block; border-radius:inherit; image-rendering:auto; }
   .hero .im{ aspect-ratio:1000/620; border-radius:12px; border:1px solid var(--gold-dim); background:linear-gradient(160deg,#1c2350,#3a2b5a); background-size:cover; background-position:center; display:grid; place-items:center; text-align:center; padding:8px; align-self:start; color:var(--ink-soft); font-size:.85rem; }
   .hero h1{ margin:0; font-family:'Cormorant',serif; font-style:italic; font-size:clamp(1.9rem,7vw,2.6rem); color:var(--gold); line-height:1.1; }
   .chips{ display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
@@ -45,7 +47,7 @@
   .r{ display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-bottom:1px solid var(--border); }
   .r:last-child{ border:0; } .r span{ color:var(--ink-soft); } .r div{ text-align:right; white-space:pre-wrap; }
   .gal{ display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; }
-  .gal a{ aspect-ratio:1000/620; border-radius:10px; border:1px solid var(--border); background-size:cover; background-position:center; position:relative; }
+  .gal a{ overflow:hidden; aspect-ratio:1000/620; border-radius:10px; border:1px solid var(--border); background-size:cover; background-position:center; position:relative; }
   .gal a.p{ border-color:var(--gold); }
   .gal a i{ position:absolute; left:4px; top:4px; font-style:normal; background:rgba(8,12,30,.8); border-radius:99px; padding:0 6px; font-size:.75rem; color:var(--gold); }
   .tl{ border-left:2px solid var(--border); margin-left:6px; padding-left:14px; }
@@ -204,7 +206,7 @@ function ficha(pj){
   const edita = soyDe(pj);
   const img = pr ? `style="background-image:url('${esc(url(pr.img_path))}')"` : '';
   if (f.oculta && !isAdmin && !soyDe(pj)){
-    $('main').innerHTML = `<div class="hero"><div class="im" ${img}>${pr ? '' : 'Sin MoonCard principal'}</div><div><h1>${esc(pj.nombre)}</h1><p class="vacio">Este miembro ha ocultado su ficha.</p></div></div>`; return;
+    $('main').innerHTML = `<div class="hero"><div class="im">${pr ? `<img src="${esc(url(pr.img_path))}" alt="MoonCard de ${esc(pj.nombre)}">` : 'Sin MoonCard principal'}</div><div><h1>${esc(pj.nombre)}</h1><p class="vacio">Este miembro ha ocultado su ficha.</p></div></div>`; return;
   }
   const nodo = AR.find(a => clave(a.nombre) === k);
   const byId = {}; AR.forEach(a => byId[a.id] = a);
@@ -239,7 +241,7 @@ function ficha(pj){
       <div class="r"><span>Última vez que habló</span><div class="vacio">Pendiente de enlazar con Menciones</div></div></div>`;
   }
   $('main').innerHTML = `
-    <div class="hero"><div class="im" ${img}>${pr ? '' : 'Sin MoonCard principal'}</div>
+    <div class="hero"><div class="im">${pr ? `<img src="${esc(url(pr.img_path))}" alt="MoonCard de ${esc(pj.nombre)}">` : 'Sin MoonCard principal'}</div>
       <div><h1>${esc(pj.nombre)}</h1><div class="chips">${chips}${f.oculta ? '<span class="chip">Ficha oculta</span>' : ''}</div>
         ${f.bio ? `<p class="bio">${esc(f.bio)}</p>` : '<p class="vacio">Todavía no hay descripción.</p>'}
         <div class="fila">${nodo ? `<a class="gbtn" href="arbol.html">Ver en el árbol</a>` : ''}${cartas.length ? `<a class="gbtn" href="galeria.html">Ver en la galería (${cartas.length})</a>` : ''}${edita ? '<button class="gbtn suave" id="editar" type="button">✏️ Editar ficha</button>' : ''}</div>
@@ -248,7 +250,7 @@ function ficha(pj){
     <div class="box">${fam.length ? `<div class="fam">${fam.map(([r, a]) => `<a class="fm${a.fuera ? ' out' : ''}" href="ficha.html?p=${encodeURIComponent(a.nombre)}"><small>${r}</small>${esc(a.nombre)}</a>`).join('')}</div>` : '<span class="vacio">Sin familia registrada en el árbol.</span>'}</div>
     ${filas.length ? `<h2 class="s">Sobre el personaje</h2><div class="box">${filas.map(([a, b]) => `<div class="r"><span>${a}</span><div>${esc(b)}</div></div>`).join('')}</div>` : ''}
     <h2 class="s">MoonCards</h2>
-    ${cartas.length ? `<div class="gal">${cartas.map(c => `<a class="${c.principal ? 'p' : ''}" href="galeria.html" title="${esc(c.titulo || '')}" style="background-image:url('${esc(url(c.img_path))}')">${c.principal ? '<i>★</i>' : ''}</a>`).join('')}</div>` : '<div class="box"><span class="vacio">Aún no hay MoonCards de este personaje.</span></div>'}
+    ${cartas.length ? `<div class="gal">${cartas.map(c => `<a class="${c.principal ? 'p' : ''}" href="galeria.html" title="${esc(c.titulo || '')}"><img src="${esc(url(c.img_path))}" alt="${esc(c.titulo || 'MoonCard')}" loading="lazy">${c.principal ? '<i>★</i>' : ''}</a>`).join('')}</div>` : '<div class="box"><span class="vacio">Aún no hay MoonCards de este personaje.</span></div>'}
     <h2 class="s">Línea de tiempo</h2>
     <div class="box"><div class="tl">${tl.map(([d, t]) => `<div><i>${esc(fmtF(d))}</i>${t}</div>`).join('') || '<span class="vacio">Sin datos.</span>'}</div></div>
     ${admin}`;
