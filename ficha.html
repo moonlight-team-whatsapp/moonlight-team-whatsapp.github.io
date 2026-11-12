@@ -18,11 +18,11 @@
   .dir{ display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:12px; }
   .pj{ display:block; text-decoration:none; color:var(--ink); border:1px solid var(--border); border-radius:14px; background:rgba(16,22,48,.72); padding:10px; text-align:center; transition:border-color .2s, transform .2s; }
   .pj:hover{ border-color:var(--gold-dim); transform:translateY(-2px); }
-  .pj .im{ aspect-ratio:3/4; border-radius:10px; background:linear-gradient(160deg,#1c2350,#3a2b5a); background-size:cover; background-position:center; display:grid; place-items:center; font-family:'Cormorant',serif; font-size:2.2rem; color:var(--gold); margin-bottom:8px; }
+  .pj .im{ width:96px; aspect-ratio:1; border-radius:50%; border:1.5px solid var(--gold-dim); margin:4px auto 10px; background:linear-gradient(160deg,#1c2350,#3a2b5a); background-repeat:no-repeat; display:grid; place-items:center; font-family:'Cormorant',serif; font-size:2.2rem; color:var(--gold); }
   .pj b{ display:block; font-family:'Cormorant',serif; font-size:1.15rem; color:var(--gold); }
   .pj small{ color:var(--ink-soft); }
-  .hero{ display:grid; grid-template-columns:160px 1fr; gap:20px; border:1px solid var(--border); border-radius:18px; background:rgba(16,22,48,.72); padding:18px; }
-  .hero .im{ aspect-ratio:3/4; border-radius:12px; border:1px solid var(--gold-dim); background:linear-gradient(160deg,#1c2350,#3a2b5a); background-size:cover; background-position:center; display:grid; place-items:center; text-align:center; padding:8px; color:var(--ink-soft); font-size:.85rem; }
+  .hero{ display:grid; grid-template-columns:minmax(0,340px) 1fr; gap:20px; border:1px solid var(--border); border-radius:18px; background:rgba(16,22,48,.72); padding:18px; }
+  .hero .im{ aspect-ratio:1000/620; border-radius:12px; border:1px solid var(--gold-dim); background:linear-gradient(160deg,#1c2350,#3a2b5a); background-size:cover; background-position:center; display:grid; place-items:center; text-align:center; padding:8px; align-self:start; color:var(--ink-soft); font-size:.85rem; }
   .hero h1{ margin:0; font-family:'Cormorant',serif; font-style:italic; font-size:clamp(1.9rem,7vw,2.6rem); color:var(--gold); line-height:1.1; }
   .chips{ display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
   .chip{ font-size:.82rem; padding:2px 10px; border-radius:999px; border:1px solid var(--border); color:var(--ink-soft); }
@@ -43,8 +43,8 @@
   a.fm:hover{ border-color:var(--gold-dim); }
   .r{ display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-bottom:1px solid var(--border); }
   .r:last-child{ border:0; } .r span{ color:var(--ink-soft); } .r div{ text-align:right; white-space:pre-wrap; }
-  .gal{ display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; }
-  .gal a{ aspect-ratio:3/4; border-radius:10px; border:1px solid var(--border); background-size:cover; background-position:center; position:relative; }
+  .gal{ display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; }
+  .gal a{ aspect-ratio:1000/620; border-radius:10px; border:1px solid var(--border); background-size:cover; background-position:center; position:relative; }
   .gal a.p{ border-color:var(--gold); }
   .gal a i{ position:absolute; left:4px; top:4px; font-style:normal; background:rgba(8,12,30,.8); border-radius:99px; padding:0 6px; font-size:.75rem; color:var(--gold); }
   .tl{ border-left:2px solid var(--border); margin-left:6px; padding-left:14px; }
@@ -59,7 +59,7 @@
   dialog.fdlg::backdrop{ background:rgba(4,7,20,.7); }
   dialog.fdlg h3{ margin:0 0 6px; font-family:'Cormorant',serif; font-style:italic; color:var(--gold); font-size:1.5rem; }
   .nota{ font-size:.82rem; color:var(--ink-soft); margin:4px 0; }
-  @media(max-width:520px){ .hero{ grid-template-columns:1fr; } .hero .im{ max-width:170px; } }
+  @media(max-width:620px){ .hero{ grid-template-columns:1fr; } }
   #toast{ position:fixed; left:50%; bottom:20px; transform:translate(-50%,20px); background:#141b37; border:1px solid var(--gold-dim); color:var(--ink); padding:9px 16px; border-radius:8px; opacity:0; transition:all .3s; pointer-events:none; }
   #toast.show{ opacity:1; transform:translate(-50%,0); }
 </style>
@@ -160,7 +160,7 @@ function directorio(){
     const q = clave($('q').value);
     $('dir').innerHTML = lista.filter(d => !q || clave(d.nombre).includes(q)).map(d => {
       const k = clave(d.nombre), pr = principal(k), f = FI[k] || {};
-      return `<a class="pj" href="ficha.html?p=${encodeURIComponent(d.nombre)}"><div class="im" ${pr ? `style="background-image:url('${esc(url(pr.img_path))}')"` : ''}>${pr ? '' : esc(d.nombre.charAt(0))}</div><b>${esc(d.nombre)}</b>${f.oculta ? '<small>Ficha privada</small>' : ''}</a>`;
+      return `<a class="pj" href="ficha.html?p=${encodeURIComponent(d.nombre)}"><div class="im" ${pr ? `style="background-image:url('${esc(url(pr.img_path))}');background-size:312.5% auto;background-position:10.3% 50%"` : ''}>${pr ? '' : esc(d.nombre.charAt(0))}</div><b>${esc(d.nombre)}</b>${f.oculta ? '<small>Ficha privada</small>' : ''}</a>`;
     }).join('') || '<p class="vacio">Sin resultados.</p>';
   };
   $('q').oninput = draw; draw();
