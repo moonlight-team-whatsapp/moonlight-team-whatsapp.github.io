@@ -39,10 +39,15 @@
   .box{ border:1px solid var(--border); border-radius:14px; background:rgba(16,22,48,.72); padding:12px 16px; }
   .box.adm{ border-style:dashed; border-color:rgba(199,154,208,.5); }
   h2.s.adm{ color:#c79ad0; }
+  .fg + .fg{ margin-top:12px; padding-top:12px; border-top:1px dashed var(--border); }
+  .fgt{ font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); margin-bottom:8px; }
   .fam{ display:flex; flex-wrap:wrap; gap:8px; }
-  .fm{ text-decoration:none; color:var(--ink); border:1px solid var(--border); border-radius:999px; padding:5px 14px; }
-  .fm small{ display:block; font-size:.72rem; color:var(--ink-soft); line-height:1.1; }
+  .fm{ display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--ink); border:1px solid var(--border); border-radius:999px; padding:5px 16px 5px 6px; background:rgba(255,255,255,.03); }
+  .fm .ft{ line-height:1.15; font-weight:600; } .fm small{ display:block; font-size:.7rem; font-weight:400; color:var(--ink-soft); }
   .fm.out{ opacity:.55; }
+  .fav-w{ flex:none; width:38px; height:38px; display:block; filter:drop-shadow(0 0 1px rgba(217,195,131,.9)); }
+  .fav{ display:grid; place-items:center; width:38px; height:38px; border-radius:50%; background:linear-gradient(160deg,#1c2350,#3a2b5a) no-repeat; background-size:312.5% auto; background-position:10.3% 50%; color:var(--gold); font-family:'Cormorant',serif; }
+  .fav.ini{ background-size:auto; }
   a.fm:hover{ border-color:var(--gold-dim); }
   .r{ display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-bottom:1px solid var(--border); }
   .r:last-child{ border:0; } .r span{ color:var(--ink-soft); } .r div{ text-align:right; white-space:pre-wrap; }
@@ -220,12 +225,35 @@ function ficha(pj){
   const nodo = AR.find(a => clave(a.nombre) === k);
   const byId = {}; AR.forEach(a => byId[a.id] = a);
   const dep = (a, seen = new Set()) => { if (!a || seen.has(a.id)) return 0; seen.add(a.id); const ps = (a.padres || []).map(i => byId[i]).filter(Boolean); return ps.length ? 1 + Math.max(...ps.map(x => dep(x, seen))) : 0; };
-  const fam = [];
+  const fam = [];   // [grupo, etiqueta, nodo]
   if (nodo){
-    (nodo.padres || []).forEach(i => byId[i] && fam.push(['Padre/madre', byId[i]]));
-    (nodo.parejas || []).forEach(i => byId[i] && fam.push(['Pareja', byId[i]]));
-    AR.filter(a => (a.padres || []).includes(nodo.id)).forEach(a => fam.push([a.genero === 'f' ? 'Hija' : a.genero === 'm' ? 'Hijo' : 'Hijo/a', a]));
+    const G = (a, m, fm, n) => a.genero === 'm' ? m : a.genero === 'f' ? fm : n;
+    const P = a => (a.padres || []).map(i => byId[i]).filter(Boolean);
+    const H = a => AR.filter(x => (x.padres || []).includes(a.id));
+    const PA = a => [...new Set([...(a.parejas || []), ...AR.filter(x => (x.parejas || []).includes(a.id)).map(x => x.id)])].map(i => byId[i]).filter(Boolean);
+    const vistos = new Set([nodo.id]);
+    const add = (g, lab, list) => list.forEach(x => { if (x && !vistos.has(x.id)){ vistos.add(x.id); fam.push([g, lab(x), x]); } });
+    const padres = P(nodo), pareja = PA(nodo), hijos = H(nodo);
+    add('Padres', x => G(x, 'Padre', 'Madre', 'Progenitor/a'), padres);
+    add('Pareja', () => 'Pareja', pareja);
+    add('Hijos', x => G(x, 'Hijo', 'Hija', 'Hijo/a'), hijos);
+    const pid = new Set(padres.map(x => x.id));
+    const herm = AR.filter(x => x.id !== nodo.id && P(x).some(p => pid.has(p.id)));
+    add('Hermanos', x => { const mismos = P(x).length === padres.length && P(x).every(p => pid.has(p.id)); return mismos ? G(x, 'Hermano', 'Hermana', 'Hermano/a') : G(x, 'Medio hermano', 'Media hermana', 'Medio/a hermano/a'); }, herm);
+    add('Familia política', x => G(x, 'Padrastro', 'Madrastra', 'Padrastro/madrastra'), padres.flatMap(p => PA(p)).filter(x => !pid.has(x.id)));
+    add('Familia política', x => G(x, 'Hijastro', 'Hijastra', 'Hijastro/a'), pareja.flatMap(p => H(p)));
+    add('Familia política', x => G(x, 'Suegro', 'Suegra', 'Suegro/a'), pareja.flatMap(p => P(p)));
+    add('Familia política', x => G(x, 'Yerno', 'Nuera', 'Yerno/nuera'), hijos.flatMap(h => PA(h)));
+    add('Familia política', x => G(x, 'Cuñado', 'Cuñada', 'Cuñado/a'), [...pareja.flatMap(p => AR.filter(y => y.id !== p.id && P(y).some(q => P(p).some(r => r.id === q.id)))), ...herm.flatMap(h => PA(h))]);
+    add('Más familia', x => G(x, 'Abuelo', 'Abuela', 'Abuelo/a'), padres.flatMap(p => P(p)));
+    add('Más familia', x => G(x, 'Nieto', 'Nieta', 'Nieto/a'), hijos.flatMap(h => H(h)));
+    add('Más familia', x => G(x, 'Tío', 'Tía', 'Tío/a'), padres.flatMap(p => AR.filter(y => y.id !== p.id && P(y).some(q => P(p).some(r => r.id === q.id)))));
+    add('Más familia', x => G(x, 'Sobrino', 'Sobrina', 'Sobrino/a'), herm.flatMap(h => H(h)));
   }
+  const famHtml = ['Padres', 'Pareja', 'Hijos', 'Hermanos', 'Familia política', 'Más familia'].map(g => {
+    const l = fam.filter(x => x[0] === g); if (!l.length) return '';
+    return `<div class="fg"><div class="fgt">${g}</div><div class="fam">${l.map(([, r, a]) => { const pa = principal(clave(a.nombre)); return `<a class="fm${a.fuera ? ' out' : ''}" href="ficha.html?p=${encodeURIComponent(a.nombre)}">${pa ? `<span class="fav-w"><span class="fav" style="background-image:url('${esc(url(pa.img_path))}');${clipForma(pa.forma)}"></span></span>` : `<span class="fav-w"><span class="fav ini">${esc(a.nombre.charAt(0))}</span></span>`}<span class="ft"><small>${r}</small>${esc(a.nombre)}</span></a>`; }).join('')}</div></div>`;
+  }).join('');
   const chips = [pj.createdAt ? `<span class="chip">En el team desde ${esc(fmtF(pj.createdAt))}</span>` : '', nodo ? `<span class="chip g">Gen. ${ROM[dep(nodo)] || dep(nodo) + 1}${nodo.genero === 'f' ? ' ♀' : nodo.genero === 'm' ? ' ♂' : ''}</span>` : ''].join('');
   const filas = [];
   if (f.procedencia) filas.push(['Procedencia', f.procedencia]);
@@ -256,7 +284,7 @@ function ficha(pj){
         <div class="fila">${nodo ? `<a class="gbtn" href="arbol.html">Ver en el árbol</a>` : ''}${cartas.length ? `<a class="gbtn" href="galeria.html">Ver en la galería (${cartas.length})</a>` : ''}${edita ? '<button class="gbtn suave" id="editar" type="button">✏️ Editar ficha</button>' : ''}</div>
       </div></div>
     <h2 class="s">Familia</h2>
-    <div class="box">${fam.length ? `<div class="fam">${fam.map(([r, a]) => `<a class="fm${a.fuera ? ' out' : ''}" href="ficha.html?p=${encodeURIComponent(a.nombre)}"><small>${r}</small>${esc(a.nombre)}</a>`).join('')}</div>` : '<span class="vacio">Sin familia registrada en el árbol.</span>'}</div>
+    <div class="box">${famHtml || '<span class="vacio">Sin familia registrada en el árbol.</span>'}</div>
     ${filas.length ? `<h2 class="s">Sobre el personaje</h2><div class="box">${filas.map(([a, b]) => `<div class="r"><span>${a}</span><div>${esc(b)}</div></div>`).join('')}</div>` : ''}
     <h2 class="s">MoonCards</h2>
     ${cartas.length ? `<div class="gal">${cartas.map(c => `<a class="${c.principal ? 'p' : ''}" href="galeria.html" title="${esc(c.titulo || '')}"><img src="${esc(url(c.img_path))}" alt="${esc(c.titulo || 'MoonCard')}" loading="lazy">${c.principal ? '<i>★</i>' : ''}</a>`).join('')}</div>` : '<div class="box"><span class="vacio">Aún no hay MoonCards de este personaje.</span></div>'}
