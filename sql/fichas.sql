@@ -2,3 +2,4 @@
 -- fichas(personaje_key, data jsonb): lectura pública; solo escribe el dueño por carnet (los admins NO editan) con ficha_guardar(token, per, d).
 -- Campos de data: bio, procedencia, edad, notas, cumple (MM-DD, solo si el miembro lo activa), cumpleNo, oculta.
 -- Si oculta, solo se guarda {"oculta":true}.
+-- ficha_desde(per, fecha): solo admin; cambia la fecha «En el team desde» (data.desde). ficha_guardar la conserva.

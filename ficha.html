@@ -58,6 +58,9 @@
   .gal a i{ position:absolute; left:4px; top:4px; font-style:normal; background:rgba(8,12,30,.8); border-radius:99px; padding:0 6px; font-size:.75rem; color:var(--gold); }
   .tl{ border-left:2px solid var(--border); margin-left:6px; padding-left:14px; }
   .tl div{ margin:10px 0; } .tl i{ display:block; font-style:normal; font-size:.8rem; color:var(--gold); }
+  button.chip-ed{ font:inherit; font-size:.82rem; background:none; cursor:pointer; }
+  button.chip-ed:hover{ border-color:var(--gold-dim); color:var(--ink); }
+  .edf input[type=date]{ padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--ink); font:inherit; color-scheme:dark; }
   .vacio{ color:var(--ink-soft); font-style:italic; }
   .priv{ text-align:center; padding:40px 10px; color:var(--ink-soft); }
   .edf{ display:grid; gap:4px; margin:8px 0; } .edf label{ font-size:.88rem; color:var(--ink-soft); }
@@ -109,6 +112,13 @@
   <label class="chk"><span>Ocultar mi ficha<small>Solo se verá tu nombre.</small></span><input type="checkbox" id="fOculta"></label>
   <p class="nota" id="edMsg" role="status"></p>
   <div class="fila"><button class="gbtn" id="edOk" type="button">Guardar</button><button class="gbtn suave" id="edNo" type="button">Cancelar</button></div>
+</dialog>
+<dialog class="fdlg" id="dsDlg">
+  <h3>En el team desde</h3>
+  <p class="nota">Fecha en la que este personaje entró de verdad al team (solo admin).</p>
+  <div class="edf"><input id="dsFecha" type="date"></div>
+  <p class="nota" id="dsMsg" role="status"></p>
+  <div class="fila"><button class="gbtn" id="dsOk" type="button">Guardar</button><button class="gbtn suave" id="dsQuitar" type="button">Volver a la fecha original</button><button class="gbtn suave" id="dsNo" type="button">Cancelar</button></div>
 </dialog>
 <dialog id="loginDialog">
   <div class="dialog-inner">
@@ -255,7 +265,8 @@ function ficha(pj){
     const l = fam.filter(x => x[0] === g); if (!l.length) return '';
     return `<div class="fg"><div class="fgt">${g}</div><div class="fam">${l.map(([, r, a]) => { const pa = principal(clave(a.nombre)); return `<a class="fm${a.fuera ? ' out' : ''}" href="ficha.html?p=${encodeURIComponent(a.nombre)}">${pa ? `<span class="fav-w"><span class="fav" style="background-image:url('${esc(url(pa.img_path))}');${clipForma(pa.forma)}"></span></span>` : `<span class="fav-w"><span class="fav ini">${esc(a.nombre.charAt(0))}</span></span>`}<span class="ft"><small>${r}</small>${esc(a.nombre)}</span></a>`; }).join('')}</div></div>`;
   }).join('');
-  const chips = [pj.createdAt ? `<span class="chip">En el team desde ${esc(fmtF(pj.createdAt))}</span>` : '', nodo ? `<span class="chip g">Gen. ${ROM[dep(nodo)] || dep(nodo) + 1}${nodo.genero === 'f' ? ' ♀' : nodo.genero === 'm' ? ' ♂' : ''}</span>` : ''].join('');
+  const desde = f.desde || pj.createdAt;
+  const chips = [desde ? (isAdmin ? `<button class="chip chip-ed" id="cDesde" type="button" title="Cambiar fecha de entrada">En el team desde ${esc(fmtF(desde))} ✏️</button>` : `<span class="chip">En el team desde ${esc(fmtF(desde))}</span>`) : '', nodo ? `<span class="chip g">Gen. ${ROM[dep(nodo)] || dep(nodo) + 1}${nodo.genero === 'f' ? ' ♀' : nodo.genero === 'm' ? ' ♂' : ''}</span>` : ''].join('');
   const filas = [];
   if (f.procedencia) filas.push(['Procedencia', f.procedencia]);
   if (f.edad) filas.push(['Edad', f.edad]);
@@ -264,7 +275,7 @@ function ficha(pj){
   if (f.notas) filas.push(['Relaciones', f.notas]);
   const cartas = MC.filter(c => c.personaje_key === k).sort((a, b) => (b.principal ? 1 : 0) - (a.principal ? 1 : 0));
   const tl = [];
-  if (pj.createdAt) tl.push([pj.createdAt, 'Entra al team']);
+  if (desde) tl.push([desde, 'Entra al team']);
   if (nodo && nodo.createdAt) tl.push([nodo.createdAt, 'Se añade al árbol']);
   cartas.forEach(c => tl.push([c.creada, `MoonCard${c.titulo ? ' «' + esc(c.titulo) + '»' : ''} publicada`]));
   tl.sort((a, b) => String(b[0]).localeCompare(String(a[0])));
@@ -293,9 +304,19 @@ function ficha(pj){
     <div class="box"><div class="tl">${tl.map(([d, t]) => `<div><i>${esc(fmtF(d))}</i>${t}</div>`).join('') || '<span class="vacio">Sin datos.</span>'}</div></div>
     ${admin}`;
   const b = $('editar'); if (b) b.onclick = () => abreEd(pj, f);
+  const cd = $('cDesde'); if (cd) cd.onclick = () => { $('dsFecha').value = String(desde).slice(0, 10); $('dsMsg').textContent = ''; DSP = pj; $('dsDlg').showModal(); };
 }
 
-let EDP = null, EDF = {};
+let EDP = null, EDF = {}, DSP = null;
+$('dsNo').onclick = () => $('dsDlg').close();
+$('dsQuitar').onclick = () => guardaDesde('');
+$('dsOk').onclick = () => { const v = $('dsFecha').value; if (!v){ $('dsMsg').textContent = 'Elige una fecha.'; return; } guardaDesde(v); };
+async function guardaDesde(v){
+  $('dsMsg').textContent = 'Guardando…';
+  const r = await sb.rpc('ficha_desde', { per: DSP.nombre, fecha: v });
+  if (r.error || r.data !== 'ok'){ $('dsMsg').textContent = 'No se pudo guardar (' + (r.error ? r.error.message : r.data) + ').'; return; }
+  $('dsDlg').close(); toast('Fecha actualizada'); load();
+}
 function abreEd(pj, f){
   EDP = pj;
   $('fBio').value = f.bio || ''; $('fProc').value = f.procedencia || ''; $('fEdad').value = f.edad || ''; $('fNotas').value = f.notas || '';
