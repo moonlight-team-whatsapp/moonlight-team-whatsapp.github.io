@@ -395,12 +395,21 @@
     btn.addEventListener('click', async () => {
       btn.disabled = true;
       try {
+        let aviso = '';
         if (item.miembroId){
-          await updateDoc(doc(db, 'miembros', item.miembroId), {
-            historialPersonajes: arrayUnion({ nombre: item.nombre, fecha: new Date().toISOString() })
-          });
+          const upd = { historialPersonajes: arrayUnion({ nombre: item.nombre, fecha: new Date().toISOString() }) };
+          // Si era su único personaje, es una salida del team: se descuenta 1 de sus salidas
+          const otros = allCaches.ocupados.filter(o => o.miembroId === item.miembroId && o.id !== item.id).length;
+          if (!otros){
+            const ms = await getDoc(doc(db, 'miembros', item.miembroId));
+            const cur = ms.exists() && typeof ms.data().salidasDisponibles === 'number' ? ms.data().salidasDisponibles : 3;
+            upd.salidasDisponibles = Math.max(0, cur - 1);
+            aviso = `${item.nombre} sale del team: le quedan ${upd.salidasDisponibles} salida${upd.salidasDisponibles === 1 ? '' : 's'}.` + (upd.salidasDisponibles === 0 ? ' Ya no podrá volver.' : '');
+          }
+          await updateDoc(doc(db, 'miembros', item.miembroId), upd);
         }
         await deleteDoc(doc(db, 'ocupados', item.id));
+        if (aviso) statusLine.textContent = aviso;
       } catch (e) {
         statusLine.textContent = 'No se pudo quitar, inténtalo de nuevo.';
         btn.disabled = false;

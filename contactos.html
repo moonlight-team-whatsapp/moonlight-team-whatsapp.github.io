@@ -608,6 +608,15 @@
             if (!prev.empty) memberId = prev.docs[0].id;
           }
         }
+        if (memberId){
+          // Si vuelve al team (no tiene otros personajes) y no le quedan salidas, no puede volver
+          const ms = (await getDoc(doc(db, 'miembros', memberId))).data() || {};
+          const otros = ocupadosCache.filter(x => x.miembroId === memberId && x.id !== o.id).length;
+          if (!otros && typeof ms.salidasDisponibles === 'number' && ms.salidasDisponibles <= 0){
+            statusLine.textContent = `No se puede vincular: ${ms.apodoInterno || 'ese miembro'} no tiene salidas disponibles, así que no puede volver al team.`;
+            return;
+          }
+        }
         if (!memberId){
           const nacISO = nacNuevo.getISO();
           if (!nacISO){ nacNuevo.querySelector('input').focus(); statusLine.textContent = 'Para crear un miembro nuevo hace falta su fecha de nacimiento.'; return; }
