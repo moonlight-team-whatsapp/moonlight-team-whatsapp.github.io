@@ -548,7 +548,7 @@
         updateDoc(doc(db, 'miembros', r.id), { cambiosDisponibles: val })
       ));
       steppers.appendChild(makeStepper('Salidas', r.salidasDisponibles, (val) =>
-        updateDoc(doc(db, 'miembros', r.id), { salidasDisponibles: val }), -1
+        updateDoc(doc(db, 'miembros', r.id), { salidasDisponibles: val })
       ));
       textWrap.appendChild(steppers);
 
@@ -609,18 +609,17 @@
           }
         }
         if (memberId){
-          // Si vuelve al team (no tiene otros personajes) gasta una salida: 3→2→1→0→-1.
-          // Con 0 vuelve por última vez (queda en -1); con -1 ya no puede volver.
+          // Si vuelve al team (no tiene otros personajes) gasta una salida: 3→2→1→0. Con 0 ya no puede volver.
           const ms = (await getDoc(doc(db, 'miembros', memberId))).data() || {};
           const otros = ocupadosCache.filter(x => x.miembroId === memberId && x.id !== o.id).length;
           if (!otros){
             const cur = typeof ms.salidasDisponibles === 'number' ? ms.salidasDisponibles : 3;
-            if (cur <= -1){
-              statusLine.textContent = `No se puede vincular: ${ms.apodoInterno || 'ese miembro'} ya usó su última vuelta y no puede volver al team.`;
+            if (cur <= 0){
+              statusLine.textContent = `No se puede vincular: ${ms.apodoInterno || 'ese miembro'} no tiene salidas disponibles, así que no puede volver al team.`;
               return;
             }
             await updateDoc(doc(db, 'miembros', memberId), { salidasDisponibles: cur - 1 });
-            statusLine.textContent = `${ms.apodoInterno || 'El miembro'} vuelve al team: salidas ${cur} → ${cur - 1}` + (cur === 0 ? ' (última vuelta).' : '.');
+            statusLine.textContent = `${ms.apodoInterno || 'El miembro'} vuelve al team: salidas ${cur} → ${cur - 1}.`;
           }
         }
         if (!memberId){
