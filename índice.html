@@ -425,10 +425,30 @@
   const SEC_ICO = { roleplay:'🎭', moon:'🌙', eventos:'🎪', team:'🏰', admin:'🛡️', otras:'✨' };
   const NIVELES = [[0,'Viajero lunar'],[20,'Explorador'],[45,'Guardián'],[70,'Maestro lunar'],[100,'Leyenda de la luna']];
   const hoy = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date());
-  (function racha(){ const r = LS.get('mc_racha', { d: '', n: 0 }), h = hoy(); if (r.d !== h){ const ayer = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date(Date.now() - 864e5)); r.n = r.d === ayer ? r.n + 1 : 1; r.d = h; LS.set('mc_racha', r); } $('racha').textContent = '🔥 ' + r.n + (r.n === 1 ? ' día' : ' días'); })();
+  const ayerES = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date(Date.now() - 864e5));
+  let RACHA = LS.get('mc_racha', { d: '', n: 0 });
+  function actualizaRacha(){ const h = hoy(); if (RACHA.d !== h){ RACHA = { n: RACHA.d === ayerES() ? RACHA.n + 1 : 1, d: h }; } $('racha').textContent = '🔥 ' + RACHA.n + (RACHA.n === 1 ? ' día' : ' días'); }
+  actualizaRacha();
   (function fase(){ const d = ((Date.now() - Date.UTC(2000, 0, 6, 18, 14)) / 864e5) % 29.530588853; const f = (d + 29.530588853) % 29.530588853 / 29.530588853, i = Math.round(f * 8) % 8; $('fase').textContent = ['🌑 Luna nueva','🌒 Creciente','🌓 Cuarto creciente','🌔 Gibosa creciente','🌕 Luna llena','🌖 Gibosa menguante','🌗 Cuarto menguante','🌘 Menguante'][i]; })();
-  const reg = f => { VIS[f] = { n: ((VIS[f] || {}).n || 0) + 1, t: Date.now() }; LS.set('mc_visitas', VIS); };
-  const toggleFav = f => { FAV = FAV.includes(f) ? FAV.filter(x => x !== f) : [...FAV, f]; LS.set('mc_favs', FAV); renderNav(); };
+  // Con carnet, el progreso se guarda en el perfil del miembro (base de datos) y lo sigue a cualquier dispositivo.
+  // Sin carnet (anónimo) se queda solo en este navegador.
+  const TOKEN = (() => { try { return localStorage.getItem('mc_carnet'); } catch (e) { return null; } })();
+  let sincronizado = false, tmr = null;
+  function persiste(){
+    LS.set('mc_visitas', VIS); LS.set('mc_favs', FAV); LS.set('mc_racha', RACHA);
+    if (!TOKEN || !sincronizado) return;
+    clearTimeout(tmr); tmr = setTimeout(() => { sbPend.rpc('perfil_guardar', { token: TOKEN, d: { vis: VIS, favs: FAV, racha: RACHA } }); }, 800);
+  }
+  async function sincroniza(){
+    if (!TOKEN) return;
+    try {
+      const r = await sbPend.rpc('perfil_leer', { token: TOKEN });
+      if (r.data && typeof r.data === 'object' && Object.keys(r.data).length){ VIS = r.data.vis || {}; FAV = r.data.favs || []; if (r.data.racha) RACHA = r.data.racha; }
+      sincronizado = true; actualizaRacha(); persiste(); renderNav();
+    } catch (e) {}
+  }
+  const reg = f => { VIS[f] = { n: ((VIS[f] || {}).n || 0) + 1, t: Date.now() }; persiste(); };
+  const toggleFav = f => { FAV = FAV.includes(f) ? FAV.filter(x => x !== f) : [...FAV, f]; persiste(); renderNav(); };
   let primera = true;
 
   function tile(p, grid, items, i){
@@ -508,6 +528,7 @@
     if (!alguna) navGrid.insertAdjacentHTML('beforeend', '<p class="vacio">Nada por aquí… prueba otra búsqueda 🔭</p>');
     primera = false;
   }
+  persiste(); sincroniza();
   $('tabs').addEventListener('click', e => { const b = e.target.closest('.tab'); if (!b) return; TAB = b.dataset.t; renderNav(); });
   $('q').addEventListener('input', () => { Q = $('q').value; renderNav(); });
   document.addEventListener('keydown', e => { if (e.key === '/' && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)){ e.preventDefault(); $('q').focus(); } });
