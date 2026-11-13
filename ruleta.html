@@ -125,7 +125,9 @@ function dibuja(){
   // ——— sectores ———
   if (!n){
     g.beginPath(); g.arc(C, C, RW, 0, TAU); g.fillStyle = '#141b37'; g.fill();
-    g.fillStyle = '#9aa3c9'; g.font = "italic 600 54px Cormorant, serif"; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('Añade opciones →', C, C);
+    g.fillStyle = '#9aa3c9'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = "italic 600 58px Cormorant, serif"; g.fillText('Añade opciones', C, C - RW * .52);
+    g.font = "italic 500 40px Cormorant, serif"; g.fillText('para empezar a girar', C, C + RW * .52);
     return;
   }
   const a = TAU / n;
