@@ -294,7 +294,7 @@
   const nombreDe = (m) => { const r = rolesDe(m.id); return r.length ? r.join(', ') : (m.contacto || m.id); };
   $('pickSearch').addEventListener('input', (e) => { pickTerm = normalize(e.target.value.trim()); renderPicker(); });
   function renderPicker(){
-    const cand = miembrosCache.filter(m => !m.baneado);
+    const cand = miembrosCache.filter(m => !m.baneado && rolesDe(m.id).length);
     const chips = $('selChips'); chips.innerHTML = '';
     [...SEL].forEach(id => {
       const m = cand.find(x => x.id === id); if (!m){ SEL.delete(id); return; }
