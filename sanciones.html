@@ -282,7 +282,6 @@
   async function expulsarPorEdad(r, btn){
     const nombre = r.roles.length ? r.roles.join(', ') : r.contacto;
     const motivo = edadTxt(r.nacimiento).motivo || '19 años';
-    if (!confirm(`¿Expulsar a ${nombre} por «${motivo}»? Se le aplica sanción de nivel 3.`)) return;
     btn.disabled = true;
     try { await aplicarWarn(r, motivo, WARN_LIMIT); }
     catch (e) { statusLine.textContent = 'No se pudo expulsar, inténtalo de nuevo.'; btn.disabled = false; }
@@ -322,7 +321,6 @@
     if (!SEL.size){ statusLine.textContent = 'Elige al menos un integrante.'; return; }
     if (!motivo){ $('sanMotivo').focus(); return; }
     const objetivo = miembrosCache.filter(m => SEL.has(m.id));
-    if (!confirm(`¿Aplicar ${cantidad} warn${cantidad > 1 ? 's' : ''} («${motivo}») a: ${objetivo.map(nombreDe).join(', ')}?`)) return;
     const btn = $('sanBtn'); btn.disabled = true;
     let ok = 0, fallos = [];
     for (const m of objetivo){
