@@ -12,6 +12,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 <script src="js/temporadas.js"></script>
+<style>
+.sel-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.sel-chips .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(200,180,255,.16);border:1px solid rgba(200,180,255,.35);cursor:pointer;font-size:.95rem}
+.sel-chips .chip:after{content:"×";opacity:.7}
+.pick-list{max-height:190px;overflow:auto;margin:6px 0 10px;display:flex;flex-direction:column;gap:2px}
+.pick-list label{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px;cursor:pointer}
+.pick-list label:hover{background:rgba(255,255,255,.06)}
+.pick-list input{width:auto;flex:none}
+.pick-list small{opacity:.65;margin-left:auto}
+</style>
 </head>
 <body>
 
@@ -41,9 +51,22 @@
     <input type="text" id="searchInput" placeholder="Buscar por contacto o personaje..." autocomplete="off">
   </div>
 
+  <section class="panel" id="sancionarPanel" hidden>
+    <h2>Sancionar</h2>
+    <p class="panel-desc">Elige a uno o varios integrantes, pon el motivo y se aplica a todos a la vez. Al llegar a 3 warns, se expulsa automáticamente.</p>
+    <div id="selChips" class="sel-chips"></div>
+    <input type="text" id="pickSearch" placeholder="Buscar integrante para añadir..." autocomplete="off">
+    <div id="pickList" class="pick-list"></div>
+    <div class="warn-form">
+      <input type="text" id="sanMotivo" placeholder="Motivo (el mismo para todos)" maxlength="120">
+      <input type="number" id="sanCant" class="warn-cantidad" min="1" value="1" title="Nº de warns">
+      <button class="icon-btn" id="sanBtn" type="button">Sancionar</button>
+    </div>
+  </section>
+
   <section class="panel" id="sancionesPanel" hidden>
     <h2>Miembros</h2>
-    <p class="panel-desc">Cada warn necesita un motivo. Puedes poner más de 1 warn de golpe si el motivo lo merece — al llegar a 3, se expulsa automáticamente.</p>
+    <p class="panel-desc">Historial de sanciones de cada miembro.</p>
     <div id="edadAviso" class="li-meta" hidden></div>
     <ul class="simple-list" id="memberList"></ul>
     <p class="empty-note" id="memberEmpty" hidden></p>
@@ -181,6 +204,7 @@
     loggedOutNote.hidden = isAdmin;
     searchWrap.hidden = !isAdmin;
     sancionesPanel.hidden = !isAdmin;
+    $('sancionarPanel').hidden = !isAdmin;
 
     if (isAdmin && !unsubMiembros){
       unsubMiembros = onSnapshot(collection(db, 'miembros'), (snap) => {
@@ -264,8 +288,55 @@
     catch (e) { statusLine.textContent = 'No se pudo expulsar, inténtalo de nuevo.'; btn.disabled = false; }
   }
 
+  // ---------- Sancionar a varios ----------
+  const SEL = new Set();
+  let pickTerm = '';
+  const nombreDe = (m) => { const r = rolesDe(m.id); return r.length ? r.join(', ') : (m.contacto || m.id); };
+  $('pickSearch').addEventListener('input', (e) => { pickTerm = normalize(e.target.value.trim()); renderPicker(); });
+  function renderPicker(){
+    const cand = miembrosCache.filter(m => !m.baneado);
+    const chips = $('selChips'); chips.innerHTML = '';
+    [...SEL].forEach(id => {
+      const m = cand.find(x => x.id === id); if (!m){ SEL.delete(id); return; }
+      const c = document.createElement('span'); c.className = 'chip'; c.textContent = nombreDe(m);
+      c.addEventListener('click', () => { SEL.delete(id); renderPicker(); });
+      chips.appendChild(c);
+    });
+    const list = $('pickList'); list.innerHTML = '';
+    cand.filter(m => !pickTerm || normalize(m.contacto || m.id).includes(pickTerm) || rolesDe(m.id).some(n => normalize(n).includes(pickTerm)))
+      .sort((a, b) => nombreDe(a).localeCompare(nombreDe(b), 'es'))
+      .forEach(m => {
+        const l = document.createElement('label');
+        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = SEL.has(m.id);
+        cb.addEventListener('change', () => { cb.checked ? SEL.add(m.id) : SEL.delete(m.id); renderPicker(); });
+        const t = document.createElement('span'); t.textContent = nombreDe(m);
+        const sm = document.createElement('small'); sm.textContent = `${m.warnsTotal || 0}/${WARN_LIMIT}`;
+        l.append(cb, t, sm); list.appendChild(l);
+      });
+    $('sanBtn').textContent = SEL.size > 1 ? `Sancionar a ${SEL.size}` : 'Sancionar';
+  }
+  $('sanBtn').addEventListener('click', async () => {
+    const motivo = $('sanMotivo').value.trim();
+    const cantidad = Math.max(1, parseInt($('sanCant').value, 10) || 1);
+    if (!SEL.size){ statusLine.textContent = 'Elige al menos un integrante.'; return; }
+    if (!motivo){ $('sanMotivo').focus(); return; }
+    const objetivo = miembrosCache.filter(m => SEL.has(m.id));
+    if (!confirm(`¿Aplicar ${cantidad} warn${cantidad > 1 ? 's' : ''} («${motivo}») a: ${objetivo.map(nombreDe).join(', ')}?`)) return;
+    const btn = $('sanBtn'); btn.disabled = true;
+    let ok = 0, fallos = [];
+    for (const m of objetivo){
+      try { await aplicarWarn(m, motivo, cantidad); ok++; SEL.delete(m.id); }
+      catch (e) { fallos.push(nombreDe(m)); }
+    }
+    btn.disabled = false;
+    if (!fallos.length){ $('sanMotivo').value = ''; $('sanCant').value = '1'; }
+    statusLine.textContent = `Sancionados: ${ok}.` + (fallos.length ? ` Fallaron: ${fallos.join(', ')}.` : '');
+    renderPicker();
+  });
+
   function render(){
     if (!isAdmin) return;
+    renderPicker();
     memberList.innerHTML = '';
 
     const rows = miembrosCache.map(m => ({
@@ -373,44 +444,6 @@
           .map(w => `${escapeHtml(formatFecha(w.fecha))} — ${escapeHtml(w.motivo)} (+${w.cantidad})`)
           .join('<br>');
         left.appendChild(historial);
-      }
-
-      if (!r.baneado){
-        const form = document.createElement('div');
-        form.className = 'warn-form';
-
-        const motivoInput = document.createElement('input');
-        motivoInput.type = 'text';
-        motivoInput.placeholder = 'Motivo del warn';
-        motivoInput.maxLength = 120;
-
-        const cantidadInput = document.createElement('input');
-        cantidadInput.type = 'number';
-        cantidadInput.min = '1';
-        cantidadInput.value = '1';
-        cantidadInput.className = 'warn-cantidad';
-
-        const applyBtn = document.createElement('button');
-        applyBtn.className = 'icon-btn';
-        applyBtn.textContent = 'Aplicar warn';
-        applyBtn.addEventListener('click', async () => {
-          const motivo = motivoInput.value.trim();
-          const cantidad = Math.max(1, parseInt(cantidadInput.value, 10) || 1);
-          if (!motivo) { motivoInput.focus(); return; }
-          applyBtn.disabled = true;
-          try {
-            await aplicarWarn(r, motivo, cantidad);
-            motivoInput.value = '';
-            cantidadInput.value = '1';
-          } catch (e) {
-            statusLine.textContent = 'No se pudo aplicar el warn, inténtalo de nuevo.';
-          } finally {
-            applyBtn.disabled = false;
-          }
-        });
-
-        form.append(motivoInput, cantidadInput, applyBtn);
-        left.appendChild(form);
       }
 
       li.appendChild(left);
