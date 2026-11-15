@@ -16,11 +16,11 @@
 .sel-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .sel-chips .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(200,180,255,.16);border:1px solid rgba(200,180,255,.35);cursor:pointer;font-size:.95rem}
 .sel-chips .chip:after{content:"×";opacity:.7}
-.pick-list{max-height:190px;overflow:auto;margin:6px 0 10px;display:flex;flex-direction:column;gap:2px}
-.pick-list label{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px;cursor:pointer}
-.pick-list label:hover{background:rgba(255,255,255,.06)}
-.pick-list input{width:auto;flex:none}
-.pick-list small{opacity:.65;margin-left:auto}
+.pick-list{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px;max-height:230px;overflow:auto}
+.pick-list span{font-size:.9rem;padding:3px 10px;border-radius:999px;border:1px solid var(--border);color:var(--ink-soft);cursor:pointer;user-select:none}
+.pick-list span:hover{border-color:rgba(217,195,131,.5)}
+.pick-list span.si{color:#7dffb0;border-color:rgba(125,255,176,.45);background:rgba(125,255,176,.08)}
+.pick-list span em{font-style:normal;opacity:.6;font-size:.8em;margin-left:4px}
 </style>
 </head>
 <body>
@@ -306,12 +306,13 @@
     cand.filter(m => !pickTerm || normalize(m.contacto || m.id).includes(pickTerm) || rolesDe(m.id).some(n => normalize(n).includes(pickTerm)))
       .sort((a, b) => nombreDe(a).localeCompare(nombreDe(b), 'es'))
       .forEach(m => {
-        const l = document.createElement('label');
-        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = SEL.has(m.id);
-        cb.addEventListener('change', () => { cb.checked ? SEL.add(m.id) : SEL.delete(m.id); renderPicker(); });
-        const t = document.createElement('span'); t.textContent = nombreDe(m);
-        const sm = document.createElement('small'); sm.textContent = `${m.warnsTotal || 0}/${WARN_LIMIT}`;
-        l.append(cb, t, sm); list.appendChild(l);
+        const on = SEL.has(m.id);
+        const sp = document.createElement('span');
+        sp.className = on ? 'si' : '';
+        sp.title = m.contacto || m.id;
+        sp.innerHTML = (on ? '✓ ' : '') + escapeHtml(nombreDe(m)) + (m.warnsTotal ? `<em>${m.warnsTotal}/${WARN_LIMIT}</em>` : '');
+        sp.addEventListener('click', () => { on ? SEL.delete(m.id) : SEL.add(m.id); renderPicker(); });
+        list.appendChild(sp);
       });
     $('sanBtn').textContent = SEL.size > 1 ? `Sancionar a ${SEL.size}` : 'Sancionar';
   }
