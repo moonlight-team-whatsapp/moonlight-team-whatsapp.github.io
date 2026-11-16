@@ -110,5 +110,6 @@ $('hoyBtn').onclick = () => { vy = H.y; vm = H.m; sel = null; pinta(); };
 $('cal').addEventListener('click', e => { const d = e.target.closest('.d.cu'); if (!d) return; sel = +d.dataset.d === sel ? null : +d.dataset.d; pinta(); });
 load();
 </script>
+<script type="module" src="js/anon-alertas.js"></script>
 </body>
 </html>

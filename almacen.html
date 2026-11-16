@@ -128,5 +128,6 @@ $('loginSubmit').addEventListener('click', async () => {
 });
 sb.auth.onAuthStateChange((_e, session) => { isAdmin = !!session; $('adminToggleBtn').textContent = isAdmin ? 'Cerrar sesión admin' : 'Acceso admin'; load().catch(() => toast('No se pudo leer el almacenamiento.')); });
 </script>
+<script type="module" src="js/anon-alertas.js"></script>
 </body>
 </html>

@@ -128,5 +128,6 @@ $('loginSubmit').addEventListener('click', async () => {
 });
 sb.auth.onAuthStateChange((_e, session) => { isAdmin = !!session; $('adminToggleBtn').textContent = isAdmin ? 'Cerrar sesión admin' : 'Acceso admin'; if (isAdmin) load(); else paint(); });
 </script>
+<script type="module" src="js/anon-alertas.js"></script>
 </body>
 </html>
