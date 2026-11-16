@@ -56,7 +56,7 @@ if (!/anonimos\.html$/.test(location.pathname)) {
     if (user && !chan) {
       carnetListo.then(contar);
       chan = sb.channel('anon-alertas').on('postgres_changes', { event: '*', schema: 'public', table: 'anonimos' }, (p) => {
-        if (p.eventType === 'INSERT' && (p.new.para || []).some(k => misClaves().includes(k))) anima(p.new.para);
+        if (p.eventType === 'INSERT' && (p.new.para || []).some(k => claveLocal().includes(k))) anima(p.new.para);
         contar();
       }).subscribe();
     } else if (!user && chan) { sb.removeChannel(chan); chan = null; pill.classList.remove('on'); }
