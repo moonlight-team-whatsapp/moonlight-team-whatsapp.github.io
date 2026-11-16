@@ -304,6 +304,7 @@
   const PAGINAS = {
     'lista.html':      { t: 'Lista',            d: 'Ocupados, reservados y buscados',      s: 'roleplay' },
     'ficha.html':      { t: 'Fichas',           d: 'La ficha de cada personaje',           s: 'roleplay' },
+    'musica.html':     { t: 'Música',           d: 'Playlists del team, para escuchar donde quieras', s: 'team' },
     'cumples.html':    { t: 'Cumpleaños',       d: 'Calendario y próximos cumpleaños',     s: 'team' },
     'arbol.html':      { t: 'Árbol',            d: 'Familias y relaciones del team',       s: 'roleplay' },
     'mooncard.html':   { t: 'MoonCard',         d: 'Crea la tarjeta de tu personaje',      s: 'moon' },
@@ -422,7 +423,7 @@
   // ---------- Estado de “juego”: visitas, favoritos y racha (solo en este navegador) ----------
   const LS = { get(k, d){ try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } }, set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
   let VIS = LS.get('mc_visitas', {}), FAV = LS.get('mc_favs', []), TAB = 'todo', Q = '';
-  const ICONOS = { 'lista.html':'📜','ficha.html':'🪪','cumples.html':'🎂','arbol.html':'🌳','mooncard.html':'🌙','galeria.html':'🖼️','anonimos.html':'🕊️','registros.html':'📖','adviento.html':'🎄','votaciones.html':'🗳️','ruleta.html':'🎡','amigo-invisible.html':'🎁','almacen.html':'🗄️','menciones.html':'💬','carnets.html':'🎫','contactos.html':'📇','sanciones.html':'⚖️','respaldo.html':'💾','temporadas.html':'🍂' };
+  const ICONOS = { 'lista.html':'📜','ficha.html':'🪪','cumples.html':'🎂','musica.html':'🎧','arbol.html':'🌳','mooncard.html':'🌙','galeria.html':'🖼️','anonimos.html':'🕊️','registros.html':'📖','adviento.html':'🎄','votaciones.html':'🗳️','ruleta.html':'🎡','amigo-invisible.html':'🎁','almacen.html':'🗄️','menciones.html':'💬','carnets.html':'🎫','contactos.html':'📇','sanciones.html':'⚖️','respaldo.html':'💾','temporadas.html':'🍂' };
   const SEC_ICO = { roleplay:'🎭', moon:'🌙', eventos:'🎪', team:'🏰', admin:'🛡️', otras:'✨' };
   const NIVELES = [[0,'Viajero lunar'],[20,'Explorador'],[45,'Guardián'],[70,'Maestro lunar'],[100,'Leyenda de la luna']];
   const hoy = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date());

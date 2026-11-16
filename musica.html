@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Música — Moonlight Team</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1026">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script src="js/temporadas.js"></script>
+<style>
+  .wrap{ max-width:820px; padding-bottom:110px }
+  .pl{ border:1px solid var(--border); border-radius:12px; background:rgba(16,22,48,.7); margin:14px 0; overflow:hidden }
+  .pl.grupal{ border-color:var(--gold-dim) }
+  .plh{ display:flex; align-items:center; gap:10px; padding:12px 14px; flex-wrap:wrap }
+  .plh .em{ font-size:1.6rem } .plh b{ font-family:'Cormorant',serif; font-style:italic; font-size:1.35rem; color:var(--gold) }
+  .plh small{ color:var(--ink-soft); display:block } .plh .sp{ flex:1; min-width:10px }
+  .mb{ padding:5px 12px; border-radius:999px; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:1rem; cursor:pointer; color:var(--gold); border:1px solid rgba(217,195,131,.5); background:rgba(217,195,131,.08) }
+  .mb:hover{ background:rgba(217,195,131,.22) } .mb.red{ color:#ff9b9b; border-color:rgba(255,155,155,.5) } .mb:disabled{ opacity:.5 }
+  .tr{ display:flex; align-items:center; gap:10px; padding:8px 14px; border-top:1px solid rgba(255,255,255,.06); cursor:pointer }
+  .tr:hover{ background:rgba(255,255,255,.04) } .tr.sona{ background:rgba(217,195,131,.1) } .tr.oculta{ opacity:.4 }
+  .tr .n{ width:22px; text-align:right; color:var(--ink-soft); font-size:.9rem } .tr .t{ flex:1; min-width:0 }
+  .tr .t b{ font-weight:500; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap } .tr .t small{ color:var(--ink-soft) }
+  .tr button{ background:none; border:0; color:var(--ink-soft); cursor:pointer; font-size:1.05rem; padding:4px 6px }
+  .vacia{ padding:10px 14px; color:var(--ink-soft); font-size:.95rem }
+  #bar{ position:fixed; left:0; right:0; bottom:0; z-index:50; background:#10163a; border-top:1px solid var(--gold-dim); padding:8px 14px; display:none }
+  #bar.on{ display:block } #bar .r{ display:flex; align-items:center; gap:10px; max-width:820px; margin:auto }
+  #bar .ti{ flex:1; min-width:0 } #bar .ti b{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap } #bar .ti small{ color:var(--ink-soft) }
+  #bar button{ background:none; border:0; color:var(--ink); font-size:1.4rem; cursor:pointer }
+  #bar input[type=range]{ width:100%; margin:6px auto 0; display:block; max-width:820px; accent-color:#d9c383 }
+  dialog .fld{ display:flex; flex-direction:column; gap:4px; margin:8px 0 } #nuevaDlg input,#subeDlg input{ width:100% }
+  #toast{ position:fixed; left:50%; bottom:90px; transform:translate(-50%,20px); background:#141b37; border:1px solid var(--gold-dim); color:var(--ink); padding:9px 16px; border-radius:8px; opacity:0; transition:all .3s; z-index:60; pointer-events:none; max-width:90vw; text-align:center }
+  #toast.show{ opacity:1; transform:translate(-50%,0) }
+</style>
+</head>
+<body>
+<div class="stars" id="starsLayer" aria-hidden="true"></div>
+<div class="moon" aria-hidden="true"></div>
+<div class="wrap">
+  <a class="back-link" href="index.html">← Volver al índice</a>
+  <header class="top"><div><div class="title-wrap"><h1>Música</h1></div>
+    <p class="subtitle">Cada miembro con carnet puede crear hasta 3 playlists de 5 canciones. Al acabar una, suena la siguiente tuya en bucle. Además hay una playlist grupal para todo el team.</p></div></header>
+  <p class="admin-only-note" id="sinCarnet" hidden>Para añadir música necesitas abrir esta página con tu carnet. Escuchar, puede cualquiera.</p>
+  <p><button class="mb" id="nuevaBtn" type="button" hidden>＋ Nueva playlist</button> <button class="mb" id="instBtn" type="button" hidden>📲 Instalar app</button></p>
+  <div id="lista"></div>
+  <p class="vacia" id="oculNote" hidden></p>
+</div>
+
+<div id="bar"><div class="r"><button id="bPrev" aria-label="Anterior">⏮</button><button id="bPlay" aria-label="Reproducir">▶</button><button id="bNext" aria-label="Siguiente">⏭</button>
+  <div class="ti"><b id="bT">—</b><small id="bS"></small></div></div><input type="range" id="bSeek" min="0" max="1000" value="0" aria-label="Posición"></div>
+<div id="toast" role="status"></div>
+
+<dialog id="nuevaDlg"><div class="dialog-inner"><h3>Nueva playlist</h3>
+  <div class="fld"><label for="nNom">Nombre</label><input id="nNom" maxlength="40"></div>
+  <div class="fld"><label for="nEmo">Emoji</label><input id="nEmo" maxlength="4" value="🎵"></div>
+  <div class="dialog-actions"><button class="btn-primary" id="nOk" type="button">Crear</button><button class="btn-ghost" id="nNo" type="button">Cancelar</button></div></div></dialog>
+<dialog id="subeDlg"><div class="dialog-inner"><h3>Añadir canción</h3>
+  <div class="fld"><label for="sFile">Archivo de audio (mp3, m4a… máx. 15 MB)</label><input id="sFile" type="file" accept="audio/*"></div>
+  <div class="fld"><label for="sTit">Título</label><input id="sTit" maxlength="80"></div>
+  <div class="fld"><label for="sArt">Artista</label><input id="sArt" maxlength="60"></div>
+  <p class="vacia" id="sMsg"></p>
+  <div class="dialog-actions"><button class="btn-primary" id="sOk" type="button">Subir</button><button class="btn-ghost" id="sNo" type="button">Cancelar</button></div></div></dialog>
+
+<script type="module">
+import { sb } from './js/supabase-sesion.js';
+import { tokenActual, miPerfil } from './js/carnet.js';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), 3800); };
+const MSG = { sin_carnet:'Abre la página con tu carnet.', limite:'Has llegado al límite.', no_es_tuya:'Esa playlist no es tuya.', ruta:'Archivo no válido.', no_existe:'La playlist ya no existe.' };
+const url = p => sb.storage.from('musica').getPublicUrl(p).data.publicUrl;
+let yo = null, nombre = '', PL = [], CA = [], ocultas = new Set();
+try { ocultas = new Set(JSON.parse(localStorage.getItem('mc_musica_ocultas') || '[]')); } catch (e) {}
+const guardaOc = () => { try { localStorage.setItem('mc_musica_ocultas', JSON.stringify([...ocultas])); } catch (e) {} };
+const fmt = s => s ? Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0') : '';
+
+(function stars(){ const l = $('starsLayer'); for (let i = 0; i < 40; i++){ const s = document.createElement('span'); s.className = 'star'; const z = (Math.random() * 1.6 + .8).toFixed(2); s.style.cssText = `top:${Math.random() * 100}%;left:${Math.random() * 100}%;width:${z}px;height:${z}px`; l.appendChild(s); } })();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+
+async function carga(){
+  const [a, b] = await Promise.all([sb.from('musica_playlists').select('*').order('created_at'), sb.from('musica_canciones').select('*').order('orden')]);
+  PL = a.data || []; CA = b.data || []; pinta();
+}
+const cancs = id => CA.filter(c => c.playlist_id === id);
+function pinta(){
+  const orden = [...PL.filter(p => p.grupal), ...PL.filter(p => !p.grupal)];
+  $('lista').innerHTML = orden.map(p => {
+    const cs = cancs(p.id), mia = yo && p.miembro_id === yo, puede = yo && (p.grupal || mia), lleno = !p.grupal && cs.length >= 5;
+    return `<section class="pl${p.grupal ? ' grupal' : ''}" data-p="${p.id}"><div class="plh"><span class="em">${esc(p.emoji)}</span><div><b>${esc(p.nombre)}</b><small>${p.grupal ? 'Todo el team' : 'de ' + esc(p.autor || '—')} · ${cs.length}${p.grupal ? '' : '/5'} canciones</small></div><span class="sp"></span>
+      ${cs.length ? `<button class="mb" data-a="play">▶ Escuchar</button><button class="mb" data-a="off" title="Guardar para escuchar sin conexión">⬇</button>` : ''}
+      ${puede && !lleno ? `<button class="mb" data-a="add">＋ Canción</button>` : ''}${mia ? `<button class="mb red" data-a="del">Borrar</button>` : ''}</div>
+      ${cs.map((c, i) => `<div class="tr${ocultas.has(c.id) ? ' oculta' : ''}${actual && actual.id === c.id ? ' sona' : ''}" data-c="${c.id}"><span class="n">${i + 1}</span><div class="t"><b>${esc(c.titulo)}</b><small>${esc(c.artista)}${c.artista && c.autor ? ' · ' : ''}${p.grupal && c.autor ? 'añadida por ' + esc(c.autor) : ''} ${fmt(c.dur)}</small></div>
+        <button data-a="hide" title="${ocultas.has(c.id) ? 'Volver a mostrar' : 'Ocultar solo para mí'}">${ocultas.has(c.id) ? '👁' : '🙈'}</button>${yo && (c.miembro_id === yo || mia) ? '<button data-a="rm" title="Quitar">✕</button>' : ''}</div>`).join('') || '<div class="vacia">Vacía por ahora.</div>'}</section>`; }).join('');
+  const nOc = ocultas.size; $('oculNote').hidden = !nOc; $('oculNote').textContent = nOc ? `Tienes ${nOc} canción${nOc > 1 ? 'es' : ''} oculta${nOc > 1 ? 's' : ''} solo para ti (🙈 en la lista). No suenan en tu reproductor.` : '';
+}
+
+// ---------- Reproductor ----------
+const au = new Audio(); au.preload = 'auto'; let actual = null, cola = [], ci = 0;
+function colaDe(p){ // playlist + (si es personal) las siguientes del mismo dueño, en bucle
+  const base = p.grupal ? [p] : PL.filter(x => !x.grupal && x.miembro_id === p.miembro_id);
+  const k = Math.max(0, base.findIndex(x => x.id === p.id)); const rot = [...base.slice(k), ...base.slice(0, k)];
+  return rot.flatMap(x => cancs(x.id)).filter(c => !ocultas.has(c.id));
+}
+function suena(i){
+  if (!cola.length) return; ci = (i + cola.length) % cola.length; actual = cola[ci];
+  au.src = url(actual.path); au.play().catch(() => toast('Toca ▶ para reproducir.'));
+  $('bar').classList.add('on'); $('bT').textContent = actual.titulo; $('bS').textContent = actual.artista || actual.autor || '';
+  if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: actual.titulo, artist: actual.artista || actual.autor || 'Moonlight Team', album: (PL.find(p => p.id === actual.playlist_id) || {}).nombre || 'Moonlight', artwork: [{ src: 'favicon.png', sizes: '256x256', type: 'image/png' }] });
+  pinta();
+}
+au.addEventListener('ended', () => suena(ci + 1));
+au.addEventListener('play', () => { $('bPlay').textContent = '⏸'; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; });
+au.addEventListener('pause', () => { $('bPlay').textContent = '▶'; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'; });
+au.addEventListener('timeupdate', () => { if (au.duration) $('bSeek').value = Math.round(au.currentTime / au.duration * 1000); });
+au.addEventListener('error', () => { toast('No se pudo reproducir «' + (actual && actual.titulo) + '». Paso a la siguiente.'); setTimeout(() => suena(ci + 1), 800); });
+$('bSeek').addEventListener('input', e => { if (au.duration) au.currentTime = au.duration * e.target.value / 1000; });
+$('bPlay').onclick = () => au.paused ? au.play() : au.pause(); $('bNext').onclick = () => suena(ci + 1); $('bPrev').onclick = () => au.currentTime > 4 ? au.currentTime = 0 : suena(ci - 1);
+if ('mediaSession' in navigator){ const ms = navigator.mediaSession; ms.setActionHandler('play', () => au.play()); ms.setActionHandler('pause', () => au.pause()); ms.setActionHandler('nexttrack', () => suena(ci + 1)); ms.setActionHandler('previoustrack', () => suena(ci - 1)); ms.setActionHandler('seekto', d => { au.currentTime = d.seekTime; }); }
+
+// ---------- Acciones ----------
+let subiendoA = null;
+$('lista').addEventListener('click', async e => {
+  const b = e.target.closest('[data-a]'); if (!b) { const r = e.target.closest('.tr'); if (r){ const c = CA.find(x => x.id === r.dataset.c), p = PL.find(x => x.id === c.playlist_id); cola = colaDe(p); const i = cola.findIndex(x => x.id === c.id); if (i >= 0) suena(i); else toast('Esa canción está oculta para ti.'); } return; }
+  const sec = b.closest('.pl'), p = PL.find(x => x.id === sec.dataset.p), a = b.dataset.a, tr = b.closest('.tr');
+  if (a === 'play'){ cola = colaDe(p); if (!cola.length) return toast('Todas están ocultas.'); suena(0); }
+  else if (a === 'hide'){ const id = tr.dataset.c; ocultas.has(id) ? ocultas.delete(id) : ocultas.add(id); guardaOc(); pinta(); }
+  else if (a === 'add'){ subiendoA = p; $('sFile').value = ''; $('sTit').value = ''; $('sArt').value = ''; $('sMsg').textContent = ''; $('subeDlg').showModal(); }
+  else if (a === 'del'){ if (!b.dataset.seguro){ b.dataset.seguro = 1; b.textContent = '¿Seguro?'; setTimeout(() => { delete b.dataset.seguro; b.textContent = 'Borrar'; }, 3500); return; } const r = await sb.rpc('musica_playlist_borrar', { p_token: tokenActual(), p_id: p.id }); r.data === 'ok' ? carga() : toast(MSG[r.data] || 'No se pudo borrar.'); }
+  else if (a === 'rm'){ const r = await sb.rpc('musica_cancion_borrar', { p_token: tokenActual(), p_id: tr.dataset.c }); r.data === 'ok' ? carga() : toast(MSG[r.data] || 'No se pudo quitar.'); }
+  else if (a === 'off'){ b.disabled = true; try { const c = await caches.open('musica-v1'); let n = 0; for (const s of cancs(p.id)){ const u = url(s.path); if (!await c.match(u)){ const r = await fetch(u); if (r.ok) await c.put(u, r); } n++; b.textContent = '⬇ ' + n; } toast('Guardada para escuchar sin conexión.'); } catch (er) { toast('No se pudo guardar sin conexión.'); } b.disabled = false; b.textContent = '✓'; }
+});
+$('nuevaBtn').onclick = () => { $('nNom').value = ''; $('nuevaDlg').showModal(); }; $('nNo').onclick = () => $('nuevaDlg').close();
+$('nOk').onclick = async () => { const n = $('nNom').value.trim(); if (!n) return $('nNom').focus(); const r = await sb.rpc('musica_playlist_crear', { p_token: tokenActual(), p_nombre: n, p_emoji: $('nEmo').value.trim(), p_autor: nombre }); $('nuevaDlg').close(); r.data === 'ok' ? carga() : toast(r.data === 'limite' ? 'Ya tienes 3 playlists.' : MSG[r.data] || 'No se pudo crear.'); };
+$('sNo').onclick = () => $('subeDlg').close();
+$('sFile').addEventListener('change', () => { const f = $('sFile').files[0]; if (f && !$('sTit').value) $('sTit').value = f.name.replace(/\.[^.]+$/, '').slice(0, 80); });
+$('sOk').onclick = async () => {
+  const f = $('sFile').files[0], t = $('sTit').value.trim(); if (!f) return $('sMsg').textContent = 'Elige un archivo.'; if (!t) return $('sTit').focus();
+  if (f.size > 15 * 1048576) return $('sMsg').textContent = 'Pesa más de 15 MB.';
+  $('sOk').disabled = true; $('sMsg').textContent = 'Subiendo…';
+  try {
+    const dur = await new Promise(res => { const a = new Audio(URL.createObjectURL(f)); a.onloadedmetadata = () => res(Math.round(a.duration) || null); a.onerror = () => res(null); });
+    const ext = (f.name.split('.').pop() || 'mp3').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'mp3';
+    const path = `m/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}.${ext}`;
+    const up = await sb.storage.from('musica').upload(path, f, { contentType: f.type || 'audio/mpeg', cacheControl: '31536000' });
+    if (up.error) throw up.error;
+    const r = await sb.rpc('musica_cancion_add', { p_token: tokenActual(), p_playlist: subiendoA.id, p_titulo: t, p_artista: $('sArt').value.trim(), p_path: path, p_dur: dur, p_autor: nombre });
+    if (r.data !== 'ok'){ $('sMsg').textContent = r.data === 'limite' ? 'Esa playlist ya está llena.' : MSG[r.data] || 'No se pudo añadir.'; }
+    else { $('subeDlg').close(); toast('Canción añadida.'); carga(); }
+  } catch (er) { $('sMsg').textContent = 'No se pudo subir el archivo (¿formato o tamaño?).'; }
+  $('sOk').disabled = false;
+};
+let ip = null; window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); ip = e; $('instBtn').hidden = false; });
+$('instBtn').onclick = async () => { if (ip){ ip.prompt(); ip = null; $('instBtn').hidden = true; } };
+
+(async () => {
+  const pf = tokenActual() ? await miPerfil() : null; yo = pf && pf.id; nombre = (pf && pf.nombres && pf.nombres[0]) || '';
+  $('nuevaBtn').hidden = !yo; $('sinCarnet').hidden = !!yo; await carga();
+})();
+</script>
+</body>
+</html>
