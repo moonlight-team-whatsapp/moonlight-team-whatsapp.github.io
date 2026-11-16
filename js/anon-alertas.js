@@ -1,9 +1,15 @@
 // Avisos de anónimos para admins en cualquier página: contador de sin leer + animación al llegar uno nuevo.
 // Solo actúa con sesión de admin (la tabla `anonimos` es solo-admin por RLS). Nunca muestra el contenido.
 import { sb } from './supabase-sesion.js';
+import { miPerfil } from './carnet.js';
 if (!/anonimos\.html$/.test(location.pathname)) {
   const ADM = { furina: ['Furina', '#62aaff', '#7fe3ff'], neuvillette: ['Neuvillette', '#4fd9c8', '#6fe7a8'], kazuha: ['Kazuha', '#f0904a', '#f8cf8a'] };
-  const misClaves = () => { try { const g = JSON.parse(localStorage.getItem('anon-aviso') || 'null'); if (Array.isArray(g)) return g.filter(k => ADM[k]); } catch (e) {} return Object.keys(ADM); };
+  // Si el carnet de este dispositivo es de un admin (su personaje es Furina/Neuvillette/Kazuha), avisa solo de los suyos.
+  let porCarnet = null;
+  const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  const carnetListo = miPerfil().then(p => { const k = p ? Object.keys(ADM).filter(x => (p.nombres || []).some(n => norm(n) === norm(ADM[x][0]))) : []; porCarnet = k.length ? k : null; }).catch(() => {});
+  const misClaves = () => { if (porCarnet) return porCarnet; return claveLocal(); };
+  const claveLocal = () => { try { const g = JSON.parse(localStorage.getItem('anon-aviso') || 'null'); if (Array.isArray(g)) return g.filter(k => ADM[k]); } catch (e) {} return Object.keys(ADM); };
   const leido = (m, k) => 'leido_por' in m ? (m.leido_por || []).includes(k) : !!m.leido;
   let chan = null;
 
@@ -48,7 +54,7 @@ if (!/anonimos\.html$/.test(location.pathname)) {
   }
   function sesion(user){
     if (user && !chan) {
-      contar();
+      carnetListo.then(contar);
       chan = sb.channel('anon-alertas').on('postgres_changes', { event: '*', schema: 'public', table: 'anonimos' }, (p) => {
         if (p.eventType === 'INSERT' && (p.new.para || []).some(k => misClaves().includes(k))) anima(p.new.para);
         contar();
