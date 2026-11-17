@@ -199,21 +199,20 @@ const au = new Audio(); au.preload = 'auto'; let actual = null, cola = [], ci = 
 // Repetir: 0 = para al acabar la canción · 1 = toda la playlist una vez · 2 = bucle de la cola (tus playlists seguidas) · 3 = bucle de todas las playlists públicas
 let rep = 0; try { rep = parseInt(localStorage.getItem('mc_musica_rep'), 10) || 0; } catch (e) {}
 const publicas = () => [...PL.filter(p => p.grupal), ...PL.filter(p => !p.grupal && !p.privada)].flatMap(p => cancs(p.id)).filter(c => !ocultas.has(c.id));
-function colaDe(p){ return rep === 3 ? publicas() : rep === 2 ? cadena(p) : cancs(p.id).filter(c => !ocultas.has(c.id)); }
-const REP_TXT = ['Repetir: desactivado (se para al terminar la canción)', 'Repetir: reproduce toda la playlist una vez', 'Repetir: bucle de toda la cola', 'Repetir: bucle de todas las playlists públicas'];
+function colaDe(p){ return rep === 3 ? publicas() : cancs(p.id).filter(c => !ocultas.has(c.id)); }
+const REP_TXT = ['Repetir: desactivado (se para al terminar la canción)', 'Repetir: reproduce toda la cola una vez y se para', 'Repetir: bucle de toda la cola', 'Repetir: bucle de todas las playlists públicas'];
 function pintaRep(){ const b = $('bRep'); b.classList.toggle('on', rep > 0); $('bRepN').textContent = ['', '1', '', '∞'][rep]; b.title = REP_TXT[rep]; }
-function reArma(){ if (!actual) return; const p = PL.find(x => x.id === actual.playlist_id); let l = p ? colaDe(p) : []; let i = l.findIndex(x => x.id === actual.id); if (i < 0){ l = [actual, ...l]; i = 0; } cola = l; ci = i; }
+function reArma(){ if (!actual) return; const extras = cola.slice(ci + 1); const p = PL.find(x => x.id === actual.playlist_id); let l = p ? colaDe(p) : []; let i = l.findIndex(x => x.id === actual.id); if (i < 0){ l = [actual, ...l]; i = 0; } const nuevas = extras.filter(c => !l.some(x => x.id === c.id)); l.splice(i + 1, 0, ...nuevas); cola = l; ci = i; pintaQ(); }
 function cadena(p){ // playlist + (si es personal) las siguientes del mismo dueño, en bucle
   const base = p.grupal ? [p] : PL.filter(x => !x.grupal && x.miembro_id === p.miembro_id);
   const k = Math.max(0, base.findIndex(x => x.id === p.id)); const rot = [...base.slice(k), ...base.slice(0, k)];
   return rot.flatMap(x => cancs(x.id)).filter(c => !ocultas.has(c.id));
 }
-let Q = [];
 function reproduce(c){
   actual = c; au.src = url(c.path); au.play().catch(() => toast('Toca ▶ para reproducir.'));
   $('bar').classList.add('on'); $('bT').textContent = c.titulo; $('bS').textContent = c.artista || c.autor || '';
   if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: c.titulo, artist: c.artista || c.autor || 'Moonlight Team', album: (PL.find(p => p.id === c.playlist_id) || {}).nombre || 'Moonlight', artwork: [{ src: 'favicon.png', sizes: '256x256', type: 'image/png' }] });
-  pinta();
+  pinta(); pintaQ();
 }
 // Recordar qué suena: por carnet (perfil del rol) y, sin carnet, en este navegador.
 let ultG = 0;
@@ -226,7 +225,7 @@ function guarda(ya){
 function prepara(c, t){
   actual = c; au.src = url(c.path); $('bar').classList.add('on'); $('bT').textContent = c.titulo; $('bS').textContent = c.artista || c.autor || '';
   if (t > 1) au.addEventListener('loadedmetadata', () => { try { au.currentTime = Math.min(t, (au.duration || t) - 1); } catch (e) {} }, { once: true });
-  pinta();
+  pinta(); pintaQ();
 }
 async function restaura(){
   if (actual) return; let o = null;
@@ -253,12 +252,12 @@ async function conecta(){
     .on('broadcast', { event: 'pause' }, ({ payload }) => { if (payload.dev === DEV) return; otro = { ...payload, sonando: false }; pintaOtro(); }).subscribe();
 }
 function suena(i){ if (!cola.length) return; ci = (i + cola.length) % cola.length; reproduce(cola[ci]); }
-function siguiente(){ if (Q.length){ const c = Q.shift(); pintaQ(); reproduce(c); } else suena(ci + 1); }
-function fin(){ if (Q.length) return siguiente(); if (rep === 0 || (rep === 1 && ci + 1 >= cola.length)) return; suena(ci + 1); }
-function pintaQ(){ $('bQ').textContent = '☰ Cola' + (Q.length ? ' · ' + Q.length : ''); }
-function pintaQDlg(){ $('qLista').innerHTML = Q.map((c, i) => `<div class="tr" data-i="${i}"><span class="n">${i + 1}</span><div class="t"><b>${esc(c.titulo)}</b><small>${esc(c.artista)}</small></div><button title="Quitar de la cola">✕</button></div>`).join('') || '<p class="vacia">La cola está vacía. Pulsa ☰＋ en una canción para añadirla.</p>'; }
-$('bQ').onclick = () => { pintaQDlg(); $('qDlg').showModal(); }; $('qNo').onclick = () => $('qDlg').close(); $('qVac').onclick = () => { Q = []; pintaQ(); pintaQDlg(); };
-$('qLista').addEventListener('click', e => { const r = e.target.closest('[data-i]'); if (r && e.target.closest('button')){ Q.splice(+r.dataset.i, 1); pintaQ(); pintaQDlg(); } });
+function siguiente(){ suena(ci + 1); }
+function fin(){ if (rep === 0 || (rep === 1 && ci + 1 >= cola.length)) return; suena(ci + 1); }
+function pintaQ(){ const n = Math.max(0, cola.length - ci - 1); $('bQ').textContent = '☰ Cola' + (n ? ' · ' + (n > 99 ? '99+' : n) : ''); }
+function pintaQDlg(){ const sig = cola.slice(ci + 1, ci + 61); $('qLista').innerHTML = sig.map((c, i) => `<div class="tr" data-i="${ci + 1 + i}"><span class="n">${i + 1}</span><div class="t"><b>${esc(c.titulo)}</b><small>${esc(c.artista)}</small></div><button title="Quitar de la cola">✕</button></div>`).join('') || '<p class="vacia">La cola está vacía. Pulsa ☰＋ en una canción para añadirla.</p>'; }
+$('bQ').onclick = () => { pintaQDlg(); $('qDlg').showModal(); }; $('qNo').onclick = () => $('qDlg').close(); $('qVac').onclick = () => { cola.length = Math.min(cola.length, ci + 1); pintaQ(); pintaQDlg(); };
+$('qLista').addEventListener('click', e => { const r = e.target.closest('[data-i]'); if (r && e.target.closest('button')){ cola.splice(+r.dataset.i, 1); pintaQ(); pintaQDlg(); } });
 au.addEventListener('ended', fin);
 au.addEventListener('pause', () => { guarda(true); emite('pause'); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) guarda(true); });
@@ -303,7 +302,7 @@ $('lista').addEventListener('click', async e => {
   if ((a === 'play' || a === 'shuf') && rep === 0){ rep = 1; try { localStorage.setItem('mc_musica_rep', 1); } catch (e) {} pintaRep(); }
   if (a === 'play'){ cola = colaDe(p); if (!cola.length) return toast('Todas están ocultas.'); suena(0); }
   else if (a === 'shuf'){ const l = cancs(p.id).filter(c => !ocultas.has(c.id)); if (!l.length) return toast('Todas están ocultas.'); for (let i = l.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } cola = l; suena(0); toast('Orden aleatorio.'); }
-  else if (a === 'q'){ const c = CA.find(x => x.id === tr.dataset.c); if (ocultas.has(c.id)) return toast('Esa canción está oculta para ti.'); if (!actual){ cola = colaDe(PL.find(x => x.id === c.playlist_id)); suena(Math.max(0, cola.findIndex(x => x.id === c.id))); } else { Q.push(c); pintaQ(); toast('Añadida a la cola.'); } }
+  else if (a === 'q'){ const c = CA.find(x => x.id === tr.dataset.c); if (ocultas.has(c.id)) return toast('Esa canción está oculta para ti.'); if (!actual){ cola = colaDe(PL.find(x => x.id === c.playlist_id)); suena(Math.max(0, cola.findIndex(x => x.id === c.id))); } else { cola.splice(ci + 1, 0, c); pintaQ(); toast('Será la siguiente en la cola.'); } }
   else if (a === 'hide'){ const id = tr.dataset.c; ocultas.has(id) ? ocultas.delete(id) : ocultas.add(id); guardaOc(); pinta(); }
   else if (a === 'add'){ subiendoA = p; $('sFile').value = ''; muestraArchivo(); $('sTit').value = ''; $('sArt').value = ''; $('sMsg').textContent = ''; $('subeDlg').showModal(); }
   else if (a === 'del'){ if (!b.dataset.seguro){ b.dataset.seguro = 1; b.textContent = '¿Seguro?'; setTimeout(() => { delete b.dataset.seguro; b.textContent = 'Borrar'; }, 3500); return; }
