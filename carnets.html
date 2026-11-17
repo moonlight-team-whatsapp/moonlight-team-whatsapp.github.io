@@ -29,6 +29,7 @@
   #toast.show{ opacity:1; transform:translate(-50%,0); }
 </style>
 <script src="js/temporadas.js"></script>
+<script src="js/dialogos.js"></script>
 </head><body>
 <div class="stars" id="starsLayer" aria-hidden="true"></div>
 <div class="mist m1" aria-hidden="true"></div>
@@ -106,7 +107,7 @@ async function copiar(txt){ try { await navigator.clipboard.writeText(txt); toas
 $('cl').addEventListener('click', async e => {
   const li = e.target.closest('li[data-id]'); if (!li) return; const id = li.dataset.id, m = M.find(x => x.id === id);
   if (e.target.closest('[data-gen]')){
-    if (carn[id] && !nuevos[id] && !confirm('Esto invalida el enlace anterior de ' + m.n + '. ¿Continuar?')) return;
+    if (carn[id] && !nuevos[id] && !await mcConfirm('Esto invalida el enlace anterior de ' + m.n + '. ¿Continuar?')) return;
     if (await generar(id)) paint();
   }
   const c = e.target.closest('[data-cp]'); if (c) copiar(c.dataset.cp === 'l' ? enlace(nuevos[id]) : mensaje(m, nuevos[id]));
@@ -114,7 +115,7 @@ $('cl').addEventListener('click', async e => {
 $('q').addEventListener('input', paint);
 $('avisos').addEventListener('click', async e => {
   if (!e.target.closest('#limpia')) return;
-  if (!confirm('Se eliminarán ' + sobran.length + ' carnet(s) de miembros que ya no están. ¿Continuar?')) return;
+  if (!await mcConfirm('Se eliminarán ' + sobran.length + ' carnet(s) de miembros que ya no están. ¿Continuar?')) return;
   const { error } = await sb.from('carnets').delete().in('miembro_id', sobran);
   if (error){ toast('No se pudo eliminar.'); return; }
   sobran.forEach(id => delete carn[id]); sobran = []; paint(); toast('Carnets eliminados.');

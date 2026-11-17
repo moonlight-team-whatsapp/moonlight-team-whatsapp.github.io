@@ -65,6 +65,7 @@
   .is-admin-sec .nav-sec-h{ color:var(--gold-dim); }
 </style>
 <script src="js/temporadas.js"></script>
+<script src="js/dialogos.js"></script>
 </head>
 <body class="page-index">
 <script>
@@ -432,7 +433,7 @@
   let editOrden = false;      // modo «ordenar»: flechas y arrastrar en las tarjetas
   async function guardaOrden(L){
     try { await Promise.all(L.map((f, i) => setDoc(doc(db, 'paginas', f), { orden: i }, { merge: true }))); }
-    catch (e) { alert('No se pudo guardar el orden.'); renderNav(); }
+    catch (e) { mcAviso('No se pudo guardar el orden.'); renderNav(); }
   }
   // Arrastrar como en la pantalla de inicio del móvil: la tarjeta sigue al dedo y las demás se apartan con animación
   let arrastrando = false;

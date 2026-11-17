@@ -122,6 +122,7 @@
   #toast.show{ opacity:1; transform:translate(-50%,0); }
 </style>
 <script src="js/temporadas.js"></script>
+<script src="js/dialogos.js"></script>
 </head>
 <body>
 <div class="stars" id="starsLayer" aria-hidden="true"></div>
@@ -534,7 +535,7 @@ function editar(d){
   $('fTipo').onchange = () => { esp(); montaMem(); }; esp(); montaMem();
   const q = $('fImgQ'); if (q) q.onclick = e => { e.preventDefault(); quitar = true; $('fImgN').textContent = 'La imagen se quitará al guardar.'; };
   $('fCancel').onclick = () => $('edDlg').close();
-  $('fDel').onclick = async () => { if (!confirm('¿Vaciar la puerta ' + d + '?')) return; const { error } = await sb.from('adviento').delete().eq('dia', d); if (error) return toast('No se pudo vaciar.'); if (r.imagen_path) try { await sb.storage.from('mooncards').remove([r.imagen_path]); } catch (e) {} delete filas[d]; $('edDlg').close(); paint(); toast('Puerta vaciada.'); };
+  $('fDel').onclick = async () => { if (!await mcConfirm('¿Vaciar la puerta ' + d + '?')) return; const { error } = await sb.from('adviento').delete().eq('dia', d); if (error) return toast('No se pudo vaciar.'); if (r.imagen_path) try { await sb.storage.from('mooncards').remove([r.imagen_path]); } catch (e) {} delete filas[d]; $('edDlg').close(); paint(); toast('Puerta vaciada.'); };
   $('fSave').onclick = async () => {
     const t = $('fTipo').value; const datos = {}; const avisos = [];
     if (t === 'frase'){ datos.frase = $('fFrase').value.trim(); if ($('fAut').value.trim()) datos.autor = $('fAut').value.trim();

@@ -160,6 +160,7 @@
   .anon-garantia b{ color:#9dffc6; }
 </style>
 <script src="js/temporadas.js"></script>
+<script src="js/dialogos.js"></script>
 </head>
 <body>
 
@@ -479,7 +480,7 @@
         const lp = [...set];
         r = await sb.from('anonimos').update({ leido_por: lp, leido: lp.length === para.length }).eq('id', id);
       }
-      else if (confirm('¿Borrar este mensaje?')) r = await sb.from('anonimos').delete().eq('id', id);
+      else if (await mcConfirm('¿Borrar este mensaje?')) r = await sb.from('anonimos').delete().eq('id', id);
       if (r && r.error){ if (/leido_por/.test(r.error.message || '')) $('statusLine').textContent = 'Falta ejecutar el SQL de «leído por admin» en Supabase.'; throw r.error; }
       if (r) await cargar();
     } catch (er) { if (!/leido_por/.test((er && er.message) || '')) $('statusLine').textContent = 'No se pudo completar la acción.'; }

@@ -25,6 +25,7 @@
   #goneList li{ opacity:.78; }
 </style>
 <script src="js/temporadas.js"></script>
+<script src="js/dialogos.js"></script>
 </head>
 <body>
 
@@ -464,7 +465,7 @@
   // Cambiar el teléfono/usuario de un miembro sin tocar su identificador interno
   async function cambiarContacto(id){
     const m = miembrosCache.find(x => x.id === id); if (!m) return;
-    const val = (prompt('Nuevo teléfono o usuario de WhatsApp para ' + (m.contacto || m.id) + ':', m.contacto || '') || '').trim();
+    const val = (await mcPrompt('Nuevo teléfono o usuario de WhatsApp para ' + (m.contacto || m.id) + ':', m.contacto || '') || '').trim();
     if (!val || val === m.contacto) return;
     const key = memberIdFrom(val);
     if (!key) return;

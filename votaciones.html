@@ -102,6 +102,7 @@
   #toast.show{ opacity:1; transform:translate(-50%,0); }
 </style>
 <script src="js/temporadas.js"></script>
+<script src="js/dialogos.js"></script>
 </head><body>
 <div class="stars" id="starsLayer" aria-hidden="true"></div>
 <div class="mist m1" aria-hidden="true"></div>
@@ -224,7 +225,7 @@ function paint(){
 $('vl').addEventListener('click', async e => {
   const sec = e.target.closest('.vc'); if (!sec) return; const id = sec.dataset.id, v = V.find(x => x.id === id);
   const zi = e.target.closest('[data-zimg]'); if (zi){ $('zoomImg').src = imgUrl(zi.dataset.zimg); $('zoomCap').textContent = ''; $('zoomDlg').showModal(); return; }
-  const fd = e.target.closest('[data-fdel]'); if (fd){ if (!confirm('¿Borrar esta foto del concurso?')) return; const ff = (fotosAdm[id] || []).find(x => x.id === fd.dataset.fdel); const r = await sb.from('votacion_fotos').delete().eq('id', fd.dataset.fdel); if (r.error) return toast('No se pudo borrar.'); await quitarArchivos([ff && ff.img]); load(); return; }
+  const fd = e.target.closest('[data-fdel]'); if (fd){ if (!await mcConfirm('¿Borrar esta foto del concurso?')) return; const ff = (fotosAdm[id] || []).find(x => x.id === fd.dataset.fdel); const r = await sb.from('votacion_fotos').delete().eq('id', fd.dataset.fdel); if (r.error) return toast('No se pudo borrar.'); await quitarArchivos([ff && ff.img]); load(); return; }
   const qt = e.target.closest('[data-quitar]'); if (qt){ const r = await sb.rpc('concurso_quitar', { p_votacion: id, p_token: tokenActual(), p_foto: qt.dataset.quitar }); if (r.data !== 'ok') return toast(MSG[r.data] || 'No se pudo quitar.'); toast('Foto quitada.'); load(); return; }
   if (e.target.closest('[data-subir]')){ const t = (sec.querySelector('.tf') || {}).value || '';
     elegirImagen(async f => { try { toast('Subiendo…'); const p = `con/${id}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}.jpg`;
@@ -247,8 +248,8 @@ $('vl').addEventListener('click', async e => {
   if (e.target.closest('[data-quien]')){ const { data } = await sb.rpc('votacion_quienes', { p_votacion: id }); const set = new Set(data || []);
     quien[id] = miembros.map(m => ({ id: m.id, n: nombres[m.id], v: set.has(m.id), c: carn.has(m.id) })).sort((a, b) => b.v - a.v || a.n.localeCompare(b.n)); paint(); }
   if (e.target.closest('[data-edit]')) editar(v);
-  if (e.target.closest('[data-cerrar]')){ if (!confirm('¿Cerrar la votación ahora?')) return; const { error } = await sb.from('votaciones').update({ fin: new Date().toISOString() }).eq('id', id); if (error) return toast('No se pudo cerrar.'); load(); }
-  if (e.target.closest('[data-borrar]')){ if (!confirm('¿Borrar la votación y todos sus votos?')) return; const ps = [v.imagen_path, ...(v.opciones || []).map(o => o.img), ...(fotosAdm[id] || []).map(f => f.img)]; const { error } = await sb.from('votaciones').delete().eq('id', id); if (error) return toast('No se pudo borrar.'); await quitarArchivos(ps); load(); }
+  if (e.target.closest('[data-cerrar]')){ if (!await mcConfirm('¿Cerrar la votación ahora?')) return; const { error } = await sb.from('votaciones').update({ fin: new Date().toISOString() }).eq('id', id); if (error) return toast('No se pudo cerrar.'); load(); }
+  if (e.target.closest('[data-borrar]')){ if (!await mcConfirm('¿Borrar la votación y todos sus votos?')) return; const ps = [v.imagen_path, ...(v.opciones || []).map(o => o.img), ...(fotosAdm[id] || []).map(f => f.img)]; const { error } = await sb.from('votaciones').delete().eq('id', id); if (error) return toast('No se pudo borrar.'); await quitarArchivos(ps); load(); }
 });
 const quitarArchivos = async ps => { ps = [...new Set(ps.filter(Boolean))]; if (ps.length) try { await sb.storage.from('mooncards').remove(ps); } catch (e) {} };
 const imgUrl = p => p ? sb.storage.from('mooncards').getPublicUrl(p).data.publicUrl : '';

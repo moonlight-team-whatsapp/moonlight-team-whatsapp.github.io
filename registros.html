@@ -115,6 +115,7 @@
   }
 </style>
 <script src="js/temporadas.js"></script>
+<script src="js/dialogos.js"></script>
 </head>
 <body>
 
@@ -398,7 +399,7 @@
   $('olderBtn').addEventListener('click', () => { const i = registros.findIndex(r => r.id === current); if (registros[i + 1]) { current = registros[i + 1].id; render(); } });
   $('newerBtn').addEventListener('click', () => { const i = registros.findIndex(r => r.id === current); if (registros[i - 1]) { current = registros[i - 1].id; render(); } });
   $('delMonthBtn').addEventListener('click', async () => {
-    if (!current || !confirm('¿Borrar el registro de ' + mesLabel(current) + '?')) return;
+    if (!current || !await mcConfirm('¿Borrar el registro de ' + mesLabel(current) + '?')) return;
     try { await deleteDoc(doc(db, 'registros', current)); } catch (e) { status('No se pudo borrar.'); }
   });
 
@@ -593,7 +594,7 @@
   async function saveMonth(id, sec){
     const rows = [...sec.querySelectorAll('.imp-row')];
     if (rows.some(r => !r.querySelector('select').value)){ status('Faltan personas por asignar (marcadas en rojo).'); return; }
-    if (registros.some(r => r.id === id) && !confirm('Ya existe ' + mesLabel(id) + '. ¿Sustituirlo?')) return;
+    if (registros.some(r => r.id === id) && !await mcConfirm('Ya existe ' + mesLabel(id) + '. ¿Sustituirlo?')) return;
     const agg = {}, ex = [];
     rows.forEach(r => {
       const v = pending[id][r.dataset.k], mid = r.querySelector('select').value;

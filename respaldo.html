@@ -19,6 +19,7 @@
   .bk-login{ display:flex; flex-direction:column; gap:10px; margin-top:14px; }
 </style>
 <script src="js/temporadas.js"></script>
+<script src="js/dialogos.js"></script>
 </head>
 <body>
 <div class="stars" id="starsLayer" aria-hidden="true"></div>
@@ -49,7 +50,7 @@
   onAuthStateChanged(auth, (u) => { $('loginBox').hidden = !!u; $('main').hidden = !u; });
   $('loginBtn').addEventListener('click', async () => {
     try { await signInWithEmailAndPassword(auth, $('email').value.trim(), $('pass').value); }
-    catch (e) { alert('Email o contraseña incorrectos.'); }
+    catch (e) { mcAviso('Email o contraseña incorrectos.'); }
   });
 
   $('goBtn').addEventListener('click', async () => {
