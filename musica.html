@@ -47,7 +47,7 @@
   .drop.tiene{ border-style:solid; border-color:rgba(125,255,176,.5); background:rgba(125,255,176,.07) } .drop.tiene b{ color:#7dffb0; word-break:break-all }
   dialog .dialog-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:14px }
   .tr .q{ font-size:.9rem }
-  #toast{ position:fixed; left:50%; bottom:90px; transform:translate(-50%,20px); background:#141b37; border:1px solid var(--gold-dim); color:var(--ink); padding:9px 16px; border-radius:8px; opacity:0; transition:all .3s; z-index:60; pointer-events:none; max-width:90vw; text-align:center }
+  #toast{ position:fixed; left:50%; bottom:170px; transform:translate(-50%,20px); background:#141b37; border:1px solid var(--gold-dim); color:var(--ink); padding:9px 16px; border-radius:8px; opacity:0; transition:all .3s; z-index:60; pointer-events:none; max-width:90vw; text-align:center }
   #toast.show{ opacity:1; transform:translate(-50%,0) }
 
   /* ===== Reproductor moonlight ===== */
@@ -60,6 +60,7 @@
   #bar .b{ width:42px; height:42px; padding:0; border-radius:50%; display:grid; place-items:center; font-size:1.05rem; cursor:pointer; color:#f6e7b4; background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.28),rgba(120,100,230,.35) 55%,rgba(40,34,110,.7)); border:1px solid rgba(246,231,180,.55); box-shadow:0 0 14px rgba(150,130,255,.55),inset 0 1px 6px rgba(255,255,255,.3); transition:transform .12s, box-shadow .2s }
   #bar .b:hover{ transform:scale(1.07); box-shadow:0 0 20px rgba(170,150,255,.8),inset 0 1px 6px rgba(255,255,255,.35) } #bar .b:active{ transform:scale(.95) }
   #bar .b.p{ width:58px; height:58px; font-size:1.5rem; color:#2a1f55; background:radial-gradient(circle at 35% 28%,#fffbe6,#f6e7b4 50%,#d8bf72); border-color:#fff4c8; box-shadow:0 0 22px rgba(255,236,170,.75),0 0 46px rgba(255,236,170,.3),inset 0 -3px 8px rgba(160,120,30,.35) }
+  #bar .b.s{ width:34px; height:34px; font-size:.9rem; position:relative; opacity:.6 } #bar .b.s.on{ opacity:1; border-color:#fff4c8; box-shadow:0 0 16px rgba(255,236,170,.7),inset 0 1px 6px rgba(255,255,255,.35) } #bRepN{ position:absolute; right:-2px; top:-4px; font:700 .7rem 'Crimson Pro',serif; color:#2a1f55; background:#f6e7b4; border-radius:99px; padding:0 4px; min-width:14px; text-align:center } #bRepN:empty{ display:none }
   #bar .rt{ display:flex; justify-content:flex-end; align-items:center; gap:10px }
   #bQ{ padding:6px 13px; border-radius:999px; border:1px solid rgba(246,231,180,.5); color:#f6e7b4; font:italic 600 1rem 'Cormorant',serif; background:rgba(246,231,180,.07); cursor:pointer; white-space:nowrap }
   #bVol{ display:flex; align-items:center; gap:6px } #bMute{ background:none; border:0; color:#f6e7b4; font-size:1.2rem; cursor:pointer; padding:2px }
@@ -130,7 +131,7 @@
 
 <div id="bar"><div id="bOtro" hidden></div>
   <div class="row"><div class="ti"><b id="bT">—</b><small id="bS"></small></div>
-    <div class="ctl"><button class="b" id="bPrev" type="button" aria-label="Anterior">⏮</button><button class="b p" id="bPlay" type="button" aria-label="Reproducir">▶</button><button class="b" id="bNext" type="button" aria-label="Siguiente">⏭</button></div>
+    <div class="ctl"><button class="b" id="bPrev" type="button" aria-label="Anterior">⏮</button><button class="b p" id="bPlay" type="button" aria-label="Reproducir">▶</button><button class="b" id="bNext" type="button" aria-label="Siguiente">⏭</button><button class="b s" id="bRep" type="button" aria-label="Repetir"><span>🔁</span><sup id="bRepN"></sup></button></div>
     <div class="rt"><button id="bQ" type="button" aria-label="Cola">☰ Cola</button><span id="bVol"><button id="bMute" type="button" aria-label="Silenciar">🔊</button><input type="range" id="bVolR" min="0" max="100" value="100" aria-label="Volumen"></span></div></div>
   <div class="pr"><span id="bCur">0:00</span><div id="bTr"><div class="base"></div><div class="fill"></div><div class="nota">♪</div><div class="luna"></div><input type="range" id="bSeek" min="0" max="1000" value="0" aria-label="Posición"></div><span id="bDur">0:00</span></div></div>
 <div id="toast" role="status"></div>
@@ -195,7 +196,14 @@ function pinta(){
 
 // ---------- Reproductor ----------
 const au = new Audio(); au.preload = 'auto'; let actual = null, cola = [], ci = 0;
-function colaDe(p){ // playlist + (si es personal) las siguientes del mismo dueño, en bucle
+// Repetir: 0 = para al acabar la canción · 1 = toda la playlist una vez · 2 = bucle de la cola (tus playlists seguidas) · 3 = bucle de todas las playlists públicas
+let rep = 0; try { rep = parseInt(localStorage.getItem('mc_musica_rep'), 10) || 0; } catch (e) {}
+const publicas = () => [...PL.filter(p => p.grupal), ...PL.filter(p => !p.grupal && !p.privada)].flatMap(p => cancs(p.id)).filter(c => !ocultas.has(c.id));
+function colaDe(p){ return rep === 3 ? publicas() : rep === 2 ? cadena(p) : cancs(p.id).filter(c => !ocultas.has(c.id)); }
+const REP_TXT = ['Repetir: desactivado (se para al terminar la canción)', 'Repetir: reproduce toda la playlist una vez', 'Repetir: bucle de toda la cola', 'Repetir: bucle de todas las playlists públicas'];
+function pintaRep(){ const b = $('bRep'); b.classList.toggle('on', rep > 0); $('bRepN').textContent = ['', '1', '', '∞'][rep]; b.title = REP_TXT[rep]; }
+function reArma(){ if (!actual) return; const p = PL.find(x => x.id === actual.playlist_id); let l = p ? colaDe(p) : []; let i = l.findIndex(x => x.id === actual.id); if (i < 0){ l = [actual, ...l]; i = 0; } cola = l; ci = i; }
+function cadena(p){ // playlist + (si es personal) las siguientes del mismo dueño, en bucle
   const base = p.grupal ? [p] : PL.filter(x => !x.grupal && x.miembro_id === p.miembro_id);
   const k = Math.max(0, base.findIndex(x => x.id === p.id)); const rot = [...base.slice(k), ...base.slice(0, k)];
   return rot.flatMap(x => cancs(x.id)).filter(c => !ocultas.has(c.id));
@@ -246,11 +254,12 @@ async function conecta(){
 }
 function suena(i){ if (!cola.length) return; ci = (i + cola.length) % cola.length; reproduce(cola[ci]); }
 function siguiente(){ if (Q.length){ const c = Q.shift(); pintaQ(); reproduce(c); } else suena(ci + 1); }
+function fin(){ if (Q.length) return siguiente(); if (rep === 0 || (rep === 1 && ci + 1 >= cola.length)) return; suena(ci + 1); }
 function pintaQ(){ $('bQ').textContent = '☰ Cola' + (Q.length ? ' · ' + Q.length : ''); }
 function pintaQDlg(){ $('qLista').innerHTML = Q.map((c, i) => `<div class="tr" data-i="${i}"><span class="n">${i + 1}</span><div class="t"><b>${esc(c.titulo)}</b><small>${esc(c.artista)}</small></div><button title="Quitar de la cola">✕</button></div>`).join('') || '<p class="vacia">La cola está vacía. Pulsa ☰＋ en una canción para añadirla.</p>'; }
 $('bQ').onclick = () => { pintaQDlg(); $('qDlg').showModal(); }; $('qNo').onclick = () => $('qDlg').close(); $('qVac').onclick = () => { Q = []; pintaQ(); pintaQDlg(); };
 $('qLista').addEventListener('click', e => { const r = e.target.closest('[data-i]'); if (r && e.target.closest('button')){ Q.splice(+r.dataset.i, 1); pintaQ(); pintaQDlg(); } });
-au.addEventListener('ended', siguiente);
+au.addEventListener('ended', fin);
 au.addEventListener('pause', () => { guarda(true); emite('pause'); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) guarda(true); });
 // Volumen (se recuerda). En iPhone el volumen del navegador no se puede cambiar: ahí se usa el de los botones del móvil.
@@ -265,6 +274,8 @@ au.addEventListener('pause', () => { $('bPlay').textContent = '▶'; if ('mediaS
 au.addEventListener('timeupdate', () => { if (!au.paused) guarda(); if (au.duration){ const v = Math.round(au.currentTime / au.duration * 1000); $('bSeek').value = v; $('bTr').style.setProperty('--p', v / 1000); $('bCur').textContent = fmt(au.currentTime) || '0:00'; $('bDur').textContent = fmt(au.duration) || '0:00'; } });
 au.addEventListener('error', () => { toast('No se pudo reproducir «' + (actual && actual.titulo) + '». Paso a la siguiente.'); setTimeout(siguiente, 800); });
 $('bSeek').addEventListener('input', e => { $('bTr').style.setProperty('--p', e.target.value / 1000); if (au.duration) au.currentTime = au.duration * e.target.value / 1000; });
+$('bRep').onclick = () => { rep = (rep + 1) % 4; try { localStorage.setItem('mc_musica_rep', rep); } catch (e) {} pintaRep(); reArma(); toast(REP_TXT[rep]); };
+pintaRep();
 $('bPlay').onclick = () => au.paused ? au.play() : au.pause(); $('bNext').onclick = siguiente; $('bPrev').onclick = () => au.currentTime > 4 ? au.currentTime = 0 : suena(ci - 1);
 if ('mediaSession' in navigator){ const ms = navigator.mediaSession; ms.setActionHandler('play', () => au.play()); ms.setActionHandler('pause', () => au.pause()); ms.setActionHandler('nexttrack', siguiente); ms.setActionHandler('previoustrack', () => suena(ci - 1)); ms.setActionHandler('seekto', d => { au.currentTime = d.seekTime; }); }
 
@@ -289,6 +300,7 @@ sb.auth.onAuthStateChange((ev, ses) => { setTimeout(async () => { isAdmin = !!(s
 $('lista').addEventListener('click', async e => {
   const b = e.target.closest('[data-a]'); if (!b) { const h = e.target.closest('.plh'); if (h){ plega(h.closest('.pl').dataset.p); return; } const r = e.target.closest('.tr'); if (r){ const c = CA.find(x => x.id === r.dataset.c), p = PL.find(x => x.id === c.playlist_id); cola = colaDe(p); const i = cola.findIndex(x => x.id === c.id); if (i >= 0) suena(i); else toast('Esa canción está oculta para ti.'); } return; }
   const sec = b.closest('.pl'), p = PL.find(x => x.id === sec.dataset.p), a = b.dataset.a, tr = b.closest('.tr');
+  if ((a === 'play' || a === 'shuf') && rep === 0){ rep = 1; try { localStorage.setItem('mc_musica_rep', 1); } catch (e) {} pintaRep(); }
   if (a === 'play'){ cola = colaDe(p); if (!cola.length) return toast('Todas están ocultas.'); suena(0); }
   else if (a === 'shuf'){ const l = cancs(p.id).filter(c => !ocultas.has(c.id)); if (!l.length) return toast('Todas están ocultas.'); for (let i = l.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } cola = l; suena(0); toast('Orden aleatorio.'); }
   else if (a === 'q'){ const c = CA.find(x => x.id === tr.dataset.c); if (ocultas.has(c.id)) return toast('Esa canción está oculta para ti.'); if (!actual){ cola = colaDe(PL.find(x => x.id === c.playlist_id)); suena(Math.max(0, cola.findIndex(x => x.id === c.id))); } else { Q.push(c); pintaQ(); toast('Añadida a la cola.'); } }
