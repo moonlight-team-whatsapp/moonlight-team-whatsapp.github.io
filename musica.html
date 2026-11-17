@@ -154,6 +154,28 @@ function reproduce(c){
   if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: c.titulo, artist: c.artista || c.autor || 'Moonlight Team', album: (PL.find(p => p.id === c.playlist_id) || {}).nombre || 'Moonlight', artwork: [{ src: 'favicon.png', sizes: '256x256', type: 'image/png' }] });
   pinta();
 }
+// Recordar qué suena: por carnet (perfil del rol) y, sin carnet, en este navegador.
+let ultG = 0;
+function guarda(ya){
+  if (!actual) return; const t = Math.floor(au.currentTime || 0), ahora = Date.now();
+  const o = { id: actual.id, t, pl: actual.playlist_id };
+  try { localStorage.setItem('mc_musica_ult' + (yo || ''), JSON.stringify(o)); } catch (e) {}
+  if (yo && tokenActual() && (ya || ahora - ultG > 15000)){ ultG = ahora; sb.rpc('perfil_guardar', { token: tokenActual(), d: { musica: o } }); }
+}
+function prepara(c, t){
+  actual = c; au.src = url(c.path); $('bar').classList.add('on'); $('bT').textContent = c.titulo; $('bS').textContent = c.artista || c.autor || '';
+  if (t > 1) au.addEventListener('loadedmetadata', () => { try { au.currentTime = Math.min(t, (au.duration || t) - 1); } catch (e) {} }, { once: true });
+  pinta();
+}
+async function restaura(){
+  if (actual) return; let o = null;
+  if (yo && tokenActual()){ const r = await sb.rpc('perfil_leer', { token: tokenActual() }); o = r.data && r.data.musica; }
+  if (!o){ try { o = JSON.parse(localStorage.getItem('mc_musica_ult' + (yo || '')) || 'null'); } catch (e) {} }
+  if (!o || actual) return; const c = CA.find(x => x.id === o.id); if (!c) return;
+  const p = PL.find(x => x.id === c.playlist_id); cola = p ? colaDe(p) : [c]; ci = Math.max(0, cola.findIndex(x => x.id === c.id));
+  if (!cola.length || cola[ci].id !== c.id){ cola = [c, ...cola]; ci = 0; }
+  prepara(c, o.t || 0);
+}
 function suena(i){ if (!cola.length) return; ci = (i + cola.length) % cola.length; reproduce(cola[ci]); }
 function siguiente(){ if (Q.length){ const c = Q.shift(); pintaQ(); reproduce(c); } else suena(ci + 1); }
 function pintaQ(){ $('bQ').textContent = '☰ Cola' + (Q.length ? ' · ' + Q.length : ''); }
@@ -161,6 +183,8 @@ function pintaQDlg(){ $('qLista').innerHTML = Q.map((c, i) => `<div class="tr" d
 $('bQ').onclick = () => { pintaQDlg(); $('qDlg').showModal(); }; $('qNo').onclick = () => $('qDlg').close(); $('qVac').onclick = () => { Q = []; pintaQ(); pintaQDlg(); };
 $('qLista').addEventListener('click', e => { const r = e.target.closest('[data-i]'); if (r && e.target.closest('button')){ Q.splice(+r.dataset.i, 1); pintaQ(); pintaQDlg(); } });
 au.addEventListener('ended', siguiente);
+au.addEventListener('pause', () => guarda(true));
+document.addEventListener('visibilitychange', () => { if (document.hidden) guarda(true); });
 // Volumen (se recuerda). En iPhone el volumen del navegador no se puede cambiar: ahí se usa el de los botones del móvil.
 { const R = $('bVolR'); let vol = 1; try { vol = parseFloat(localStorage.getItem('mc_musica_vol')); if (!(vol >= 0 && vol <= 1)) vol = 1; } catch (e) {}
   au.volume = .5; const fijo = au.volume !== .5; au.volume = vol; if (fijo) $('bVol').hidden = true;
@@ -170,7 +194,7 @@ au.addEventListener('ended', siguiente);
   pinta(); }
 au.addEventListener('play', () => { $('bPlay').textContent = '⏸'; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; });
 au.addEventListener('pause', () => { $('bPlay').textContent = '▶'; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'; });
-au.addEventListener('timeupdate', () => { if (au.duration){ const v = Math.round(au.currentTime / au.duration * 1000); $('bSeek').value = v; $('bSeek').style.setProperty('--p', v / 10 + '%'); } });
+au.addEventListener('timeupdate', () => { if (!au.paused) guarda(); if (au.duration){ const v = Math.round(au.currentTime / au.duration * 1000); $('bSeek').value = v; $('bSeek').style.setProperty('--p', v / 10 + '%'); } });
 au.addEventListener('error', () => { toast('No se pudo reproducir «' + (actual && actual.titulo) + '». Paso a la siguiente.'); setTimeout(siguiente, 800); });
 $('bSeek').addEventListener('input', e => { e.target.style.setProperty('--p', e.target.value / 10 + '%'); if (au.duration) au.currentTime = au.duration * e.target.value / 1000; });
 $('bPlay').onclick = () => au.paused ? au.play() : au.pause(); $('bNext').onclick = siguiente; $('bPrev').onclick = () => au.currentTime > 4 ? au.currentTime = 0 : suena(ci - 1);
@@ -245,7 +269,7 @@ $('instBtn').onclick = async () => { if (ip){ ip.prompt(); ip = null; $('instBtn
 
 (async () => {
   const pf = tokenActual() ? await miPerfil() : null; yo = pf && pf.id; nombre = (pf && pf.nombres && pf.nombres[0]) || '';
-  $('nuevaBtn').hidden = !yo; $('sinCarnet').hidden = !!yo; await carga();
+  $('nuevaBtn').hidden = !yo; $('sinCarnet').hidden = !!yo; await carga(); restaura();
 })();
 </script>
 </body>
