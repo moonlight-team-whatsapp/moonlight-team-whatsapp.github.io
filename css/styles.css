@@ -948,7 +948,8 @@ html.halloween .moon{ filter:var(--tono-luna); box-shadow:0 0 28px 6px rgba(255,
 .tela{ position:fixed; top:0; z-index:5; pointer-events:none; }
 .tela.izq{ left:0; } .tela.der{ right:0; transform:scaleX(-1); }
 .tela .ara .hilo{ position:absolute; left:50%; top:calc(var(--h) * -1); width:0; height:var(--h); border-left:1px solid rgba(235,235,245,.55); }
-.tela .ara{ --h:96px; position:absolute; left:84px; top:96px; font-size:18px; transform-origin:50% -96px; animation:colgar 4s ease-in-out infinite alternate; }
+.tela svg{ width:84px; height:84px; }
+.tela .ara{ --h:62px; position:absolute; left:54px; top:62px; font-size:14px; transform-origin:50% -62px; animation:colgar 4s ease-in-out infinite alternate; }
 @keyframes colgar{ from{ transform:rotate(-8deg); } to{ transform:rotate(8deg); } }
 .murci{ position:fixed; left:-60px; z-index:1; pointer-events:none; opacity:.85; animation:murciVuela linear infinite, murciAletea ease-in-out infinite alternate; }
 @keyframes murciVuela{ from{ transform:translateX(0); } to{ transform:translateX(calc(100vw + 120px)); } }
@@ -956,7 +957,7 @@ html.halloween .moon{ filter:var(--tono-luna); box-shadow:0 0 28px 6px rgba(255,
 @keyframes murciAletea{ from{ margin-top:-8px; } to{ margin-top:10px; } }
 .calabazas{ position:fixed; right:10px; bottom:6px; z-index:4; pointer-events:none; font-size:34px; display:flex; gap:2px; filter:drop-shadow(0 0 10px rgba(255,140,30,.6)); }
 .calabazas span:nth-child(2){ font-size:24px; align-self:flex-end; }
-@media (max-width:600px){ .tela svg{ width:80px; height:80px; } .tela .ara{ --h:58px; left:50px; top:58px; transform-origin:50% -58px; } .calabazas{ font-size:26px; } }
+@media (max-width:600px){ .tela svg{ width:56px; height:56px; } .tela .ara{ --h:38px; left:36px; top:38px; font-size:12px; transform-origin:50% -38px; } .calabazas{ font-size:26px; } }
 @media (prefers-reduced-motion:reduce){ .tela .ara, .murci{ animation:none; } }
 
 /* ---------- Temporadas: San Valentín, Primavera, Verano, Otoño ---------- */
