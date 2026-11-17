@@ -1,3 +1,6 @@
 -- Música (referencia; ya aplicado): tablas musica_playlists / musica_canciones (lectura pública, escritura por RPC con carnet o admin),
 -- RPC musica_playlist_crear (máx. 3 por miembro), musica_playlist_borrar, musica_cancion_add (máx. 5 por playlist personal, 200 en la grupal), musica_cancion_borrar.
 -- Storage: bucket público «musica» (15 MB, audio/*), subir a m/% (anon), borrar solo admin. Playlist grupal = fila con grupal=true.
+-- Añadido: musica_playlists.privada (lectura pública solo si no es privada; el dueño las lee con la RPC musica_privadas(token)),
+-- musica_playlist_privada(token,id,bool), musica_cancion_add_existente(token,playlist,origen,autor) (reutiliza el mismo audio),
+-- política musica_listar (admin lista el bucket para borrar archivos sin enlazar).

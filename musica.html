@@ -46,7 +46,7 @@
   <header class="top"><div><div class="title-wrap"><h1>Música</h1></div>
     <p class="subtitle">Cada miembro con carnet puede crear hasta 3 playlists de 5 canciones. Al acabar una, suena la siguiente tuya en bucle. Además hay una playlist grupal para todo el team.</p></div></header>
   <p class="admin-only-note" id="sinCarnet" hidden>Para añadir música necesitas abrir esta página con tu carnet. Escuchar, puede cualquiera.</p>
-  <p><button class="mb" id="nuevaBtn" type="button" hidden>＋ Nueva playlist</button> <button class="mb" id="instBtn" type="button" hidden>📲 Instalar app</button></p>
+  <p><button class="mb" id="nuevaBtn" type="button" hidden>＋ Nueva playlist</button> <button class="mb" id="instBtn" type="button" hidden>📲 Instalar app</button> <button class="mb" id="huerBtn" type="button" hidden>🧹 Archivos sin enlazar</button></p>
   <div id="lista"></div>
   <p class="vacia" id="oculNote" hidden></p>
 </div>
@@ -58,6 +58,7 @@
 <dialog id="nuevaDlg"><div class="dialog-inner"><h3>Nueva playlist</h3>
   <div class="fld"><label for="nNom">Nombre</label><input id="nNom" maxlength="40"></div>
   <div class="fld"><label for="nEmo">Emoji</label><input id="nEmo" maxlength="4" value="🎵"></div>
+  <label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" id="nPriv" style="width:auto"> Privada (solo la ves tú)</label>
   <div class="dialog-actions"><button class="btn-primary" id="nOk" type="button">Crear</button><button class="btn-ghost" id="nNo" type="button">Cancelar</button></div></div></dialog>
 <dialog id="subeDlg"><div class="dialog-inner"><h3>Añadir canción</h3>
   <div class="fld"><label for="sFile">Archivo de audio (mp3, m4a… máx. 15 MB)</label><input id="sFile" type="file" accept="audio/*"></div>
@@ -65,6 +66,14 @@
   <div class="fld"><label for="sArt">Artista</label><input id="sArt" maxlength="60"></div>
   <p class="vacia" id="sMsg"></p>
   <div class="dialog-actions"><button class="btn-primary" id="sOk" type="button">Subir</button><button class="btn-ghost" id="sNo" type="button">Cancelar</button></div></div></dialog>
+
+<dialog id="exiDlg"><div class="dialog-inner"><h3>Añadir canción ya subida</h3>
+  <div class="fld"><input id="eBus" placeholder="Buscar por título o artista…" autocomplete="off"></div>
+  <div id="eLista" style="max-height:50vh;overflow:auto"></div>
+  <div class="dialog-actions"><button class="btn-ghost" id="eNo" type="button">Cerrar</button></div></div></dialog>
+<dialog id="huerDlg"><div class="dialog-inner"><h3>Archivos sin enlazar</h3><p class="vacia">Audios del almacenamiento que ya no están en ninguna playlist.</p>
+  <div id="hLista" style="max-height:50vh;overflow:auto"></div>
+  <div class="dialog-actions"><button class="mb red" id="hTodo" type="button">Borrar todos</button><button class="btn-ghost" id="hNo" type="button">Cerrar</button></div></div></dialog>
 
 <script type="module">
 import { sb } from './js/supabase-sesion.js';
@@ -74,7 +83,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&l
 const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), 3800); };
 const MSG = { sin_carnet:'Abre la página con tu carnet.', limite:'Has llegado al límite.', no_es_tuya:'Esa playlist no es tuya.', ruta:'Archivo no válido.', no_existe:'La playlist ya no existe.' };
 const url = p => sb.storage.from('musica').getPublicUrl(p).data.publicUrl;
-let yo = null, nombre = '', PL = [], CA = [], ocultas = new Set();
+let yo = null, nombre = '', isAdmin = false, PL = [], CA = [], ocultas = new Set();
 try { ocultas = new Set(JSON.parse(localStorage.getItem('mc_musica_ocultas') || '[]')); } catch (e) {}
 const guardaOc = () => { try { localStorage.setItem('mc_musica_ocultas', JSON.stringify([...ocultas])); } catch (e) {} };
 const fmt = s => s ? Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0') : '';
@@ -84,18 +93,21 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
 
 async function carga(){
   const [a, b] = await Promise.all([sb.from('musica_playlists').select('*').order('created_at'), sb.from('musica_canciones').select('*').order('orden')]);
-  PL = a.data || []; CA = b.data || []; pinta();
+  PL = a.data || []; CA = b.data || [];
+  if (yo){ const r = await sb.rpc('musica_privadas', { p_token: tokenActual() }); const d = r.data || {}; const ids = new Set(PL.map(x => x.id)), cid = new Set(CA.map(x => x.id));
+    (d.playlists || []).forEach(x => ids.has(x.id) || PL.push(x)); (d.canciones || []).forEach(x => cid.has(x.id) || CA.push(x)); CA.sort((x, y) => x.orden - y.orden); }
+  pinta();
 }
 const cancs = id => CA.filter(c => c.playlist_id === id);
 function pinta(){
   const orden = [...PL.filter(p => p.grupal), ...PL.filter(p => !p.grupal)];
   $('lista').innerHTML = orden.map(p => {
-    const cs = cancs(p.id), mia = yo && p.miembro_id === yo, puede = yo && (p.grupal || mia), lleno = !p.grupal && cs.length >= 5;
-    return `<section class="pl${p.grupal ? ' grupal' : ''}" data-p="${p.id}"><div class="plh"><span class="em">${esc(p.emoji)}</span><div><b>${esc(p.nombre)}</b><small>${p.grupal ? 'Todo el team' : 'de ' + esc(p.autor || '—')} · ${cs.length}${p.grupal ? '' : '/5'} canciones</small></div><span class="sp"></span>
+    const cs = cancs(p.id), mia = yo && p.miembro_id === yo, adm = isAdmin, puede = yo && (p.grupal || mia), lleno = !p.grupal && cs.length >= 5;
+    return `<section class="pl${p.grupal ? ' grupal' : ''}" data-p="${p.id}"><div class="plh"><span class="em">${esc(p.emoji)}</span><div><b>${esc(p.nombre)}${p.privada ? ' 🔒' : ''}</b><small>${p.grupal ? 'Todo el team' : 'de ' + esc(p.autor || '—') + (p.privada ? ' · privada' : '')} · ${cs.length}${p.grupal ? '' : '/5'} canciones</small></div><span class="sp"></span>
       ${cs.length ? `<button class="mb" data-a="play">▶ Escuchar</button><button class="mb" data-a="off" title="Guardar para escuchar sin conexión">⬇</button>` : ''}
-      ${puede && !lleno ? `<button class="mb" data-a="add">＋ Canción</button>` : ''}${mia ? `<button class="mb red" data-a="del">Borrar</button>` : ''}</div>
+      ${puede && !lleno ? `<button class="mb" data-a="add">＋ Subir</button><button class="mb" data-a="exi">＋ Ya subida</button>` : ''}${mia ? `<button class="mb" data-a="priv">${p.privada ? '🔓 Hacer pública' : '🔒 Hacer privada'}</button>` : ''}${mia || adm ? `<button class="mb red" data-a="del">Borrar</button>` : ''}</div>
       ${cs.map((c, i) => `<div class="tr${ocultas.has(c.id) ? ' oculta' : ''}${actual && actual.id === c.id ? ' sona' : ''}" data-c="${c.id}"><span class="n">${i + 1}</span><div class="t"><b>${esc(c.titulo)}</b><small>${esc(c.artista)}${c.artista && c.autor ? ' · ' : ''}${p.grupal && c.autor ? 'añadida por ' + esc(c.autor) : ''} ${fmt(c.dur)}</small></div>
-        <button data-a="hide" title="${ocultas.has(c.id) ? 'Volver a mostrar' : 'Ocultar solo para mí'}">${ocultas.has(c.id) ? '👁' : '🙈'}</button>${yo && (c.miembro_id === yo || mia) ? '<button data-a="rm" title="Quitar">✕</button>' : ''}</div>`).join('') || '<div class="vacia">Vacía por ahora.</div>'}</section>`; }).join('');
+        <button data-a="hide" title="${ocultas.has(c.id) ? 'Volver a mostrar' : 'Ocultar solo para mí'}">${ocultas.has(c.id) ? '👁' : '🙈'}</button>${adm || (yo && (c.miembro_id === yo || mia)) ? '<button data-a="rm" title="Quitar">✕</button>' : ''}</div>`).join('') || '<div class="vacia">Vacía por ahora.</div>'}</section>`; }).join('');
   const nOc = ocultas.size; $('oculNote').hidden = !nOc; $('oculNote').textContent = nOc ? `Tienes ${nOc} canción${nOc > 1 ? 'es' : ''} oculta${nOc > 1 ? 's' : ''} solo para ti (🙈 en la lista). No suenan en tu reproductor.` : '';
 }
 
@@ -124,18 +136,47 @@ if ('mediaSession' in navigator){ const ms = navigator.mediaSession; ms.setActio
 
 // ---------- Acciones ----------
 let subiendoA = null;
+const mineP = p => yo && p.miembro_id === yo;
+// Borra del almacenamiento los audios que ya no usa ninguna canción (solo admin; el resto queda para «Archivos sin enlazar»).
+async function limpiaHuerfanos(paths){
+  if (!isAdmin) return; const { data } = await sb.from('musica_canciones').select('path').in('path', [...new Set(paths)]);
+  const usados = new Set((data || []).map(x => x.path)); const quitar = [...new Set(paths)].filter(p => !usados.has(p));
+  if (quitar.length) await sb.storage.from('musica').remove(quitar);
+}
+function pintaExi(){
+  const q = $('eBus').value.trim().toLowerCase(), ya = new Set(cancs(subiendoA.id).map(c => c.path)), vistos = new Set();
+  const lib = CA.filter(c => { if (vistos.has(c.path)) return false; vistos.add(c.path); return true; }).filter(c => !ya.has(c.path) && (!q || (c.titulo + ' ' + c.artista).toLowerCase().includes(q)));
+  $('eLista').innerHTML = lib.map(c => `<div class="tr" data-o="${c.id}"><div class="t"><b>${esc(c.titulo)}</b><small>${esc(c.artista)} ${fmt(c.dur)}</small></div><button>＋</button></div>`).join('') || '<p class="vacia">No hay canciones nuevas para añadir.</p>';
+}
+$('eBus').addEventListener('input', pintaExi); $('eNo').onclick = () => $('exiDlg').close();
+$('eLista').addEventListener('click', async e => { const r = e.target.closest('[data-o]'); if (!r) return;
+  const x = await sb.rpc('musica_cancion_add_existente', { p_token: tokenActual(), p_playlist: subiendoA.id, p_origen: r.dataset.o, p_autor: nombre });
+  if (x.data === 'ok'){ toast('Canción añadida.'); await carga(); const p = PL.find(z => z.id === subiendoA.id); if (p && !p.grupal && cancs(p.id).length >= 5) $('exiDlg').close(); else pintaExi(); }
+  else toast(x.data === 'limite' ? 'Esa playlist ya está llena.' : x.data === 'repetida' ? 'Ya está en esa playlist.' : MSG[x.data] || 'No se pudo añadir.'); });
+// Archivos sin enlazar (admin)
+async function huerfanos(){ const { data } = await sb.storage.from('musica').list('m', { limit: 1000 }); const { data: ru } = await sb.from('musica_canciones').select('path'); const usados = new Set((ru || []).map(x => 'm/' + x.path.replace(/^m\//, '')));
+  return (data || []).filter(f => f.name && f.id && !usados.has('m/' + f.name)); }
+async function pintaHuer(){ const l = await huerfanos(); $('hTodo').hidden = !l.length; $('hLista').innerHTML = l.map(f => `<div class="tr"><div class="t"><b>${esc(f.name)}</b><small>${Math.round((f.metadata && f.metadata.size || 0) / 1024)} KB</small></div><audio controls preload="none" src="${url('m/' + f.name)}" style="height:30px;max-width:150px"></audio><button data-h="${esc(f.name)}">✕</button></div>`).join('') || '<p class="vacia">No hay archivos sueltos.</p>'; }
+$('huerBtn').onclick = async () => { await pintaHuer(); $('huerDlg').showModal(); }; $('hNo').onclick = () => $('huerDlg').close();
+$('hLista').addEventListener('click', async e => { const b = e.target.closest('[data-h]'); if (!b) return; await sb.storage.from('musica').remove(['m/' + b.dataset.h]); pintaHuer(); });
+$('hTodo').onclick = async () => { const l = await huerfanos(); if (l.length) await sb.storage.from('musica').remove(l.map(f => 'm/' + f.name)); pintaHuer(); };
+sb.auth.onAuthStateChange((ev, ses) => { setTimeout(async () => { isAdmin = !!(ses && ses.user); $('huerBtn').hidden = !isAdmin; if (PL.length) await carga(); }, 0); });
 $('lista').addEventListener('click', async e => {
   const b = e.target.closest('[data-a]'); if (!b) { const r = e.target.closest('.tr'); if (r){ const c = CA.find(x => x.id === r.dataset.c), p = PL.find(x => x.id === c.playlist_id); cola = colaDe(p); const i = cola.findIndex(x => x.id === c.id); if (i >= 0) suena(i); else toast('Esa canción está oculta para ti.'); } return; }
   const sec = b.closest('.pl'), p = PL.find(x => x.id === sec.dataset.p), a = b.dataset.a, tr = b.closest('.tr');
   if (a === 'play'){ cola = colaDe(p); if (!cola.length) return toast('Todas están ocultas.'); suena(0); }
   else if (a === 'hide'){ const id = tr.dataset.c; ocultas.has(id) ? ocultas.delete(id) : ocultas.add(id); guardaOc(); pinta(); }
   else if (a === 'add'){ subiendoA = p; $('sFile').value = ''; $('sTit').value = ''; $('sArt').value = ''; $('sMsg').textContent = ''; $('subeDlg').showModal(); }
-  else if (a === 'del'){ if (!b.dataset.seguro){ b.dataset.seguro = 1; b.textContent = '¿Seguro?'; setTimeout(() => { delete b.dataset.seguro; b.textContent = 'Borrar'; }, 3500); return; } const r = await sb.rpc('musica_playlist_borrar', { p_token: tokenActual(), p_id: p.id }); r.data === 'ok' ? carga() : toast(MSG[r.data] || 'No se pudo borrar.'); }
+  else if (a === 'del'){ if (!b.dataset.seguro){ b.dataset.seguro = 1; b.textContent = '¿Seguro?'; setTimeout(() => { delete b.dataset.seguro; b.textContent = 'Borrar'; }, 3500); return; } if (isAdmin && !mineP(p)){ const paths = cancs(p.id).map(c => c.path); const r = await sb.from('musica_playlists').delete().eq('id', p.id); if (r.error) return toast('No se pudo borrar.'); await limpiaHuerfanos(paths); carga(); return; }
+    const paths = cancs(p.id).map(c => c.path); const r = await sb.rpc('musica_playlist_borrar', { p_token: tokenActual(), p_id: p.id }); r.data === 'ok' ? (isAdmin && await limpiaHuerfanos(paths), carga()) : toast(MSG[r.data] || 'No se pudo borrar.'); }
+  else if (a === 'priv'){ const r = await sb.rpc('musica_playlist_privada', { p_token: tokenActual(), p_id: p.id, p_privada: !p.privada }); r.data === 'ok' ? carga() : toast('No se pudo cambiar.'); }
+  else if (a === 'exi'){ subiendoA = p; $('eBus').value = ''; pintaExi(); $('exiDlg').showModal(); }
+  else if (a === 'rm' && isAdmin){ const c = CA.find(x => x.id === tr.dataset.c); const r = await sb.from('musica_canciones').delete().eq('id', c.id); if (r.error) return toast('No se pudo quitar.'); await limpiaHuerfanos([c.path]); toast('Canción quitada.'); carga(); }
   else if (a === 'rm'){ const r = await sb.rpc('musica_cancion_borrar', { p_token: tokenActual(), p_id: tr.dataset.c }); r.data === 'ok' ? carga() : toast(MSG[r.data] || 'No se pudo quitar.'); }
   else if (a === 'off'){ b.disabled = true; try { const c = await caches.open('musica-v1'); let n = 0; for (const s of cancs(p.id)){ const u = url(s.path); if (!await c.match(u)){ const r = await fetch(u); if (r.ok) await c.put(u, r); } n++; b.textContent = '⬇ ' + n; } toast('Guardada para escuchar sin conexión.'); } catch (er) { toast('No se pudo guardar sin conexión.'); } b.disabled = false; b.textContent = '✓'; }
 });
-$('nuevaBtn').onclick = () => { $('nNom').value = ''; $('nuevaDlg').showModal(); }; $('nNo').onclick = () => $('nuevaDlg').close();
-$('nOk').onclick = async () => { const n = $('nNom').value.trim(); if (!n) return $('nNom').focus(); const r = await sb.rpc('musica_playlist_crear', { p_token: tokenActual(), p_nombre: n, p_emoji: $('nEmo').value.trim(), p_autor: nombre }); $('nuevaDlg').close(); r.data === 'ok' ? carga() : toast(r.data === 'limite' ? 'Ya tienes 3 playlists.' : MSG[r.data] || 'No se pudo crear.'); };
+$('nuevaBtn').onclick = () => { $('nNom').value = ''; $('nPriv').checked = false; $('nuevaDlg').showModal(); }; $('nNo').onclick = () => $('nuevaDlg').close();
+$('nOk').onclick = async () => { const n = $('nNom').value.trim(); if (!n) return $('nNom').focus(); const r = await sb.rpc('musica_playlist_crear', { p_token: tokenActual(), p_nombre: n, p_emoji: $('nEmo').value.trim(), p_autor: nombre, p_privada: $('nPriv').checked }); $('nuevaDlg').close(); r.data === 'ok' ? carga() : toast(r.data === 'limite' ? 'Ya tienes 3 playlists.' : MSG[r.data] || 'No se pudo crear.'); };
 $('sNo').onclick = () => $('subeDlg').close();
 $('sFile').addEventListener('change', () => { const f = $('sFile').files[0]; if (f && !$('sTit').value) $('sTit').value = f.name.replace(/\.[^.]+$/, '').slice(0, 80); });
 $('sOk').onclick = async () => {
