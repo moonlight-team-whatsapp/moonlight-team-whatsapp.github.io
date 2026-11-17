@@ -5,3 +5,5 @@
 -- musica_playlist_privada(token,id,bool), musica_cancion_add_existente(token,playlist,origen,autor) (reutiliza el mismo audio),
 -- política musica_listar (admin lista el bucket para borrar archivos sin enlazar).
 -- almacen_ok() ahora suma los buckets mooncards + musica (tope 800 MB para subidas anónimas); la limpieza de archivos sueltos está en almacen.html.
+-- Límite 5 = subidas nuevas (musica_canciones.origen=true) por playlist personal; las canciones reutilizadas (origen=false) no cuentan (tope total 30 personal / 200 grupal).
+-- Quitar una canción subida o borrar su playlist la elimina de TODAS las playlists; el cliente borra el archivo del bucket cuando queda huérfano.
