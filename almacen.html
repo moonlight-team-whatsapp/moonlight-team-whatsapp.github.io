@@ -79,30 +79,32 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;
 (function(){ const l = $('starsLayer'), fr = document.createDocumentFragment(); for (let i = 0; i < 30; i++){ const s = document.createElement('span'); s.className = 'star'; const z = (Math.random()*1.6+.8).toFixed(2); s.style.cssText = `top:${Math.random()*100}%;left:${Math.random()*100}%;width:${z}px;height:${z}px`; s.style.setProperty('--dur', (Math.random()*3+2).toFixed(2)+'s'); s.style.setProperty('--delay', (Math.random()*5).toFixed(2)+'s'); s.style.setProperty('--o-min', '.2'); s.style.setProperty('--o-max', '.85'); fr.appendChild(s); } l.appendChild(fr); })();
 const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), 3500); };
 const MB = b => (b / 1048576).toFixed(b < 10485760 ? 2 : 1) + ' MB', LIM = 1024 * 1048576;
-const B = () => sb.storage.from('mooncards');
+const B = (b = 'mooncards') => sb.storage.from(b);
+const BUCKETS = ['mooncards', 'musica'];
 let isAdmin = false, files = [], huer = [];
-async function listar(pref = ''){ // recorre carpetas y devuelve todos los archivos con su tamaño
+async function listarB(bk, pref = ''){ // recorre carpetas y devuelve todos los archivos con su tamaño
   const out = []; let off = 0;
-  for (;;){ const { data, error } = await B().list(pref, { limit: 1000, offset: off }); if (error) throw error; if (!data || !data.length) break;
-    for (const it of data){ const p = pref ? pref + '/' + it.name : it.name; if (it.id === null || !it.metadata) out.push(...await listar(p)); else out.push({ path: p, size: it.metadata.size || 0, creado: it.created_at || it.updated_at }); }
+  for (;;){ const { data, error } = await B(bk).list(pref, { limit: 1000, offset: off }); if (error) throw error; if (!data || !data.length) break;
+    for (const it of data){ const p = pref ? pref + '/' + it.name : it.name; if (it.id === null || !it.metadata) out.push(...await listarB(bk, p)); else out.push({ bucket: bk, path: p, size: it.metadata.size || 0, creado: it.created_at || it.updated_at }); }
     if (data.length < 1000) break; off += 1000; }
   return out;
 }
+const listar = async () => (await Promise.all(BUCKETS.map(b => listarB(b)))).flat();
 async function load(){
   $('needAdmin').hidden = isAdmin; $('panel').hidden = !isAdmin; if (!isAdmin) return;
   files = await listar(); const tot = files.reduce((a, f) => a + f.size, 0);
   $('uso').style.width = Math.min(100, tot * 100 / LIM) + '%'; $('uso').classList.toggle('alto', tot > .7 * LIM);
   $('usoT').textContent = `${MB(tot)} de 1024 MB usados (${(tot * 100 / LIM).toFixed(1)} %) · ${files.length} archivos. Las subidas anónimas se bloquean al llegar a 800 MB.`;
-  const por = {}; files.forEach(f => { const k = f.path.split('/')[0]; (por[k] = por[k] || { n: 0, b: 0 }); por[k].n++; por[k].b += f.size; });
-  const N = { mc: 'MoonCards (imagen y diseño)', adv: 'Adviento', vot: 'Votaciones (portadas y opciones)', con: 'Concurso de fotos' };
+  const por = {}; files.forEach(f => { const k = f.bucket === 'musica' ? 'musica' : f.path.split('/')[0]; (por[k] = por[k] || { n: 0, b: 0 }); por[k].n++; por[k].b += f.size; });
+  const N = { mc: 'MoonCards (imagen y diseño)', adv: 'Adviento', vot: 'Votaciones (portadas y opciones)', con: 'Concurso de fotos', musica: 'Música (playlists)' };
   $('carp').innerHTML = Object.entries(por).sort((a, b) => b[1].b - a[1].b).map(([k, v]) => `<li><div class="nm">${esc(N[k] || k)}<small>${v.n} archivos</small></div><span class="chip">${MB(v.b)}</span></li>`).join('') || '<li>No hay archivos.</li>';
 }
 async function usados(){
   const u = new Set(), add = p => { if (p) u.add(p); };
-  const [m, a, v, f] = await Promise.all([sb.from('mooncards').select('img_path,diseno_path'), sb.from('adviento').select('imagen_path'), sb.from('votaciones').select('imagen_path,opciones'), sb.from('votacion_fotos').select('img_path')]);
-  for (const r of [m, a, v, f]) if (r.error) throw r.error;
+  const [m, a, v, f, mu] = await Promise.all([sb.from('mooncards').select('img_path,diseno_path'), sb.from('adviento').select('imagen_path'), sb.from('votaciones').select('imagen_path,opciones'), sb.from('votacion_fotos').select('img_path'), sb.from('musica_canciones').select('path')]);
+  for (const r of [m, a, v, f, mu]) if (r.error) throw r.error;
   (m.data || []).forEach(r => { add(r.img_path); add(r.diseno_path); }); (a.data || []).forEach(r => add(r.imagen_path));
-  (v.data || []).forEach(r => { add(r.imagen_path); (r.opciones || []).forEach(o => add(o.img)); }); (f.data || []).forEach(r => add(r.img_path));
+  (v.data || []).forEach(r => { add(r.imagen_path); (r.opciones || []).forEach(o => add(o.img)); }); (f.data || []).forEach(r => add(r.img_path)); (mu.data || []).forEach(r => add(r.path));
   return u;
 }
 $('analiza').onclick = async () => {
@@ -110,11 +112,13 @@ $('analiza').onclick = async () => {
     huer = files.filter(f => !u.has(f.path) && new Date(f.creado).getTime() < hace1h);
     const tot = huer.reduce((a, f) => a + f.size, 0);
     $('resT').textContent = huer.length ? `${huer.length} archivos sin usar (${MB(tot)}). Solo se cuentan los que tienen más de 1 hora, para no tocar subidas en curso.` : 'No hay archivos sin usar. Todo está limpio.';
-    $('huer').innerHTML = huer.map(f => `<li><div class="nm">${esc(f.path)}</div><span class="chip">${MB(f.size)}</span></li>`).join(''); $('limpia').hidden = !huer.length;
+    $('huer').innerHTML = huer.map(f => `<li><div class="nm">${f.bucket === 'musica' ? '🎵 ' : ''}${esc(f.path)}</div><span class="chip">${MB(f.size)}</span></li>`).join(''); $('limpia').hidden = !huer.length;
   } catch (e) { toast('No se pudo analizar: ' + (e.message || e)); } };
 $('limpia').onclick = async () => {
-  if (!huer.length || !confirm(`¿Borrar ${huer.length} archivos sin usar? No se puede deshacer.`)) return;
-  try { for (let i = 0; i < huer.length; i += 100){ const { error } = await B().remove(huer.slice(i, i + 100).map(f => f.path)); if (error) throw error; }
+  if (!huer.length) return;
+  if (!$('limpia').dataset.seguro){ $('limpia').dataset.seguro = 1; $('limpia').dataset.txt = $('limpia').textContent; $('limpia').textContent = '¿Seguro? Pulsa otra vez para borrar'; setTimeout(() => { delete $('limpia').dataset.seguro; $('limpia').textContent = $('limpia').dataset.txt; }, 4000); return; }
+  delete $('limpia').dataset.seguro; $('limpia').textContent = $('limpia').dataset.txt || $('limpia').textContent;
+  try { for (const bk of BUCKETS){ const l = huer.filter(f => f.bucket === bk); for (let i = 0; i < l.length; i += 100){ const { error } = await B(bk).remove(l.slice(i, i + 100).map(f => f.path)); if (error) throw error; } }
     toast('Archivos borrados.'); huer = []; $('huer').innerHTML = ''; $('limpia').hidden = true; $('resT').textContent = ''; load();
   } catch (e) { toast('No se pudo borrar: ' + (e.message || e)); } };
 $('adminToggleBtn').addEventListener('click', () => {

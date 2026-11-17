@@ -4,3 +4,4 @@
 -- Añadido: musica_playlists.privada (lectura pública solo si no es privada; el dueño las lee con la RPC musica_privadas(token)),
 -- musica_playlist_privada(token,id,bool), musica_cancion_add_existente(token,playlist,origen,autor) (reutiliza el mismo audio),
 -- política musica_listar (admin lista el bucket para borrar archivos sin enlazar).
+-- almacen_ok() ahora suma los buckets mooncards + musica (tope 800 MB para subidas anónimas); la limpieza de archivos sueltos está en almacen.html.
