@@ -21,6 +21,8 @@
 .pick-list span:hover{border-color:rgba(217,195,131,.5)}
 .pick-list span.si{color:#7dffb0;border-color:rgba(125,255,176,.45);background:rgba(125,255,176,.08)}
 .pick-list span em{font-style:normal;opacity:.6;font-size:.8em;margin-left:4px}
+.warn-toggle{ font:inherit; color:inherit; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.22); border-radius:999px; padding:1px 10px; cursor:pointer } .warn-toggle:hover{ background:rgba(255,255,255,.16) }
+  .warn-history{ margin-top:6px; padding:8px 10px; border-left:2px solid rgba(255,255,255,.25); white-space:pre-wrap; overflow-wrap:anywhere } .warn-history[hidden]{ display:none }
 </style>
 </head>
 <body>
@@ -58,7 +60,7 @@
     <input type="text" id="pickSearch" placeholder="Buscar integrante para añadir..." autocomplete="off">
     <div id="pickList" class="pick-list"></div>
     <div class="warn-form">
-      <input type="text" id="sanMotivo" placeholder="Motivo (el mismo para todos)" maxlength="120">
+      <input type="text" id="sanMotivo" placeholder="Motivo (el mismo para todos)" maxlength="400">
       <input type="number" id="sanCant" class="warn-cantidad" min="1" value="1" title="Nº de warns">
       <button class="icon-btn" id="sanBtn" type="button">Sancionar</button>
     </div>
@@ -443,7 +445,7 @@
       meta.className = 'li-meta';
       const rolesTxt = r.roles.length ? r.roles.join(', ') : (r.baneado && r.pasados.length ? r.pasados.join(', ') : 'Sin rol actual');
       const etiqueta = (!r.roles.length && r.baneado && r.pasados.length) ? 'Ocupaba' : 'Ocupa';
-      meta.innerHTML = `${etiqueta}: <b>${escapeHtml(rolesTxt)}</b> — warns: ${r.warnsTotal}/${WARN_LIMIT}`;
+      meta.innerHTML = `${etiqueta}: <b>${escapeHtml(rolesTxt)}</b> — warns: ` + (r.warns.length ? `<button type="button" class="warn-toggle" aria-expanded="false" title="Ver el motivo de cada sanción">${r.warnsTotal}/${WARN_LIMIT} ▾</button>` : `${r.warnsTotal}/${WARN_LIMIT}`);
       left.appendChild(meta);
 
       if (!r.baneado){
@@ -464,7 +466,9 @@
 
       if (r.warns.length){
         const historial = document.createElement('div');
-        historial.className = 'li-meta warn-history';
+        historial.className = 'li-meta warn-history'; historial.hidden = true;
+        const tg = meta.querySelector('.warn-toggle');
+        if (tg) tg.addEventListener('click', () => { historial.hidden = !historial.hidden; tg.setAttribute('aria-expanded', String(!historial.hidden)); tg.textContent = `${r.warnsTotal}/${WARN_LIMIT} ` + (historial.hidden ? '▾' : '▴'); });
         historial.innerHTML = r.warns
           .map(w => `${escapeHtml(formatFecha(w.fecha))} — ${escapeHtml(w.motivo)} (+${w.cantidad})`)
           .join('<br>');
