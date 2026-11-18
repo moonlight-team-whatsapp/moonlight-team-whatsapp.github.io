@@ -144,7 +144,7 @@
   <header class="top"><div><div class="title-wrap"><h1>Música</h1></div>
     <p class="subtitle">Crea las playlists que quieras con canciones ya subidas. Hasta 5 de ellas pueden llevar canciones nuevas tuyas (5 por playlist). Al acabar una, suena la siguiente tuya en bucle. Además hay una playlist grupal para todo el team.</p></div></header>
   <p class="admin-only-note" id="sinCarnet" hidden>Para añadir música necesitas abrir esta página con tu carnet. Escuchar, puede cualquiera.</p>
-  <p><button class="mb" id="nuevaBtn" type="button" hidden>＋ Nueva playlist</button> <button class="mb" id="instBtn" type="button" hidden>📲 Instalar app</button></p>
+  <p><button class="mb" id="nuevaBtn" type="button" hidden>＋ Nueva playlist</button> <button class="mb" id="mezclaBtn" type="button">🔀 Mezclar todo</button> <button class="mb" id="instBtn" type="button" hidden>📲 Instalar app</button></p>
   <div id="lista"></div>
   <p class="vacia" id="oculNote" hidden></p>
 </div>
@@ -184,9 +184,12 @@
   <p class="vacia" id="sMsg"></p>
   <div class="dialog-actions"><button class="btn-primary" id="sOk" type="button">Subir</button><button class="btn-ghost" id="sNo" type="button">Cancelar</button></div></div></dialog>
 
+<dialog id="zzDlg"><div class="dialog-inner"><h3>😴 Temporizador</h3><p class="vacia" id="zzEst">La música se apaga sola.</p>
+  <div class="dialog-actions" style="flex-wrap:wrap"><button class="mb" data-z="15" type="button">15 min</button><button class="mb" data-z="30" type="button">30 min</button><button class="mb" data-z="60" type="button">1 h</button><button class="mb" data-z="fin" type="button">Al acabar la canción</button></div>
+  <div class="dialog-actions"><button class="mb red" id="zzOff" type="button">Quitar</button><button class="btn-ghost" id="zzNo" type="button">Cerrar</button></div></div></dialog>
 <dialog id="qDlg"><div class="dialog-inner"><h3>Cola</h3><p class="vacia" id="qNota">Estas canciones suenan a continuación, antes de seguir con la lista.</p>
   <div id="qLista" style="max-height:50vh;overflow:auto"></div>
-  <div class="dialog-actions"><button class="mb red" id="qVac" type="button">Vaciar</button><button class="btn-ghost" id="qNo" type="button">Cerrar</button></div></div></dialog>
+  <div class="dialog-actions"><button class="mb red" id="qVac" type="button">Vaciar</button><button class="mb" id="zzBtn" type="button">😴 Dormir</button><button class="btn-ghost" id="qNo" type="button">Cerrar</button></div></div></dialog>
 <dialog id="exiDlg"><div class="dialog-inner"><h3>Añadir canción ya subida</h3>
   <div class="fld"><input id="eBus" placeholder="Buscar por título o artista…" autocomplete="off"></div>
   <div id="eLista" style="max-height:50vh;overflow:auto"></div>
@@ -218,15 +221,35 @@ async function carga(){
   pinta();
 }
 const cancs = id => CA.filter(c => c.playlist_id === id);
+// Favoritas e historial (por carnet; sin carnet, en este navegador). Se guardan por ruta de archivo.
+let FAV = [], HIST = [];
+const kv = k => k + (yo || '');
+function lsGet(k){ try { return JSON.parse(localStorage.getItem(kv(k)) || '[]'); } catch (e) { return []; } }
+let ultP = 0;
+function guardaPerfil(){
+  try { localStorage.setItem(kv('mc_musica_fav'), JSON.stringify(FAV)); localStorage.setItem(kv('mc_musica_hist'), JSON.stringify(HIST)); } catch (e) {}
+  if (yo && tokenActual()) sb.rpc('perfil_guardar', { token: tokenActual(), d: { mfav: FAV, mhist: HIST } });
+}
+async function perfilMus(){
+  FAV = lsGet('mc_musica_fav'); HIST = lsGet('mc_musica_hist');
+  if (yo && tokenActual()){ try { const r = await sb.rpc('perfil_leer', { token: tokenActual() }); const d = r.data || {}; if (Array.isArray(d.mfav)) FAV = d.mfav; if (Array.isArray(d.mhist)) HIST = d.mhist; } catch (e) {} }
+}
+const porPath = p => CA.find(c => c.path === p);
+const VIRT = { fav: () => FAV.map(porPath).filter(Boolean), hist: () => HIST.map(porPath).filter(Boolean) };
+const esFav = c => FAV.includes(c.path);
+function fila(c, i, extra){ return `<div class="tr${ocultas.has(c.id) ? ' oculta' : ''}${actual && actual.id === c.id ? ' sona' : ''}" data-c="${c.id}"><span class="n">${i + 1}</span><div class="t"><b>${esc(c.titulo)}</b><small>${esc(c.artista)}${c.artista && c.autor ? ' · ' : ''}${extra || ''} ${fmt(c.dur)}</small></div>
+        <button data-a="fav" title="${esFav(c) ? 'Quitar de favoritas' : 'Añadir a favoritas'}">${esFav(c) ? '♥' : '♡'}</button><button class="q" data-a="q" title="Añadir a la cola">☰＋</button><button data-a="hide" title="${ocultas.has(c.id) ? 'Volver a mostrar' : 'Ocultar solo para mí'}">${ocultas.has(c.id) ? '👁' : '🙈'}</button></div>`; }
+function secVirtual(id, emoji, nombre, sub){ const l = VIRT[id](); if (!l.length) return '';
+  return `<section class="pl${plegadas.has(id) ? ' plegada' : ''}" data-p="${id}"><div class="plh"><span class="chev">▾</span><span class="em">${emoji}</span><div><b>${nombre}</b><small>${sub} · ${l.length} canciones</small></div><span class="sp"></span><button class="mb" data-a="play">▶ Escuchar</button><button class="mb" data-a="shuf" title="Aleatorio" aria-label="Aleatorio">🔀</button></div>${l.map((c, i) => fila(c, i)).join('')}</section>`; }
 function pinta(){
   const orden = [...PL.filter(p => p.grupal), ...PL.filter(p => !p.grupal)];
-  $('lista').innerHTML = orden.map(p => {
+  $('lista').innerHTML = secVirtual('fav', '♥', 'Favoritas', 'Solo tuyas') + secVirtual('hist', '🕘', 'Escuchado recientemente', 'Tus últimas') + orden.map(p => {
     const cs = cancs(p.id), mia = yo && p.miembro_id === yo, adm = isAdmin, puede = yo && (p.grupal || mia), lleno = !p.grupal && cs.filter(c => c.origen !== false).length >= 5, conSubidas = PL.filter(x => !x.grupal && x.miembro_id === yo && cancs(x.id).some(c => c.origen !== false)).length;
     return `<section class="pl${p.grupal ? ' grupal' : ''}${plegadas.has(p.id) ? ' plegada' : ''}" data-p="${p.id}"><div class="plh"><span class="chev">▾</span><span class="em">${esc(p.emoji)}</span><div><b>${esc(p.nombre)}${p.privada ? ' 🔒' : ''}</b><small>${p.grupal ? 'Todo el team' : 'de ' + esc(p.autor || '—') + (p.privada ? ' · privada' : '')} · ${cs.length} canciones${p.grupal ? '' : ' · ' + cs.filter(c => c.origen !== false).length + '/5 subidas'}</small></div><span class="sp"></span>
       ${cs.length ? `<button class="mb" data-a="play">▶ Escuchar</button><button class="mb" data-a="shuf" title="Aleatorio" aria-label="Aleatorio">🔀</button><button class="mb" data-a="off" title="Guardar para escuchar sin conexión">⬇</button>` : ''}
       ${puede ? `${!lleno && (p.grupal || cs.some(c => c.origen !== false) || conSubidas < 5) ? '<button class="mb" data-a="add">＋ Subir</button>' : ''}<button class="mb" data-a="exi">＋ Ya subida</button>` : ''}${mia ? `<button class="mb" data-a="priv">${p.privada ? '🔓 Hacer pública' : '🔒 Hacer privada'}</button>` : ''}${mia || adm ? `<button class="mb red" data-a="del">Borrar</button>` : ''}</div>
       ${cs.map((c, i) => `<div class="tr${ocultas.has(c.id) ? ' oculta' : ''}${actual && actual.id === c.id ? ' sona' : ''}" data-c="${c.id}"><span class="n">${i + 1}</span><div class="t"><b>${esc(c.titulo)}</b><small>${esc(c.artista)}${c.artista && c.autor ? ' · ' : ''}${p.grupal && c.autor ? 'añadida por ' + esc(c.autor) : ''} ${fmt(c.dur)}</small></div>
-        <button class="q" data-a="q" title="Añadir a la cola">☰＋</button><button data-a="hide" title="${ocultas.has(c.id) ? 'Volver a mostrar' : 'Ocultar solo para mí'}">${ocultas.has(c.id) ? '👁' : '🙈'}</button>${adm || (yo && (c.miembro_id === yo || mia)) ? '<button data-a="rm" title="Quitar">✕</button>' : ''}</div>`).join('') || '<div class="vacia">Vacía por ahora.</div>'}</section>`; }).join('');
+        <button data-a="fav" title="${esFav(c) ? 'Quitar de favoritas' : 'Añadir a favoritas'}">${esFav(c) ? '♥' : '♡'}</button><button class="q" data-a="q" title="Añadir a la cola">☰＋</button><button data-a="hide" title="${ocultas.has(c.id) ? 'Volver a mostrar' : 'Ocultar solo para mí'}">${ocultas.has(c.id) ? '👁' : '🙈'}</button>${adm || (yo && (c.miembro_id === yo || mia)) ? '<button data-a="rm" title="Quitar">✕</button>' : ''}</div>`).join('') || '<div class="vacia">Vacía por ahora.</div>'}</section>`; }).join('');
   const nOc = ocultas.size; $('oculNote').hidden = !nOc; $('oculNote').textContent = nOc ? `Tienes ${nOc} canción${nOc > 1 ? 'es' : ''} oculta${nOc > 1 ? 's' : ''} solo para ti (🙈 en la lista). No suenan en tu reproductor.` : '';
 }
 
@@ -246,6 +269,7 @@ function cadena(p){ // playlist + (si es personal) las siguientes del mismo due�
 }
 function reproduce(c){ setTimeout(() => { if (!$('letra').hidden) cargaLetra(); }, 0);
   actual = c; au.src = url(c.path); au.play().catch(() => toast('Toca ▶ para reproducir.'));
+  if (HIST[0] !== c.path){ HIST = [c.path, ...HIST.filter(x => x !== c.path)].slice(0, 20); guardaPerfil(); if (VIRT.hist().length) setTimeout(pinta, 0); }
   $('bar').classList.add('on'); $('bT').textContent = c.titulo; $('bS').textContent = c.artista || c.autor || '';
   if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: c.titulo, artist: c.artista || c.autor || 'Moonlight Team', album: (PL.find(p => p.id === c.playlist_id) || {}).nombre || 'Moonlight', artwork: [{ src: 'favicon.png', sizes: '256x256', type: 'image/png' }] });
   pinta(); pintaQ();
@@ -417,8 +441,17 @@ async function conecta(){
 }
 function suena(i){ if (!cola.length) return; ci = (i + cola.length) % cola.length; reproduce(cola[ci]); }
 function siguiente(){ suena(ci + 1); }
-function fin(){ if (rep === 0 || (rep === 1 && ci + 1 >= cola.length)) return; suena(ci + 1); }
-function pintaQ(){ const n = Math.max(0, cola.length - ci - 1); $('bQ').textContent = '☰ Cola' + (n ? ' · ' + (n > 99 ? '99+' : n) : ''); }
+let zzT = null, zzFin = 0, zzCancion = false;
+function zzQuita(){ clearTimeout(zzT); zzT = null; zzFin = 0; zzCancion = false; pintaQ(); }
+function zzApaga(){ const v0 = au.volume; let k = 0; const iv = setInterval(() => { k++; au.volume = Math.max(0, v0 * (1 - k / 20)); if (k >= 20){ clearInterval(iv); au.pause(); au.volume = v0; zzQuita(); toast('Buenas noches 🌙'); } }, 150); }
+function zzEstado(){ $('zzEst').textContent = zzCancion ? 'Se apagará al acabar esta canción.' : zzFin ? 'Se apaga en ' + Math.max(1, Math.round((zzFin - Date.now()) / 60000)) + ' min.' : 'La música se apaga sola.'; }
+$('zzBtn').onclick = () => { zzEstado(); $('zzDlg').showModal(); }; $('zzNo').onclick = () => $('zzDlg').close();
+$('zzOff').onclick = () => { zzQuita(); zzEstado(); toast('Temporizador quitado.'); };
+$('zzDlg').addEventListener('click', e => { const b = e.target.closest('[data-z]'); if (!b) return; zzQuita();
+  if (b.dataset.z === 'fin') zzCancion = true; else { const m = +b.dataset.z; zzFin = Date.now() + m * 60000; zzT = setTimeout(zzApaga, m * 60000); }
+  pintaQ(); $('zzDlg').close(); toast('😴 Temporizador activado.'); });
+function fin(){ if (zzCancion){ zzQuita(); toast('Buenas noches 🌙'); return; } if (rep === 0 || (rep === 1 && ci + 1 >= cola.length)) return; suena(ci + 1); }
+function pintaQ(){ const n = Math.max(0, cola.length - ci - 1); $('bQ').textContent = '☰ Cola' + (n ? ' · ' + (n > 99 ? '99+' : n) : '') + (zzFin || zzCancion ? ' 😴' : ''); }
 function pintaQDlg(){ const sig = cola.slice(ci + 1, ci + 61); $('qLista').innerHTML = sig.map((c, i) => `<div class="tr" data-i="${ci + 1 + i}"><span class="n">${i + 1}</span><div class="t"><b>${esc(c.titulo)}</b><small>${esc(c.artista)}</small></div><button title="Quitar de la cola">✕</button></div>`).join('') || '<p class="vacia">La cola está vacía. Pulsa ☰＋ en una canción para añadirla.</p>'; }
 $('bQ').onclick = () => { pintaQDlg(); $('qDlg').showModal(); }; $('qNo').onclick = () => $('qDlg').close(); $('qVac').onclick = () => { cola.length = Math.min(cola.length, ci + 1); pintaQ(); pintaQDlg(); };
 $('qLista').addEventListener('click', e => { const r = e.target.closest('[data-i]'); if (r && e.target.closest('button')){ cola.splice(+r.dataset.i, 1); pintaQ(); pintaQDlg(); } });
@@ -461,8 +494,14 @@ $('eLista').addEventListener('click', async e => { const r = e.target.closest('[
   else toast(x.data === 'limite' ? 'Esa playlist ya está llena.' : x.data === 'repetida' ? 'Ya está en esa playlist.' : MSG[x.data] || 'No se pudo añadir.'); });
 sb.auth.onAuthStateChange((ev, ses) => { setTimeout(async () => { isAdmin = !!(ses && ses.user); if (PL.length) await carga(); }, 0); });
 $('lista').addEventListener('click', async e => {
-  const b = e.target.closest('[data-a]'); if (!b) { const h = e.target.closest('.plh'); if (h){ plega(h.closest('.pl').dataset.p); return; } const r = e.target.closest('.tr'); if (r){ const c = CA.find(x => x.id === r.dataset.c), p = PL.find(x => x.id === c.playlist_id); cola = colaDe(p); const i = cola.findIndex(x => x.id === c.id); if (i >= 0) suena(i); else toast('Esa canción está oculta para ti.'); } return; }
+  const b = e.target.closest('[data-a]'); if (!b) { const h = e.target.closest('.plh'); if (h){ plega(h.closest('.pl').dataset.p); return; } const r = e.target.closest('.tr'); if (r){ const c = CA.find(x => x.id === r.dataset.c), sid = r.closest('.pl').dataset.p, p = PL.find(x => x.id === c.playlist_id); cola = VIRT[sid] ? VIRT[sid]().filter(x => !ocultas.has(x.id)) : colaDe(p); const i = cola.findIndex(x => x.id === c.id); if (i >= 0) suena(i); else toast('Esa canción está oculta para ti.'); } return; }
   const sec = b.closest('.pl'), p = PL.find(x => x.id === sec.dataset.p), a = b.dataset.a, tr = b.closest('.tr');
+  if (a === 'fav'){ const c = CA.find(x => x.id === tr.dataset.c); FAV = esFav(c) ? FAV.filter(x => x !== c.path) : [c.path, ...FAV].slice(0, 300); guardaPerfil(); pinta(); return; }
+  if (VIRT[sec.dataset.p] && (a === 'play' || a === 'shuf')){
+    if (rep === 0){ rep = 1; try { localStorage.setItem('mc_musica_rep', 1); } catch (e) {} pintaRep(); }
+    const l = VIRT[sec.dataset.p]().filter(c => !ocultas.has(c.id)); if (!l.length) return toast('Todas están ocultas.');
+    if (a === 'shuf') for (let i = l.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; }
+    cola = l; suena(0); return; }
   if ((a === 'play' || a === 'shuf') && rep === 0){ rep = 1; try { localStorage.setItem('mc_musica_rep', 1); } catch (e) {} pintaRep(); }
   if (a === 'play'){ cola = colaDe(p); if (!cola.length) return toast('Todas están ocultas.'); suena(0); }
   else if (a === 'shuf'){ const l = cancs(p.id).filter(c => !ocultas.has(c.id)); if (!l.length) return toast('Todas están ocultas.'); for (let i = l.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } cola = l; suena(0); toast('Orden aleatorio.'); }
@@ -482,6 +521,8 @@ $('lista').addEventListener('click', async e => {
     if (c.origen !== false) await limpiaHuerfanos([c.path]); toast(c.origen !== false ? 'Canción quitada (y borrada si estaba en otras playlists).' : 'Canción quitada.'); carga(); }
   else if (a === 'off'){ b.disabled = true; try { const c = await caches.open('musica-v1'); let n = 0; for (const s of cancs(p.id)){ const u = url(s.path); if (!await c.match(u)){ const r = await fetch(u); if (r.ok) await c.put(u, r); } n++; b.textContent = '⬇ ' + n; } toast('Guardada para escuchar sin conexión.'); } catch (er) { toast('No se pudo guardar sin conexión.'); } b.disabled = false; b.textContent = '✓'; }
 });
+$('mezclaBtn').onclick = () => { const l = publicas(); if (!l.length) return toast('No hay canciones públicas.'); for (let i = l.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; }
+  if (rep === 0){ rep = 2; try { localStorage.setItem('mc_musica_rep', 2); } catch (e) {} pintaRep(); } cola = l; suena(0); toast('Todo mezclado.'); };
 $('nuevaBtn').onclick = () => { $('nNom').value = ''; $('nPriv').checked = false; $('nuevaDlg').showModal(); }; $('nNo').onclick = () => $('nuevaDlg').close();
 $('nOk').onclick = async () => { const n = $('nNom').value.trim(); if (!n) return $('nNom').focus(); const r = await sb.rpc('musica_playlist_crear', { p_token: tokenActual(), p_nombre: n, p_emoji: $('nEmo').value.trim(), p_autor: nombre, p_privada: $('nPriv').checked }); $('nuevaDlg').close(); r.data === 'ok' ? carga() : toast(r.data === 'limite' ? 'Ya tienes 50 playlists.' : MSG[r.data] || 'No se pudo crear.'); };
 $('sNo').onclick = () => $('subeDlg').close();
@@ -512,7 +553,7 @@ $('instBtn').onclick = async () => { if (ip){ ip.prompt(); ip = null; $('instBtn
 
 (async () => {
   const pf = tokenActual() ? await miPerfil() : null; yo = pf && pf.id; nombre = (pf && pf.nombres && pf.nombres[0]) || '';
-  $('nuevaBtn').hidden = !yo; $('sinCarnet').hidden = !!yo; await carga(); restaura(); conecta();
+  $('nuevaBtn').hidden = !yo; $('sinCarnet').hidden = !!yo; await perfilMus(); await carga(); restaura(); conecta();
 })();
 </script>
 </body>
