@@ -9,3 +9,4 @@
 -- Quitar una canción subida o borrar su playlist la elimina de TODAS las playlists; el cliente borra el archivo del bucket cuando queda huérfano.
 -- perfil_guardar ahora MEZCLA (data || nuevo) para que índice y música guarden claves distintas en el mismo perfil; música guarda {musica:{id,t,pl}}.
 -- musica_playlist_crear: tope 50 playlists; musica_cancion_add: máx. 5 playlists con subidas propias (limite_pl); las que solo reutilizan canciones no cuentan.
+-- Letras: tabla musica_letras(path pk, letra ≤20000, miembro_id), RPC musica_letra_guardar(token,path,letra) (solo quien subió la canción; admin directo por RLS); trigger musica_letra_limpia borra la letra cuando se borra la última canción con ese archivo.

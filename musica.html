@@ -87,6 +87,16 @@
   .subtitle{ max-width:none !important; font-size:1rem; line-height:1.5 }
   .app .back-link{ display:none }
   .plh{ cursor:pointer } .plh .chev{ transition:transform .2s; color:#a9a3f0; font-size:1.1rem } .pl.plegada .chev{ transform:rotate(-90deg) } .pl.plegada .tr, .pl.plegada .vacia{ display:none }
+  #bLet{ padding:6px 13px; border-radius:999px; border:1px solid rgba(246,231,180,.5); color:#f6e7b4; font:italic 600 1rem 'Cormorant',serif; background:rgba(246,231,180,.07); cursor:pointer; white-space:nowrap }
+  #letra{ position:fixed; inset:0; z-index:70; display:flex; flex-direction:column; background:radial-gradient(ellipse at 50% 0,#2a1f66 0,#0d1130 60%,#060919 100%) } #letra[hidden]{ display:none }
+  #letra .lh{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 18px; flex-wrap:wrap }
+  #letra .lt b{ display:block; font:italic 700 1.4rem 'Cormorant',serif; color:#f6e7b4; text-shadow:0 0 14px rgba(246,231,180,.35) } #letra .lt small{ color:#a9a3f0 } #letra .lc{ display:flex; gap:8px; align-items:center } #letra .lo{ color:#a9a3f0; min-width:44px; text-align:center; font-size:.9rem }
+  #lCuerpo{ flex:1; overflow-y:auto; padding:30vh 22px 40vh; text-align:center; scroll-behavior:smooth }
+  #lCuerpo .ln{ font:italic 600 clamp(1.35rem,4.2vw,2rem)/1.35 'Cormorant',serif; color:rgba(238,240,251,.38); padding:7px 0; transition:color .25s, transform .25s, text-shadow .25s; cursor:pointer }
+  #lCuerpo.sinc .ln:hover{ color:rgba(238,240,251,.7) } #lCuerpo .ln.pas{ color:rgba(238,240,251,.55) }
+  #lCuerpo .ln.act{ color:#f6e7b4; transform:scale(1.06); text-shadow:0 0 18px rgba(246,231,180,.65) } #lCuerpo:not(.sinc) .ln{ color:rgba(238,240,251,.85); cursor:default; font-size:1.25rem }
+  #lCuerpo .nada{ color:#a9a3f0; padding:20px } #lSigue{ position:absolute; left:50%; bottom:26px; transform:translateX(-50%) }
+  .letraop{ margin:8px 0; color:#a9a3f0 } .letraop summary{ cursor:pointer } textarea{ width:100%; border-radius:12px; background:rgba(255,255,255,.06); border:1px solid rgba(190,170,255,.3); color:#eef0fb; font:inherit; padding:10px; resize:vertical; margin-top:6px }
   /* ===== Estética moonlight para toda la página ===== */
   .pl{ position:relative; border:1px solid rgba(190,170,255,.35); border-radius:18px; background:linear-gradient(135deg,rgba(40,34,90,.6),rgba(20,18,56,.55)); backdrop-filter:blur(8px); box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 24px rgba(120,100,230,.12); overflow:hidden }
   .pl::before{ content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle at 0 0,rgba(130,110,255,.2),transparent 45%) }
@@ -132,8 +142,19 @@
 <div id="bar"><div id="bOtro" hidden></div>
   <div class="row"><div class="ti"><b id="bT">—</b><small id="bS"></small></div>
     <div class="ctl"><button class="b" id="bPrev" type="button" aria-label="Anterior">⏮</button><button class="b p" id="bPlay" type="button" aria-label="Reproducir">▶</button><button class="b" id="bNext" type="button" aria-label="Siguiente">⏭</button><button class="b s" id="bRep" type="button" aria-label="Repetir"><span>🔁</span><sup id="bRepN"></sup></button></div>
-    <div class="rt"><button id="bQ" type="button" aria-label="Cola">☰ Cola</button><span id="bVol"><button id="bMute" type="button" aria-label="Silenciar">🔊</button><input type="range" id="bVolR" min="0" max="100" value="100" aria-label="Volumen"></span></div></div>
+    <div class="rt"><button id="bLet" type="button" aria-label="Letra">🎤 Letra</button><button id="bQ" type="button" aria-label="Cola">☰ Cola</button><span id="bVol"><button id="bMute" type="button" aria-label="Silenciar">🔊</button><input type="range" id="bVolR" min="0" max="100" value="100" aria-label="Volumen"></span></div></div>
   <div class="pr"><span id="bCur">0:00</span><div id="bTr"><div class="base"></div><div class="fill"></div><div class="nota">♪</div><div class="luna"></div><input type="range" id="bSeek" min="0" max="1000" value="0" aria-label="Posición"></div><span id="bDur">0:00</span></div></div>
+<div id="letra" hidden>
+  <div class="lh"><div class="lt"><b id="lT">—</b><small id="lA"></small></div>
+    <div class="lc"><button class="mb" id="lMenos" type="button" title="La letra va adelantada: retrasarla">−0.5s</button><span id="lOff" class="lo">0.0s</span><button class="mb" id="lMas" type="button" title="La letra va atrasada: adelantarla">+0.5s</button>
+    <button class="mb" id="lEdit" type="button" hidden>✎ Letra</button><button class="mb" id="lCerrar" type="button" aria-label="Cerrar">✕</button></div></div>
+  <div id="lCuerpo"></div><button class="mb" id="lSigue" type="button" hidden>↧ Volver a la línea actual</button>
+</div>
+<dialog id="letDlg"><div class="dialog-inner"><h3>Letra de la canción</h3>
+  <textarea id="eTxt" rows="12" placeholder="Pega la letra. Con tiempos [mm:ss.xx] se sincroniza sola; sin ellos, usa «Sincronizar»."></textarea>
+  <label class="mb" style="display:inline-block;margin:6px 0">📄 Cargar .lrc / .txt<input id="eFile" type="file" accept=".lrc,.txt,text/plain" hidden></label>
+  <p class="vacia" id="eMsg"></p>
+  <div class="dialog-actions"><button class="btn-primary" id="eOk" type="button">Guardar</button><button class="btn-ghost" id="eNo" type="button">Cancelar</button></div></div></dialog>
 <div id="toast" role="status"></div>
 
 <dialog id="nuevaDlg"><div class="dialog-inner"><h3>Nueva playlist</h3>
@@ -145,6 +166,9 @@
   <label class="drop" id="sDrop" for="sFile"><span class="di">🎵</span><b id="sNom">Arrastra tu canción aquí</b><small id="sSub">o toca para elegirla · mp3, m4a… máx. 15 MB</small></label><input id="sFile" type="file" accept="audio/*" hidden>
   <div class="fld"><label for="sTit">Título</label><input id="sTit" maxlength="80"></div>
   <div class="fld"><label for="sArt">Artista</label><input id="sArt" maxlength="60"></div>
+  <details class="letraop"><summary>Letra (opcional)</summary>
+    <textarea id="sLet" rows="5" placeholder="Pega la letra aquí (con o sin tiempos [mm:ss.xx]). Si no tiene tiempos, luego puedes sincronizarla."></textarea>
+    <label class="mb" style="display:inline-block;margin-top:6px">📄 Cargar .lrc / .txt<input id="sLetF" type="file" accept=".lrc,.txt,text/plain" hidden></label></details>
   <p class="vacia" id="sMsg"></p>
   <div class="dialog-actions"><button class="btn-primary" id="sOk" type="button">Subir</button><button class="btn-ghost" id="sNo" type="button">Cancelar</button></div></div></dialog>
 
@@ -208,7 +232,7 @@ function cadena(p){ // playlist + (si es personal) las siguientes del mismo due�
   const k = Math.max(0, base.findIndex(x => x.id === p.id)); const rot = [...base.slice(k), ...base.slice(0, k)];
   return rot.flatMap(x => cancs(x.id)).filter(c => !ocultas.has(c.id));
 }
-function reproduce(c){
+function reproduce(c){ setTimeout(() => { if (!$('letra').hidden) cargaLetra(); }, 0);
   actual = c; au.src = url(c.path); au.play().catch(() => toast('Toca ▶ para reproducir.'));
   $('bar').classList.add('on'); $('bT').textContent = c.titulo; $('bS').textContent = c.artista || c.autor || '';
   if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: c.titulo, artist: c.artista || c.autor || 'Moonlight Team', album: (PL.find(p => p.id === c.playlist_id) || {}).nombre || 'Moonlight', artwork: [{ src: 'favicon.png', sizes: '256x256', type: 'image/png' }] });
@@ -236,6 +260,65 @@ async function restaura(){
   if (!cola.length || cola[ci].id !== c.id){ cola = [c, ...cola]; ci = 0; }
   prepara(c, o.t || 0);
 }
+
+// ---------- Letra (con tiempos [mm:ss.xx] se sigue sola; clic en una línea salta a ese punto) ----------
+let LET = { path: null, lineas: [], sinc: false, crudo: '' }, sigueL = true, offL = 0, idxL = -1;
+function parseLrc(t){
+  const out = [], plain = []; let off = 0;
+  for (const raw of String(t || '').split(/\r?\n/)){
+    const tags = [...raw.matchAll(/\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]/g)];
+    const txt = raw.replace(/\[[^\]]*\]/g, '').trim();
+    const o = /^\[offset:\s*([+-]?\d+)\]/i.exec(raw); if (o){ off = +o[1] / 1000; continue; }
+    if (/^\[[a-z]{2,6}:/i.test(raw) && !tags.length) continue;
+    if (tags.length){ for (const m of tags) out.push({ t: +m[1] * 60 + +m[2] + (m[3] ? +('0.' + m[3]) : 0) + off, txt }); }
+    else if (txt || plain.length) plain.push({ t: null, txt });
+  }
+  if (out.length){ out.sort((a, b) => a.t - b.t); return { sinc: true, lineas: out.filter(l => l.txt || true) }; }
+  return { sinc: false, lineas: plain };
+}
+async function cargaLetra(){
+  if (!actual) return; const path = actual.path; if (LET.path === path) return;
+  LET = { path, lineas: [], sinc: false, crudo: '' }; offL = 0; $('lOff').textContent = '0.0s'; pintaLetra();
+  const r = await sb.from('musica_letras').select('letra').eq('path', path).maybeSingle(); if (!actual || actual.path !== path) return;
+  if (r.data){ const p = parseLrc(r.data.letra); LET = { path, lineas: p.lineas, sinc: p.sinc, crudo: r.data.letra }; }
+  pintaLetra();
+}
+function puedeEditarLetra(){ const o = actual && CA.find(c => c.path === actual.path && c.origen !== false); return !!(yo && o && o.miembro_id === yo) || (isAdmin && !!actual); }
+function pintaLetra(){
+  $('lT').textContent = actual ? actual.titulo : '—'; $('lA').textContent = actual ? (actual.artista || '') : ''; $('lEdit').hidden = !puedeEditarLetra();
+  const c = $('lCuerpo'); c.classList.toggle('sinc', LET.sinc); idxL = -1;
+  c.innerHTML = LET.lineas.length ? LET.lineas.map((l, i) => `<div class="ln" data-i="${i}">${esc(l.txt) || '♪'}</div>`).join('') : `<div class="nada">${actual ? 'Esta canción aún no tiene letra.' + (puedeEditarLetra() ? ' Pulsa «✎ Letra» para añadirla.' : '') : ''}</div>`;
+  $('lSigue').hidden = true; sigueL = true; actualizaLetra(true);
+}
+function actualizaLetra(fuerza){
+  if (!LET.sinc || $('letra').hidden) return; const t = au.currentTime + offL; let lo = 0, hi = LET.lineas.length - 1, k = -1;
+  while (lo <= hi){ const m = (lo + hi) >> 1; if (LET.lineas[m].t <= t){ k = m; lo = m + 1; } else hi = m - 1; }
+  if (k === idxL && !fuerza) return; idxL = k; const els = $('lCuerpo').children;
+  for (let i = 0; i < els.length; i++){ els[i].classList.toggle('act', i === k); els[i].classList.toggle('pas', i < k); }
+  if (k >= 0 && sigueL) els[k].scrollIntoView({ block: 'center', behavior: fuerza ? 'auto' : 'smooth' });
+}
+const pausaSigue = () => { if (LET.sinc){ sigueL = false; $('lSigue').hidden = false; } };
+['wheel', 'touchmove'].forEach(ev => $('lCuerpo').addEventListener(ev, pausaSigue, { passive: true }));
+$('lSigue').onclick = () => { sigueL = true; $('lSigue').hidden = true; actualizaLetra(true); };
+$('lCuerpo').addEventListener('click', e => { const l = e.target.closest('.ln'); if (!l || !LET.sinc) return; au.currentTime = Math.max(0, LET.lineas[+l.dataset.i].t - offL); sigueL = true; $('lSigue').hidden = true; actualizaLetra(true); if (au.paused) au.play().catch(() => {}); });
+au.addEventListener('timeupdate', () => actualizaLetra());
+$('bLet').onclick = () => { $('letra').hidden = false; cargaLetra(); pintaLetra(); };
+$('lCerrar').onclick = () => { $('letra').hidden = true; };
+$('lMenos').onclick = () => { offL -= .5; $('lOff').textContent = (offL > 0 ? '+' : '') + offL.toFixed(1) + 's'; actualizaLetra(true); };
+$('lMas').onclick = () => { offL += .5; $('lOff').textContent = (offL > 0 ? '+' : '') + offL.toFixed(1) + 's'; actualizaLetra(true); };
+const leeArchivo = (inp, dest) => inp.addEventListener('change', () => { const f = inp.files[0]; if (!f) return; if (f.size > 100000) return toast('Archivo demasiado grande.'); const r = new FileReader(); r.onload = () => { dest().value = String(r.result); }; r.readAsText(f); });
+leeArchivo($('eFile'), () => $('eTxt')); leeArchivo($('sLetF'), () => $('sLet'));
+async function guardaLetra(path, texto){
+  if (isAdmin && !(yo && CA.some(c => c.path === path && c.origen !== false && c.miembro_id === yo))){
+    const r = texto.trim() ? await sb.from('musica_letras').upsert({ path, letra: texto, updated_at: new Date().toISOString() }) : await sb.from('musica_letras').delete().eq('path', path); return r.error ? 'error' : 'ok'; }
+  return (await sb.rpc('musica_letra_guardar', { p_token: tokenActual(), p_path: path, p_letra: texto })).data;
+}
+$('lEdit').onclick = () => { $('eTxt').value = LET.crudo || ''; $('eMsg').textContent = ''; $('letDlg').showModal(); };
+$('eNo').onclick = () => $('letDlg').close();
+$('eOk').onclick = async () => { const t = $('eTxt').value; if (t.length > 20000) return $('eMsg').textContent = 'Es demasiado larga (máx. 20.000 caracteres).'; $('eOk').disabled = true;
+  const r = await guardaLetra(actual.path, t); $('eOk').disabled = false;
+  if (r === 'ok'){ $('letDlg').close(); LET.path = null; cargaLetra(); toast(t.trim() ? 'Letra guardada.' : 'Letra quitada.'); } else $('eMsg').textContent = r === 'no_es_tuya' ? 'Solo quien subió la canción (o un admin) puede editar la letra.' : 'No se pudo guardar.'; };
+
 // Como Spotify Connect: un solo dispositivo suena a la vez por carnet. Canal privado derivado del carnet.
 const DEV = Math.random().toString(36).slice(2, 8); let canal = null, otro = null;
 const sha = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)))].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -339,7 +422,7 @@ $('sOk').onclick = async () => {
     if (up.error) throw up.error;
     const r = await sb.rpc('musica_cancion_add', { p_token: tokenActual(), p_playlist: subiendoA.id, p_titulo: t, p_artista: $('sArt').value.trim(), p_path: path, p_dur: dur, p_autor: nombre });
     if (r.data !== 'ok'){ $('sMsg').textContent = r.data === 'limite' ? 'Ya has subido 5 canciones nuevas a esta playlist (las ya subidas se añaden con «Ya subida» y no cuentan).' : r.data === 'limite_pl' ? MSG.limite_pl : MSG[r.data] || 'No se pudo añadir.'; }
-    else { $('subeDlg').close(); toast('Canción añadida.'); carga(); }
+    else { const lt = $('sLet').value.trim(); if (lt) await guardaLetra(path, lt); $('sLet').value = ''; $('subeDlg').close(); toast('Canción añadida.'); carga(); }
   } catch (er) { $('sMsg').textContent = 'No se pudo subir el archivo (¿formato o tamaño?).'; }
   $('sOk').disabled = false;
 };
