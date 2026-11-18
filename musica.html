@@ -95,6 +95,7 @@
   #lCuerpo .ln{ font:italic 600 clamp(1.35rem,4.2vw,2rem)/1.35 'Cormorant',serif; color:rgba(238,240,251,.38); padding:7px 0; transition:color .25s, transform .25s, text-shadow .25s; cursor:pointer }
   #lCuerpo.sinc .ln:hover{ color:rgba(238,240,251,.7) } #lCuerpo .ln.pas{ color:rgba(238,240,251,.55) }
   #lCuerpo .ln.act{ color:#f6e7b4; transform:scale(1.06); text-shadow:0 0 18px rgba(246,231,180,.65) } #lCuerpo:not(.sinc) .ln{ color:rgba(238,240,251,.85); cursor:default; font-size:1.25rem }
+  #lCuerpo .ln .ro{ display:block; font:500 .6em 'Crimson Pro',serif; font-style:normal; color:#a9a3f0; margin-top:2px } #lCuerpo.sinro .ro{ display:none } #lCuerpo .ln.act .ro{ color:#d8d0ff }
   #lCuerpo .nada{ color:#a9a3f0; padding:20px } #lSigue{ position:absolute; left:50%; bottom:26px; transform:translateX(-50%) }
   .letraop{ margin:8px 0; color:#a9a3f0 } .letraop summary{ cursor:pointer } textarea{ width:100%; border-radius:12px; background:rgba(255,255,255,.06); border:1px solid rgba(190,170,255,.3); color:#eef0fb; font:inherit; padding:10px; resize:vertical; margin-top:6px }
   #letra:not([hidden]) ~ #toast{ bottom:240px }
@@ -151,7 +152,7 @@
 <div id="letra" hidden>
   <div class="lh"><div class="lt"><b id="lT">—</b><small id="lA"></small></div>
     <div class="lc"><button class="mb" id="lMenos" type="button" title="La letra va adelantada: retrasarla">−0.5s</button><span id="lOff" class="lo">0.0s</span><button class="mb" id="lMas" type="button" title="La letra va atrasada: adelantarla">+0.5s</button>
-    <button class="mb" id="lEdit" type="button" hidden>✎ Letra</button><button class="mb" id="lCerrar" type="button" aria-label="Cerrar">✕</button></div></div>
+    <button class="mb" id="lRo" type="button" hidden title="Mostrar u ocultar el romaji">あ/A</button><button class="mb" id="lEdit" type="button" hidden>✎ Letra</button><button class="mb" id="lCerrar" type="button" aria-label="Cerrar">✕</button></div></div>
   <div id="lCuerpo"></div>
   <div id="sincBar" hidden><button class="mb" id="sAtras" type="button">⏪ Atrás</button><button class="mb sm" id="sMarca" type="button">⏱ Marcar línea <small>(Espacio)</small></button><button class="mb" id="sGuarda" type="button">💾 Guardar</button><button class="mb red" id="sCancela" type="button">Cancelar</button></div><button class="mb" id="lSigue" type="button" hidden>↧ Volver a la línea actual</button>
 </div>
@@ -159,7 +160,7 @@
   <textarea id="eTxt" rows="12" placeholder="Pega la letra. Con tiempos [mm:ss.xx] se sincroniza sola; sin ellos, usa «Sincronizar»."></textarea>
   <label class="mb" style="display:inline-block;margin:6px 0">📄 Cargar .lrc / .txt<input id="eFile" type="file" accept=".lrc,.txt,text/plain" hidden></label>
   <p class="vacia" id="eMsg"></p>
-  <button class="mb" id="eSinc" type="button">⏱ Sincronizar con la canción</button>
+  <button class="mb" id="eRo" type="button" title="Añade una línea con el romaji debajo de cada línea en japonés">🔤 Generar romaji</button> <button class="mb" id="eSinc" type="button">⏱ Sincronizar con la canción</button>
   <div class="dialog-actions"><button class="btn-primary" id="eOk" type="button">Guardar</button><button class="btn-ghost" id="eNo" type="button">Cancelar</button></div></div></dialog>
 <div id="toast" role="status"></div>
 
@@ -268,6 +269,7 @@ async function restaura(){
 }
 
 // ---------- Letra (con tiempos [mm:ss.xx] se sigue sola; clic en una línea salta a ese punto) ----------
+let verRo = true; try { verRo = localStorage.getItem('mc_musica_romaji') !== '0'; } catch (e) {}
 let LET = { path: null, lineas: [], sinc: false, crudo: '' }, sigueL = true, offL = 0, idxL = -1;
 function parseLrc(t){
   const out = [], plain = []; let off = 0;
@@ -276,6 +278,7 @@ function parseLrc(t){
     const txt = raw.replace(/\[[^\]]*\]/g, '').trim();
     const o = /^\[offset:\s*([+-]?\d+)\]/i.exec(raw); if (o){ off = +o[1] / 1000; continue; }
     if (/^\[[a-z]{2,6}:/i.test(raw) && !tags.length) continue;
+    if (txt.startsWith('~')){ const ro = txt.slice(1).trim(); if (tags.length){ for (let k = 1; k <= tags.length && k <= out.length; k++) out[out.length - k].ro = ro; } else if (plain.length) plain[plain.length - 1].ro = ro; continue; }
     if (tags.length){ for (const m of tags) out.push({ t: +m[1] * 60 + +m[2] + (m[3] ? +('0.' + m[3]) : 0) + off, txt }); }
     else if (txt || plain.length) plain.push({ t: null, txt });
   }
@@ -292,8 +295,8 @@ async function cargaLetra(){
 function puedeEditarLetra(){ const o = actual && CA.find(c => c.path === actual.path && c.origen !== false); return !!(yo && o && o.miembro_id === yo) || (isAdmin && !!actual); }
 function pintaLetra(){
   $('lT').textContent = actual ? actual.titulo : '—'; $('lA').textContent = actual ? (actual.artista || '') : ''; $('lEdit').hidden = !puedeEditarLetra();
-  const c = $('lCuerpo'); c.classList.toggle('sinc', LET.sinc); idxL = -1;
-  c.innerHTML = LET.lineas.length ? LET.lineas.map((l, i) => `<div class="ln" data-i="${i}">${esc(l.txt) || '♪'}</div>`).join('') : `<div class="nada">${actual ? 'No hay letra disponible para esta canción.' + (puedeEditarLetra() ? ' Pulsa «✎ Letra» para añadirla.' : '') : ''}</div>`;
+  const c = $('lCuerpo'); c.classList.toggle('sinc', LET.sinc); c.classList.toggle('sinro', !verRo); $('lRo').hidden = !LET.lineas.some(l => l.ro); idxL = -1;
+  c.innerHTML = LET.lineas.length ? LET.lineas.map((l, i) => `<div class="ln" data-i="${i}">${esc(l.txt) || '♪'}${l.ro ? `<small class="ro">${esc(l.ro)}</small>` : ''}</div>`).join('') : `<div class="nada">${actual ? 'No hay letra disponible para esta canción.' + (puedeEditarLetra() ? ' Pulsa «✎ Letra» para añadirla.' : '') : ''}</div>`;
   $('lSigue').hidden = true; sigueL = true; actualizaLetra(true);
 }
 function actualizaLetra(fuerza){
@@ -338,7 +341,7 @@ function pintaSync(){
   $('sMarca').disabled = SY.i >= SY.l.length;
 }
 function empiezaSync(texto){
-  if (!actual) return; const base = parseLrc(texto).lineas.map(l => ({ txt: l.txt, t: null })).filter(l => l.txt);
+  if (!actual) return; const base = parseLrc(texto).lineas.map(l => ({ txt: l.txt, t: null, ro: l.ro })).filter(l => l.txt);
   if (!base.length) return toast('Primero pega la letra.');
   SY = { l: base, i: 0 }; $('letDlg').close(); $('letra').hidden = false; ajustaBh();
   $('sincBar').hidden = false; $('lSigue').hidden = true; $('lMenos').hidden = $('lMas').hidden = $('lOff').hidden = $('lEdit').hidden = true;
@@ -349,7 +352,7 @@ function atrasSync(){ if (!SY || SY.i <= 0) return; SY.i--; SY.l[SY.i].t = null;
 function cierraSync(recarga){ SY = null; $('sincBar').hidden = true; $('lCuerpo').classList.remove('sy'); $('lMenos').hidden = $('lMas').hidden = $('lOff').hidden = false; if (recarga !== false){ LET.path = null; cargaLetra(); } else pintaLetra(); }
 async function guardaSync(){
   if (!SY) return; const hechas = SY.l.filter(x => x.t != null); if (!hechas.length) return toast('Aún no has marcado ninguna línea.');
-  const lrc = SY.l.map(x => (x.t != null ? '[' + mmss(x.t) + ']' : '') + x.txt).join('\n');
+  const lrc = SY.l.map(x => { const tg = x.t != null ? '[' + mmss(x.t) + ']' : ''; return tg + x.txt + (x.ro ? '\n' + tg + '~' + x.ro : ''); }).join('\n');
   const r = await guardaLetra(actual.path, lrc);
   if (r === 'ok'){ toast(hechas.length < SY.l.length ? 'Guardada (hay líneas sin marcar).' : 'Letra sincronizada y guardada.'); cierraSync(true); } else toast(r === 'no_es_tuya' ? 'Solo quien subió la canción (o un admin) puede guardarla.' : 'No se pudo guardar.');
 }
@@ -357,6 +360,39 @@ $('sMarca').onclick = marca; $('sAtras').onclick = atrasSync; $('sGuarda').oncli
 $('eSinc').onclick = () => empiezaSync($('eTxt').value);
 addEventListener('keydown', e => { if (SY && e.code === 'Space' && !/INPUT|TEXTAREA/.test((e.target.tagName || ''))){ e.preventDefault(); if (document.activeElement) document.activeElement.blur(); if (!e.repeat) marca(); } });
 addEventListener('keyup', e => { if (SY && e.code === 'Space' && !/INPUT|TEXTAREA/.test((e.target.tagName || ''))) e.preventDefault(); });
+
+
+// ---------- Romaji (kana exacto; los kanji se dejan tal cual para corregirlos o convertirlos aparte) ----------
+const KB = 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ'.split('');
+const KR = 'a i u e o ka ki ku ke ko sa shi su se so ta chi tsu te to na ni nu ne no ha hi fu he ho ma mi mu me mo ya yu yo ra ri ru re ro wa o n ga gi gu ge go za ji zu ze zo da ji zu de do ba bi bu be bo pa pi pu pe po'.split(' ');
+const KMAP = {}; KB.forEach((k, i) => { KMAP[k] = KR[i]; }); Object.assign(KMAP, { 'ぁ': 'a', 'ぃ': 'i', 'ぅ': 'u', 'ぇ': 'e', 'ぉ': 'o', 'ゔ': 'vu', 'ゎ': 'wa' });
+const KD = { 'きゃ': 'kya', 'きゅ': 'kyu', 'きょ': 'kyo', 'ぎゃ': 'gya', 'ぎゅ': 'gyu', 'ぎょ': 'gyo', 'しゃ': 'sha', 'しゅ': 'shu', 'しょ': 'sho', 'じゃ': 'ja', 'じゅ': 'ju', 'じょ': 'jo', 'ちゃ': 'cha', 'ちゅ': 'chu', 'ちょ': 'cho', 'ぢゃ': 'ja', 'ぢゅ': 'ju', 'ぢょ': 'jo', 'にゃ': 'nya', 'にゅ': 'nyu', 'にょ': 'nyo', 'ひゃ': 'hya', 'ひゅ': 'hyu', 'ひょ': 'hyo', 'びゃ': 'bya', 'びゅ': 'byu', 'びょ': 'byo', 'ぴゃ': 'pya', 'ぴゅ': 'pyu', 'ぴょ': 'pyo', 'みゃ': 'mya', 'みゅ': 'myu', 'みょ': 'myo', 'りゃ': 'rya', 'りゅ': 'ryu', 'りょ': 'ryo', 'てぃ': 'ti', 'でぃ': 'di', 'ふぁ': 'fa', 'ふぃ': 'fi', 'ふぇ': 'fe', 'ふぉ': 'fo', 'うぃ': 'wi', 'うぇ': 'we', 'うぉ': 'wo', 'しぇ': 'she', 'じぇ': 'je', 'ちぇ': 'che', 'ゔぁ': 'va', 'ゔぃ': 'vi', 'ゔぇ': 've', 'ゔぉ': 'vo', 'とぅ': 'tu', 'どぅ': 'du' };
+const aHira = t => t.replace(/[\u30a1-\u30f6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+function romaji(txt){
+  const t = aHira(txt); let o = '', dob = false;
+  for (let i = 0; i < t.length; i++){
+    const c = t[i], dg = KD[c + (t[i + 1] || '')];
+    if (c === 'っ'){ dob = true; continue; }
+    let r = null, n = 1;
+    if (dg){ r = dg; n = 2; } else if (KMAP[c]) r = KMAP[c]; else if (c === 'ー'){ const m = /[aiueo]$/.exec(o); r = m ? m[0] : ''; }
+    else if (c === '、' || c === '，') r = ','; else if (c === '。') r = '.'; else if (c === '　') r = ' '; else if (c === '？') r = '?'; else if (c === '！') r = '!'; else r = c;
+    if (dob && /^[a-z]/.test(r)){ r = (r.startsWith('ch') ? 't' : r[0]) + r; } dob = false;
+    o += r; i += n - 1;
+  }
+  return o.replace(/\s+/g, ' ').trim();
+}
+const esJa = t => /[\u3040-\u30ff\u4e00-\u9fff]/.test(t), hayKanji = t => /[\u4e00-\u9fff]/.test(t);
+$('eRo').onclick = () => {
+  let kan = 0, n = 0; const out = [];
+  for (const raw of $('eTxt').value.split(/\r?\n/)){
+    const tag = (/^(\s*\[[^\]]*\])+/.exec(raw) || [''])[0], txt = raw.slice(tag.length).trim();
+    if (txt.startsWith('~')) continue; out.push(raw);
+    if (txt && esJa(txt)){ out.push(tag + '~' + romaji(txt)); n++; if (hayKanji(txt)) kan++; }
+  }
+  if (!n) return toast('No he encontrado líneas en japonés.'); $('eTxt').value = out.join('\n');
+  toast(kan ? `Romaji generado. ${kan} línea${kan > 1 ? 's tienen' : ' tiene'} kanji sin convertir: corrígelas a mano.` : 'Romaji generado.');
+};
+$('lRo').onclick = () => { verRo = !verRo; try { localStorage.setItem('mc_musica_romaji', verRo ? '1' : '0'); } catch (e) {} $('lCuerpo').classList.toggle('sinro', !verRo); };
 
 // Como Spotify Connect: un solo dispositivo suena a la vez por carnet. Canal privado derivado del carnet.
 const DEV = Math.random().toString(36).slice(2, 8); let canal = null, otro = null;
