@@ -181,7 +181,7 @@
   <div class="dialog-actions"><button class="btn-ghost" id="getNo" type="button">Cerrar</button></div></div></dialog>
 <dialog id="subeDlg"><div class="dialog-inner"><h3>Añadir canción</h3>
   <div class="fld" id="sPlW" hidden><label for="sPl">Añadir a la playlist</label><select id="sPl"></select></div>
-  <label class="drop" id="sDrop" for="sFile"><span class="di">🎵</span><b id="sNom">Arrastra tu canción aquí</b><small id="sSub">o toca para elegirla · mp3, m4a… o un vídeo mp4 (se extrae el sonido)</small></label><input id="sFile" type="file" accept="audio/*,video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm" hidden>
+  <label class="drop" id="sDrop" for="sFile"><span class="di">🎵</span><b id="sNom">Arrastra tu canción aquí</b><small id="sSub">o toca para elegirla · mp3, m4a… o un vídeo mp4 (se extrae el sonido) · máx. 15 MB, 15 min, 128 kbps</small></label><input id="sFile" type="file" accept="audio/*,video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm" hidden>
   <div class="fld"><label for="sTit">Título</label><input id="sTit" maxlength="80"></div>
   <div class="fld"><label for="sArt">Artista</label><input id="sArt" maxlength="60"></div>
   <details class="letraop"><summary>Letra (opcional)</summary>
@@ -203,6 +203,7 @@
 <script type="module">
 import { sb } from './js/supabase-sesion.js';
 import { tokenActual, miPerfil } from './js/carnet.js';
+import { preparaAudio, cancelaAudio, MENSAJES } from './js/musica-audio.js';
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
 const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), 3800); };
@@ -547,45 +548,31 @@ $('getVid').onclick = () => { if (!yo){ $('getDlg').close(); return toast('Para 
   $('sPlW').hidden = false; $('sFile').value = ''; muestraArchivo(); $('sTit').value = ''; $('sArt').value = ''; $('sMsg').textContent = ''; $('getDlg').close(); $('subeDlg').showModal(); };
 $('sNo').onclick = () => $('subeDlg').close();
 const dz = $('sDrop');
-const muestraArchivo = () => { const f = $('sFile').files[0]; dz.classList.toggle('tiene', !!f); $('sNom').textContent = f ? f.name : 'Arrastra tu canción aquí'; $('sSub').textContent = f ? Math.round(f.size / 1024 / 1024 * 10) / 10 + ' MB · toca para cambiarla' : 'o toca para elegirla · mp3, m4a… o un vídeo mp4 (se extrae el sonido)'; };
+const muestraArchivo = () => { const f = $('sFile').files[0]; dz.classList.toggle('tiene', !!f); $('sNom').textContent = f ? f.name : 'Arrastra tu canción aquí'; $('sSub').textContent = f ? Math.round(f.size / 1024 / 1024 * 10) / 10 + ' MB · toca para cambiarla' : 'o toca para elegirla · mp3, m4a… o un vídeo mp4 (se extrae el sonido) · máx. 15 MB, 15 min, 128 kbps'; };
 ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
 ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('over'); }));
 dz.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f){ $('sFile').files = e.dataTransfer.files; $('sFile').dispatchEvent(new Event('change')); } });
 $('sFile').addEventListener('change', () => { muestraArchivo(); const f = $('sFile').files[0]; if (f && !$('sTit').value) $('sTit').value = f.name.replace(/\.[^.]+$/, '').slice(0, 80); });
-function cargaScript(u){ return new Promise((ok, ko) => { const e = document.createElement('script'); e.src = u; e.onload = ok; e.onerror = ko; document.head.appendChild(e); }); }
-async function videoAMp3(file, prog){
-  if (!window.lamejs){ try { await cargaScript('https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js'); } catch (e) { await cargaScript('https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js'); } }
-  const AC = window.AudioContext || window.webkitAudioContext, ctx = new AC();
-  const buf = await ctx.decodeAudioData(await file.arrayBuffer()); ctx.close && ctx.close();
-  if (buf.duration > 20 * 60) throw new Error('largo');
-  const ch = Math.min(2, buf.numberOfChannels), sr = buf.sampleRate, enc = new lamejs.Mp3Encoder(ch, sr, 128), out = [];
-  const conv = a => { const r = new Int16Array(a.length); for (let i = 0; i < a.length; i++){ const v = Math.max(-1, Math.min(1, a[i])); r[i] = v < 0 ? v * 0x8000 : v * 0x7FFF; } return r; };
-  const L = conv(buf.getChannelData(0)), R = ch > 1 ? conv(buf.getChannelData(1)) : null, N = 1152 * 20;
-  for (let i = 0; i < L.length; i += N){ const d = ch > 1 ? enc.encodeBuffer(L.subarray(i, i + N), R.subarray(i, i + N)) : enc.encodeBuffer(L.subarray(i, i + N)); if (d.length) out.push(d); prog(Math.round(i / L.length * 100)); await new Promise(r => setTimeout(r)); }
-  const e = enc.flush(); if (e.length) out.push(e);
-  return new File(out, file.name.replace(/\.[^.]+$/, '') + '.mp3', { type: 'audio/mpeg' });
-}
 $('sOk').onclick = async () => {
   if (!$('sPlW').hidden){ const pp = PL.find(x => x.id === $('sPl').value); if (!pp) return $('sMsg').textContent = 'Elige una playlist.'; subiendoA = pp; }
   const fo = $('sFile').files[0], t = $('sTit').value.trim(); if (!fo) return $('sMsg').textContent = 'Elige un archivo.'; if (!t) return $('sTit').focus();
-  const esVid = /^video\//.test(fo.type) || /\.(mp4|mov|m4v|webm)$/i.test(fo.name);
-  if (!esVid && fo.size > 15 * 1048576) return $('sMsg').textContent = 'Pesa más de 15 MB.';
-  if (esVid && fo.size > 250 * 1048576) return $('sMsg').textContent = 'El vídeo pesa más de 250 MB.';
-  $('sOk').disabled = true; $('sMsg').textContent = esVid ? 'Extrayendo el sonido…' : 'Subiendo…';
+  const msg = x => { $('sMsg').textContent = x; }, B = sb.storage.from('musica');
+  let path = '', subido = false; $('sOk').disabled = true;
   try {
-    let f0 = fo; if (esVid){ f0 = await videoAMp3(fo, p => { $('sMsg').textContent = 'Extrayendo el sonido… ' + p + '%'; }); if (f0.size > 15 * 1048576) throw new Error('grande'); $('sMsg').textContent = 'Subiendo…'; }
-    const f = f0;
-    const dur = await new Promise(res => { const a = new Audio(URL.createObjectURL(f)); a.onloadedmetadata = () => res(Math.round(a.duration) || null); a.onerror = () => res(null); });
-    const ext = (f.name.split('.').pop() || 'mp3').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'mp3';
-    const path = `m/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}.${ext}`;
-    const up = await sb.storage.from('musica').upload(path, f, { contentType: f.type || 'audio/mpeg', cacheControl: '31536000' });
-    if (up.error) throw up.error;
-    const r = await sb.rpc('musica_cancion_add', { p_token: tokenActual(), p_playlist: subiendoA.id, p_titulo: t, p_artista: $('sArt').value.trim(), p_path: path, p_dur: dur, p_autor: nombre });
-    if (r.data !== 'ok'){ $('sMsg').textContent = r.data === 'limite' ? 'Ya has subido 5 canciones nuevas a esta playlist (las ya subidas se añaden con «Ya subida» y no cuentan).' : r.data === 'limite_pl' ? MSG.limite_pl : MSG[r.data] || 'No se pudo añadir.'; }
-    else { const lt = $('sLet').value.trim(); if (lt) await guardaLetra(path, lt); $('sLet').value = ''; $('subeDlg').close(); toast('Canción añadida.'); carga(); }
-  } catch (er) { $('sMsg').textContent = er && er.message === 'grande' ? 'El mp3 resultante pesa más de 15 MB (usa un vídeo más corto).' : er && er.message === 'largo' ? 'El vídeo dura más de 20 minutos.' : 'No se pudo subir el archivo (¿formato o tamaño?).'; }
-  $('sOk').disabled = false;
+    const r0 = await preparaAudio(fo, msg), f = r0.file; path = `m/${r0.hash}.${r0.ext}`;
+    const dup = await sb.from('musica_canciones').select('id').eq('path', path).limit(1);
+    if (dup.data && dup.data.length) return msg('Esa canción ya está en el team: añádela con «Ya subida».');
+    let existe = false; try { existe = (await fetch(url(path), { method: 'HEAD', cache: 'no-store' })).ok; } catch (e) {}
+    if (!existe){ msg('Subiendo…'); const up = await B.upload(path, f, { contentType: f.type || 'audio/mpeg', cacheControl: '31536000', upsert: false }); if (up.error) throw up.error; subido = true; }
+    const r = await sb.rpc('musica_cancion_add', { p_token: tokenActual(), p_playlist: subiendoA.id, p_titulo: t, p_artista: $('sArt').value.trim(), p_path: path, p_dur: r0.dur, p_autor: nombre });
+    if (r.data !== 'ok'){ if (subido) { try { await B.remove([path]); } catch (e) {} } msg(r.data === 'limite' ? 'Ya has subido 5 canciones nuevas a esta playlist (las ya subidas se añaden con «Ya subida» y no cuentan).' : r.data === 'limite_pl' ? MSG.limite_pl : MSG[r.data] || 'No se pudo añadir.'); }
+    else { const lt = $('sLet').value.trim(); if (lt) await guardaLetra(path, lt); $('sLet').value = ''; $('subeDlg').close(); toast(r0.recomprimido ? 'Canción añadida (recomprimida a 128 kbps).' : 'Canción añadida.'); carga(); }
+  } catch (er) {
+    if (subido && path){ try { await B.remove([path]); } catch (e) {} }
+    msg(er && er.codigo ? (MENSAJES[er.codigo] || 'No se pudo procesar el archivo.') : 'No se pudo subir el archivo (¿formato o tamaño?).');
+  } finally { $('sOk').disabled = false; }
 };
+$('subeDlg').addEventListener('close', cancelaAudio);
 let ip = null; window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); ip = e; $('instBtn').hidden = false; });
 $('instBtn').onclick = async () => { if (ip){ ip.prompt(); ip = null; $('instBtn').hidden = true; } };
 
