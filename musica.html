@@ -175,7 +175,7 @@
   <label class="sw"><input type="checkbox" id="nPriv"><i></i><span>Privada<small>Solo la ves tú</small></span></label>
   <div class="dialog-actions"><button class="btn-primary" id="nOk" type="button">Crear</button><button class="btn-ghost" id="nNo" type="button">Cancelar</button></div></div></dialog>
 <dialog id="subeDlg"><div class="dialog-inner"><h3>Añadir canción</h3>
-  <label class="drop" id="sDrop" for="sFile"><span class="di">🎵</span><b id="sNom">Arrastra tu canción aquí</b><small id="sSub">o toca para elegirla · mp3, m4a… máx. 15 MB</small></label><input id="sFile" type="file" accept="audio/*" hidden>
+  <label class="drop" id="sDrop" for="sFile"><span class="di">🎵</span><b id="sNom">Arrastra tu canción aquí</b><small id="sSub">o toca para elegirla · mp3, m4a… o un vídeo mp4 (se extrae el sonido)</small></label><input id="sFile" type="file" accept="audio/*,video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm" hidden>
   <div class="fld"><label for="sTit">Título</label><input id="sTit" maxlength="80"></div>
   <div class="fld"><label for="sArt">Artista</label><input id="sArt" maxlength="60"></div>
   <details class="letraop"><summary>Letra (opcional)</summary>
@@ -231,11 +231,11 @@ function guardaPerfil(){
   if (yo && tokenActual()) sb.rpc('perfil_guardar', { token: tokenActual(), d: { mfav: FAV, mhist: HIST } });
 }
 async function perfilMus(){
-  FAV = lsGet('mc_musica_fav'); HIST = lsGet('mc_musica_hist');
-  if (yo && tokenActual()){ try { const r = await sb.rpc('perfil_leer', { token: tokenActual() }); const d = r.data || {}; if (Array.isArray(d.mfav)) FAV = d.mfav; if (Array.isArray(d.mhist)) HIST = d.mhist; } catch (e) {} }
+  FAV = lsGet('mc_musica_fav'); HIST = lsGet('mc_musica_hist').filter(x => x && x.p);
+  if (yo && tokenActual()){ try { const r = await sb.rpc('perfil_leer', { token: tokenActual() }); const d = r.data || {}; if (Array.isArray(d.mfav)) FAV = d.mfav; if (Array.isArray(d.mhist)) HIST = d.mhist.filter(x => x && x.p); } catch (e) {} }
 }
 const porPath = p => CA.find(c => c.path === p);
-const VIRT = { fav: () => FAV.map(porPath).filter(Boolean), hist: () => HIST.map(porPath).filter(Boolean) };
+const VIRT = { fav: () => FAV.map(porPath).filter(Boolean), hist: () => { const lim = Date.now() - 864e5; return HIST.filter(x => x.t > lim).map(x => porPath(x.p)).filter(Boolean); } };
 const esFav = c => FAV.includes(c.path);
 function fila(c, i, extra){ return `<div class="tr${ocultas.has(c.id) ? ' oculta' : ''}${actual && actual.id === c.id ? ' sona' : ''}" data-c="${c.id}"><span class="n">${i + 1}</span><div class="t"><b>${esc(c.titulo)}</b><small>${esc(c.artista)}${c.artista && c.autor ? ' · ' : ''}${extra || ''} ${fmt(c.dur)}</small></div>
         <button data-a="fav" title="${esFav(c) ? 'Quitar de favoritas' : 'Añadir a favoritas'}">${esFav(c) ? '♥' : '♡'}</button><button class="q" data-a="q" title="Añadir a la cola">☰＋</button><button data-a="hide" title="${ocultas.has(c.id) ? 'Volver a mostrar' : 'Ocultar solo para mí'}">${ocultas.has(c.id) ? '👁' : '🙈'}</button></div>`; }
@@ -243,7 +243,7 @@ function secVirtual(id, emoji, nombre, sub){ const l = VIRT[id](); if (!l.length
   return `<section class="pl${plegadas.has(id) ? ' plegada' : ''}" data-p="${id}"><div class="plh"><span class="chev">▾</span><span class="em">${emoji}</span><div><b>${nombre}</b><small>${sub} · ${l.length} canciones</small></div><span class="sp"></span><button class="mb" data-a="play">▶ Escuchar</button><button class="mb" data-a="shuf" title="Aleatorio" aria-label="Aleatorio">🔀</button></div>${l.map((c, i) => fila(c, i)).join('')}</section>`; }
 function pinta(){
   const orden = [...PL.filter(p => p.grupal), ...PL.filter(p => !p.grupal)];
-  $('lista').innerHTML = secVirtual('fav', '♥', 'Favoritas', 'Solo tuyas') + secVirtual('hist', '🕘', 'Escuchado recientemente', 'Tus últimas') + orden.map(p => {
+  $('lista').innerHTML = secVirtual('fav', '♥', 'Favoritas', 'Solo tuyas') + secVirtual('hist', '🕘', 'Escuchado recientemente', 'Últimas 24 h') + orden.map(p => {
     const cs = cancs(p.id), mia = yo && p.miembro_id === yo, adm = isAdmin, puede = yo && (p.grupal || mia), lleno = !p.grupal && cs.filter(c => c.origen !== false).length >= 5, conSubidas = PL.filter(x => !x.grupal && x.miembro_id === yo && cancs(x.id).some(c => c.origen !== false)).length;
     return `<section class="pl${p.grupal ? ' grupal' : ''}${plegadas.has(p.id) ? ' plegada' : ''}" data-p="${p.id}"><div class="plh"><span class="chev">▾</span><span class="em">${esc(p.emoji)}</span><div><b>${esc(p.nombre)}${p.privada ? ' 🔒' : ''}</b><small>${p.grupal ? 'Todo el team' : 'de ' + esc(p.autor || '—') + (p.privada ? ' · privada' : '')} · ${cs.length} canciones${p.grupal ? '' : ' · ' + cs.filter(c => c.origen !== false).length + '/5 subidas'}</small></div><span class="sp"></span>
       ${cs.length ? `<button class="mb" data-a="play">▶ Escuchar</button><button class="mb" data-a="shuf" title="Aleatorio" aria-label="Aleatorio">🔀</button><button class="mb" data-a="off" title="Guardar para escuchar sin conexión">⬇</button>` : ''}
@@ -269,7 +269,7 @@ function cadena(p){ // playlist + (si es personal) las siguientes del mismo due�
 }
 function reproduce(c){ setTimeout(() => { if (!$('letra').hidden) cargaLetra(); }, 0);
   actual = c; au.src = url(c.path); au.play().catch(() => toast('Toca ▶ para reproducir.'));
-  if (HIST[0] !== c.path){ HIST = [c.path, ...HIST.filter(x => x !== c.path)].slice(0, 20); guardaPerfil(); if (VIRT.hist().length) setTimeout(pinta, 0); }
+  if (!HIST[0] || HIST[0].p !== c.path){ HIST = [{ p: c.path, t: Date.now() }, ...HIST.filter(x => x.p !== c.path)].slice(0, 20); guardaPerfil(); if (VIRT.hist().length) setTimeout(pinta, 0); }
   $('bar').classList.add('on'); $('bT').textContent = c.titulo; $('bS').textContent = c.artista || c.autor || '';
   if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: c.titulo, artist: c.artista || c.autor || 'Moonlight Team', album: (PL.find(p => p.id === c.playlist_id) || {}).nombre || 'Moonlight', artwork: [{ src: 'favicon.png', sizes: '256x256', type: 'image/png' }] });
   pinta(); pintaQ();
@@ -527,16 +527,33 @@ $('nuevaBtn').onclick = () => { $('nNom').value = ''; $('nPriv').checked = false
 $('nOk').onclick = async () => { const n = $('nNom').value.trim(); if (!n) return $('nNom').focus(); const r = await sb.rpc('musica_playlist_crear', { p_token: tokenActual(), p_nombre: n, p_emoji: $('nEmo').value.trim(), p_autor: nombre, p_privada: $('nPriv').checked }); $('nuevaDlg').close(); r.data === 'ok' ? carga() : toast(r.data === 'limite' ? 'Ya tienes 50 playlists.' : MSG[r.data] || 'No se pudo crear.'); };
 $('sNo').onclick = () => $('subeDlg').close();
 const dz = $('sDrop');
-const muestraArchivo = () => { const f = $('sFile').files[0]; dz.classList.toggle('tiene', !!f); $('sNom').textContent = f ? f.name : 'Arrastra tu canción aquí'; $('sSub').textContent = f ? Math.round(f.size / 1024 / 1024 * 10) / 10 + ' MB · toca para cambiarla' : 'o toca para elegirla · mp3, m4a… máx. 15 MB'; };
+const muestraArchivo = () => { const f = $('sFile').files[0]; dz.classList.toggle('tiene', !!f); $('sNom').textContent = f ? f.name : 'Arrastra tu canción aquí'; $('sSub').textContent = f ? Math.round(f.size / 1024 / 1024 * 10) / 10 + ' MB · toca para cambiarla' : 'o toca para elegirla · mp3, m4a… o un vídeo mp4 (se extrae el sonido)'; };
 ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
 ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('over'); }));
 dz.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f){ $('sFile').files = e.dataTransfer.files; $('sFile').dispatchEvent(new Event('change')); } });
 $('sFile').addEventListener('change', () => { muestraArchivo(); const f = $('sFile').files[0]; if (f && !$('sTit').value) $('sTit').value = f.name.replace(/\.[^.]+$/, '').slice(0, 80); });
+function cargaScript(u){ return new Promise((ok, ko) => { const e = document.createElement('script'); e.src = u; e.onload = ok; e.onerror = ko; document.head.appendChild(e); }); }
+async function videoAMp3(file, prog){
+  if (!window.lamejs){ try { await cargaScript('https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js'); } catch (e) { await cargaScript('https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js'); } }
+  const AC = window.AudioContext || window.webkitAudioContext, ctx = new AC();
+  const buf = await ctx.decodeAudioData(await file.arrayBuffer()); ctx.close && ctx.close();
+  if (buf.duration > 20 * 60) throw new Error('largo');
+  const ch = Math.min(2, buf.numberOfChannels), sr = buf.sampleRate, enc = new lamejs.Mp3Encoder(ch, sr, 128), out = [];
+  const conv = a => { const r = new Int16Array(a.length); for (let i = 0; i < a.length; i++){ const v = Math.max(-1, Math.min(1, a[i])); r[i] = v < 0 ? v * 0x8000 : v * 0x7FFF; } return r; };
+  const L = conv(buf.getChannelData(0)), R = ch > 1 ? conv(buf.getChannelData(1)) : null, N = 1152 * 20;
+  for (let i = 0; i < L.length; i += N){ const d = ch > 1 ? enc.encodeBuffer(L.subarray(i, i + N), R.subarray(i, i + N)) : enc.encodeBuffer(L.subarray(i, i + N)); if (d.length) out.push(d); prog(Math.round(i / L.length * 100)); await new Promise(r => setTimeout(r)); }
+  const e = enc.flush(); if (e.length) out.push(e);
+  return new File(out, file.name.replace(/\.[^.]+$/, '') + '.mp3', { type: 'audio/mpeg' });
+}
 $('sOk').onclick = async () => {
-  const f = $('sFile').files[0], t = $('sTit').value.trim(); if (!f) return $('sMsg').textContent = 'Elige un archivo.'; if (!t) return $('sTit').focus();
-  if (f.size > 15 * 1048576) return $('sMsg').textContent = 'Pesa más de 15 MB.';
-  $('sOk').disabled = true; $('sMsg').textContent = 'Subiendo…';
+  const fo = $('sFile').files[0], t = $('sTit').value.trim(); if (!fo) return $('sMsg').textContent = 'Elige un archivo.'; if (!t) return $('sTit').focus();
+  const esVid = /^video\//.test(fo.type) || /\.(mp4|mov|m4v|webm)$/i.test(fo.name);
+  if (!esVid && fo.size > 15 * 1048576) return $('sMsg').textContent = 'Pesa más de 15 MB.';
+  if (esVid && fo.size > 250 * 1048576) return $('sMsg').textContent = 'El vídeo pesa más de 250 MB.';
+  $('sOk').disabled = true; $('sMsg').textContent = esVid ? 'Extrayendo el sonido…' : 'Subiendo…';
   try {
+    let f0 = fo; if (esVid){ f0 = await videoAMp3(fo, p => { $('sMsg').textContent = 'Extrayendo el sonido… ' + p + '%'; }); if (f0.size > 15 * 1048576) throw new Error('grande'); $('sMsg').textContent = 'Subiendo…'; }
+    const f = f0;
     const dur = await new Promise(res => { const a = new Audio(URL.createObjectURL(f)); a.onloadedmetadata = () => res(Math.round(a.duration) || null); a.onerror = () => res(null); });
     const ext = (f.name.split('.').pop() || 'mp3').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'mp3';
     const path = `m/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}.${ext}`;
@@ -545,7 +562,7 @@ $('sOk').onclick = async () => {
     const r = await sb.rpc('musica_cancion_add', { p_token: tokenActual(), p_playlist: subiendoA.id, p_titulo: t, p_artista: $('sArt').value.trim(), p_path: path, p_dur: dur, p_autor: nombre });
     if (r.data !== 'ok'){ $('sMsg').textContent = r.data === 'limite' ? 'Ya has subido 5 canciones nuevas a esta playlist (las ya subidas se añaden con «Ya subida» y no cuentan).' : r.data === 'limite_pl' ? MSG.limite_pl : MSG[r.data] || 'No se pudo añadir.'; }
     else { const lt = $('sLet').value.trim(); if (lt) await guardaLetra(path, lt); $('sLet').value = ''; $('subeDlg').close(); toast('Canción añadida.'); carga(); }
-  } catch (er) { $('sMsg').textContent = 'No se pudo subir el archivo (¿formato o tamaño?).'; }
+  } catch (er) { $('sMsg').textContent = er && er.message === 'grande' ? 'El mp3 resultante pesa más de 15 MB (usa un vídeo más corto).' : er && er.message === 'largo' ? 'El vídeo dura más de 20 minutos.' : 'No se pudo subir el archivo (¿formato o tamaño?).'; }
   $('sOk').disabled = false;
 };
 let ip = null; window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); ip = e; $('instBtn').hidden = false; });
