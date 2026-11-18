@@ -40,7 +40,8 @@
   .sw i:after{ content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#cfd3ec; transition:.2s }
   .sw input:checked + i{ background:rgba(217,195,131,.35); border-color:var(--gold) } .sw input:checked + i:after{ left:20px; background:var(--gold) } .sw input:focus-visible + i{ box-shadow:0 0 0 3px rgba(217,195,131,.25) }
   .sw span{ font-size:1rem } .sw small{ display:block; color:var(--ink-soft); font-size:.85rem }
-  dialog, dialog *{ box-sizing:border-box } dialog{ max-width:94vw; overflow-x:hidden }
+  dialog, dialog *{ box-sizing:border-box } dialog{ width:min(94vw,480px); max-width:94vw; overflow-x:hidden } #subeDlg, #nuevaDlg, #letDlg, #exiDlg, #getDlg{ width:min(94vw,560px) } #sPl{ padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.06); color:#eef0fb; font:inherit; width:100% } #sPl option{ color:#111 }
+  .met{ border:1px solid rgba(190,170,255,.3); border-radius:14px; padding:12px 14px; margin:10px 0; background:rgba(255,255,255,.04) } .met b{ color:#f6e7b4 } .met p{ margin:6px 0 10px; color:#cfd1ee } .met a.mb{ text-decoration:none; display:inline-block }
   #subeDlg .dialog-inner, #nuevaDlg .dialog-inner{ width:min(94vw,540px) }
   .drop{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:22px 14px; text-align:center; border:2px dashed rgba(217,195,131,.45); border-radius:14px; background:rgba(217,195,131,.05); cursor:pointer; transition:all .15s }
   .drop:hover, .drop.over{ border-color:var(--gold); background:rgba(217,195,131,.14) } .drop .di{ font-size:2rem } .drop b{ color:var(--gold); font-weight:600 } .drop small{ color:var(--ink-soft) }
@@ -144,7 +145,7 @@
   <header class="top"><div><div class="title-wrap"><h1>Música</h1></div>
     <p class="subtitle">Crea las playlists que quieras con canciones ya subidas. Hasta 5 de ellas pueden llevar canciones nuevas tuyas (5 por playlist). Al acabar una, suena la siguiente tuya en bucle. Además hay una playlist grupal para todo el team.</p></div></header>
   <p class="admin-only-note" id="sinCarnet" hidden>Para añadir música necesitas abrir esta página con tu carnet. Escuchar, puede cualquiera.</p>
-  <p><button class="mb" id="nuevaBtn" type="button" hidden>＋ Nueva playlist</button> <button class="mb" id="mezclaBtn" type="button">🔀 Mezclar todo</button> <button class="mb" id="instBtn" type="button" hidden>📲 Instalar app</button></p>
+  <p><button class="mb" id="nuevaBtn" type="button" hidden>＋ Nueva playlist</button> <button class="mb" id="mezclaBtn" type="button">🔀 Mezclar todo</button> <button class="mb" id="getBtn" type="button">🎧 Conseguir canciones</button> <button class="mb" id="instBtn" type="button" hidden>📲 Instalar app</button></p>
   <div id="lista"></div>
   <p class="vacia" id="oculNote" hidden></p>
 </div>
@@ -174,7 +175,12 @@
   <div class="fld"><label for="nEmo">Emoji</label><input id="nEmo" maxlength="4" value="🎵"></div>
   <label class="sw"><input type="checkbox" id="nPriv"><i></i><span>Privada<small>Solo la ves tú</small></span></label>
   <div class="dialog-actions"><button class="btn-primary" id="nOk" type="button">Crear</button><button class="btn-ghost" id="nNo" type="button">Cancelar</button></div></div></dialog>
+<dialog id="getDlg"><div class="dialog-inner"><h3>Conseguir canciones</h3>
+  <div class="met"><b>1 · Desde un vídeo (mp4)</b><p>Sube un vídeo y la página extrae el sonido en mp3. Después eliges a qué playlist se añade.</p><button class="mb" id="getVid" type="button">🎬 Subir un vídeo</button></div>
+  <div class="met"><b>2 · Desde un enlace</b><p id="getTxt"></p><span id="getLinks"></span></div>
+  <div class="dialog-actions"><button class="btn-ghost" id="getNo" type="button">Cerrar</button></div></div></dialog>
 <dialog id="subeDlg"><div class="dialog-inner"><h3>Añadir canción</h3>
+  <div class="fld" id="sPlW" hidden><label for="sPl">Añadir a la playlist</label><select id="sPl"></select></div>
   <label class="drop" id="sDrop" for="sFile"><span class="di">🎵</span><b id="sNom">Arrastra tu canción aquí</b><small id="sSub">o toca para elegirla · mp3, m4a… o un vídeo mp4 (se extrae el sonido)</small></label><input id="sFile" type="file" accept="audio/*,video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm" hidden>
   <div class="fld"><label for="sTit">Título</label><input id="sTit" maxlength="80"></div>
   <div class="fld"><label for="sArt">Artista</label><input id="sArt" maxlength="60"></div>
@@ -507,7 +513,7 @@ $('lista').addEventListener('click', async e => {
   else if (a === 'shuf'){ const l = cancs(p.id).filter(c => !ocultas.has(c.id)); if (!l.length) return toast('Todas están ocultas.'); for (let i = l.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } cola = l; suena(0); toast('Orden aleatorio.'); }
   else if (a === 'q'){ const c = CA.find(x => x.id === tr.dataset.c); if (ocultas.has(c.id)) return toast('Esa canción está oculta para ti.'); if (!actual){ cola = colaDe(PL.find(x => x.id === c.playlist_id)); suena(Math.max(0, cola.findIndex(x => x.id === c.id))); } else { cola.splice(ci + 1, 0, c); pintaQ(); toast('Será la siguiente en la cola.'); } }
   else if (a === 'hide'){ const id = tr.dataset.c; ocultas.has(id) ? ocultas.delete(id) : ocultas.add(id); guardaOc(); pinta(); }
-  else if (a === 'add'){ subiendoA = p; $('sFile').value = ''; muestraArchivo(); $('sTit').value = ''; $('sArt').value = ''; $('sMsg').textContent = ''; $('subeDlg').showModal(); }
+  else if (a === 'add'){ $('sPlW').hidden = true; subiendoA = p; $('sFile').value = ''; muestraArchivo(); $('sTit').value = ''; $('sArt').value = ''; $('sMsg').textContent = ''; $('subeDlg').showModal(); }
   else if (a === 'del'){ if (!b.dataset.seguro){ b.dataset.seguro = 1; b.textContent = '¿Seguro?'; setTimeout(() => { delete b.dataset.seguro; b.textContent = 'Borrar'; }, 3500); return; }
     const paths = cancs(p.id).filter(c => c.origen !== false).map(c => c.path);
     if (isAdmin && !mineP(p)){ if (paths.length) await sb.from('musica_canciones').delete().in('path', paths); const r = await sb.from('musica_playlists').delete().eq('id', p.id); if (r.error) return toast('No se pudo borrar.'); }
@@ -525,6 +531,20 @@ $('mezclaBtn').onclick = () => { const l = publicas(); if (!l.length) return toa
   if (rep === 0){ rep = 2; try { localStorage.setItem('mc_musica_rep', 2); } catch (e) {} pintaRep(); } cola = l; suena(0); toast('Todo mezclado.'); };
 $('nuevaBtn').onclick = () => { $('nNom').value = ''; $('nPriv').checked = false; $('nuevaDlg').showModal(); }; $('nNo').onclick = () => $('nuevaDlg').close();
 $('nOk').onclick = async () => { const n = $('nNom').value.trim(); if (!n) return $('nNom').focus(); const r = await sb.rpc('musica_playlist_crear', { p_token: tokenActual(), p_nombre: n, p_emoji: $('nEmo').value.trim(), p_autor: nombre, p_privada: $('nPriv').checked }); $('nuevaDlg').close(); r.data === 'ok' ? carga() : toast(r.data === 'limite' ? 'Ya tienes 50 playlists.' : MSG[r.data] || 'No se pudo crear.'); };
+const REL = 'https://github.com/moonlight-team-whatsapp/moonlight-team-whatsapp.github.io/releases/download/app/';
+const APPS = [['Windows', 'Moonlight-MP3-Windows.exe'], ['Mac', 'Moonlight-MP3-Mac.zip'], ['Linux', 'Moonlight-MP3-Linux']];
+$('getBtn').onclick = () => {
+  const ua = navigator.userAgent, movil = /Android|iPhone|iPad|iPod/i.test(ua), so = /Windows/i.test(ua) ? 'Windows' : /Mac/i.test(ua) ? 'Mac' : /Linux|X11/i.test(ua) ? 'Linux' : '';
+  if (movil){ $('getTxt').textContent = 'La app de enlaces solo funciona en ordenador (en el móvil no se puede ejecutar). Desde el móvil usa el método 1 con un vídeo, o descarga la app desde un ordenador.'; $('getLinks').innerHTML = ''; }
+  else { const mia = APPS.find(a => a[0] === so) || APPS[0];
+    $('getTxt').textContent = 'Descarga la app, ábrela, pega el enlace y pulsa el botón: te deja el mp3 en Descargas › Moonlight MP3. Luego lo subes aquí con ＋ Subir. Solo con contenido que tengas derecho a descargar.' + (so === 'Mac' ? ' (Mac: clic derecho › Abrir la primera vez.)' : so === 'Windows' ? ' (Si Windows avisa, «Más información › Ejecutar de todos modos».)' : '');
+    $('getLinks').innerHTML = `<a class="mb" href="${REL + mia[1]}">⬇ App para ${mia[0]}</a> <small>` + APPS.filter(a => a !== mia).map(a => `<a href="${REL + a[1]}">${a[0]}</a>`).join(' · ') + '</small>'; }
+  $('getDlg').showModal(); };
+$('getNo').onclick = () => $('getDlg').close();
+$('getVid').onclick = () => { if (!yo){ $('getDlg').close(); return toast('Para subir necesitas abrir la página con tu carnet.'); }
+  const ok = PL.filter(p => p.grupal || p.miembro_id === yo); $('sPl').innerHTML = ok.map(p => `<option value="${p.id}">${esc(p.emoji)} ${esc(p.nombre)}</option>`).join('');
+  if (!ok.length){ $('getDlg').close(); return toast('Crea primero una playlist.'); }
+  $('sPlW').hidden = false; $('sFile').value = ''; muestraArchivo(); $('sTit').value = ''; $('sArt').value = ''; $('sMsg').textContent = ''; $('getDlg').close(); $('subeDlg').showModal(); };
 $('sNo').onclick = () => $('subeDlg').close();
 const dz = $('sDrop');
 const muestraArchivo = () => { const f = $('sFile').files[0]; dz.classList.toggle('tiene', !!f); $('sNom').textContent = f ? f.name : 'Arrastra tu canción aquí'; $('sSub').textContent = f ? Math.round(f.size / 1024 / 1024 * 10) / 10 + ' MB · toca para cambiarla' : 'o toca para elegirla · mp3, m4a… o un vídeo mp4 (se extrae el sonido)'; };
@@ -546,6 +566,7 @@ async function videoAMp3(file, prog){
   return new File(out, file.name.replace(/\.[^.]+$/, '') + '.mp3', { type: 'audio/mpeg' });
 }
 $('sOk').onclick = async () => {
+  if (!$('sPlW').hidden){ const pp = PL.find(x => x.id === $('sPl').value); if (!pp) return $('sMsg').textContent = 'Elige una playlist.'; subiendoA = pp; }
   const fo = $('sFile').files[0], t = $('sTit').value.trim(); if (!fo) return $('sMsg').textContent = 'Elige un archivo.'; if (!t) return $('sTit').focus();
   const esVid = /^video\//.test(fo.type) || /\.(mp4|mov|m4v|webm)$/i.test(fo.name);
   if (!esVid && fo.size > 15 * 1048576) return $('sMsg').textContent = 'Pesa más de 15 MB.';

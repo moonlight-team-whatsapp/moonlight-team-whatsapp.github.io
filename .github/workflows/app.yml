@@ -1,0 +1,46 @@
+name: App Moonlight MP3
+on:
+  workflow_dispatch:
+  push:
+    paths: ['app/**', '.github/workflows/app.yml']
+permissions:
+  contents: write
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - { os: windows-latest, salida: Moonlight-MP3-Windows.exe }
+          - { os: macos-latest,   salida: Moonlight-MP3-Mac.zip }
+          - { os: ubuntu-latest,  salida: Moonlight-MP3-Linux }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Instalar tkinter en Linux
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y python3-tk
+      - run: pip install pyinstaller yt-dlp imageio-ffmpeg
+      - name: Construir
+        shell: bash
+        run: |
+          pyinstaller --onefile --windowed --name MoonlightMP3 --collect-all imageio_ffmpeg --collect-submodules yt_dlp app/moonlight_mp3.py
+          mkdir -p salida
+          if [ "$RUNNER_OS" = "Windows" ]; then cp dist/MoonlightMP3.exe "salida/${{ matrix.salida }}"; fi
+          if [ "$RUNNER_OS" = "macOS" ]; then ditto -c -k --keepParent dist/MoonlightMP3.app "salida/${{ matrix.salida }}"; fi
+          if [ "$RUNNER_OS" = "Linux" ]; then cp dist/MoonlightMP3 "salida/${{ matrix.salida }}"; fi
+      - uses: actions/upload-artifact@v4
+        with: { name: "${{ matrix.salida }}", path: "salida/*" }
+  publicar:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: salida, merge-multiple: true }
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app
+          name: App Moonlight MP3
+          body: Descargas de la app para sacar el sonido de un enlace.
+          files: salida/*
