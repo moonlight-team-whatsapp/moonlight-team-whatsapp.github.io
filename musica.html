@@ -88,7 +88,7 @@
   .app .back-link{ display:none }
   .plh{ cursor:pointer } .plh .chev{ transition:transform .2s; color:#a9a3f0; font-size:1.1rem } .pl.plegada .chev{ transform:rotate(-90deg) } .pl.plegada .tr, .pl.plegada .vacia{ display:none }
   #bLet{ padding:6px 13px; border-radius:999px; border:1px solid rgba(246,231,180,.5); color:#f6e7b4; font:italic 600 1rem 'Cormorant',serif; background:rgba(246,231,180,.07); cursor:pointer; white-space:nowrap }
-  #letra{ position:fixed; inset:0; z-index:70; display:flex; flex-direction:column; background:radial-gradient(ellipse at 50% 0,#2a1f66 0,#0d1130 60%,#060919 100%) } #letra[hidden]{ display:none }
+  #letra{ position:fixed; inset:0 0 var(--bh,0px) 0; z-index:45; display:flex; flex-direction:column; background:radial-gradient(ellipse at 50% 0,#2a1f66 0,#0d1130 60%,#060919 100%) } #letra[hidden]{ display:none }
   #letra .lh{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 18px; flex-wrap:wrap }
   #letra .lt b{ display:block; font:italic 700 1.4rem 'Cormorant',serif; color:#f6e7b4; text-shadow:0 0 14px rgba(246,231,180,.35) } #letra .lt small{ color:#a9a3f0 } #letra .lc{ display:flex; gap:8px; align-items:center } #letra .lo{ color:#a9a3f0; min-width:44px; text-align:center; font-size:.9rem }
   #lCuerpo{ flex:1; overflow-y:auto; padding:30vh 22px 40vh; text-align:center; scroll-behavior:smooth }
@@ -97,6 +97,10 @@
   #lCuerpo .ln.act{ color:#f6e7b4; transform:scale(1.06); text-shadow:0 0 18px rgba(246,231,180,.65) } #lCuerpo:not(.sinc) .ln{ color:rgba(238,240,251,.85); cursor:default; font-size:1.25rem }
   #lCuerpo .nada{ color:#a9a3f0; padding:20px } #lSigue{ position:absolute; left:50%; bottom:26px; transform:translateX(-50%) }
   .letraop{ margin:8px 0; color:#a9a3f0 } .letraop summary{ cursor:pointer } textarea{ width:100%; border-radius:12px; background:rgba(255,255,255,.06); border:1px solid rgba(190,170,255,.3); color:#eef0fb; font:inherit; padding:10px; resize:vertical; margin-top:6px }
+  #letra:not([hidden]) ~ #toast{ bottom:240px }
+  #sincBar{ position:absolute; left:0; right:0; bottom:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:0 12px } #sincBar[hidden]{ display:none }
+  #sincBar .sm{ padding:10px 22px; font-size:1.15rem; color:#2a1f55; border-color:#fff4c8; background:radial-gradient(circle at 35% 28%,#fffbe6,#f6e7b4 50%,#d8bf72); box-shadow:0 0 20px rgba(255,236,170,.65) } #sincBar small{ opacity:.7 }
+  #lCuerpo.sy .ln{ color:rgba(238,240,251,.35); cursor:default } #lCuerpo.sy .ln.hecha{ color:rgba(238,240,251,.75) } #lCuerpo.sy .ln.cur{ color:#f6e7b4; transform:scale(1.06); text-shadow:0 0 18px rgba(246,231,180,.65) } #lCuerpo.sy .ln i{ font:normal .75rem 'Crimson Pro',serif; color:#a9a3f0; margin-left:8px }
   /* ===== Estética moonlight para toda la página ===== */
   .pl{ position:relative; border:1px solid rgba(190,170,255,.35); border-radius:18px; background:linear-gradient(135deg,rgba(40,34,90,.6),rgba(20,18,56,.55)); backdrop-filter:blur(8px); box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 24px rgba(120,100,230,.12); overflow:hidden }
   .pl::before{ content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle at 0 0,rgba(130,110,255,.2),transparent 45%) }
@@ -148,12 +152,14 @@
   <div class="lh"><div class="lt"><b id="lT">—</b><small id="lA"></small></div>
     <div class="lc"><button class="mb" id="lMenos" type="button" title="La letra va adelantada: retrasarla">−0.5s</button><span id="lOff" class="lo">0.0s</span><button class="mb" id="lMas" type="button" title="La letra va atrasada: adelantarla">+0.5s</button>
     <button class="mb" id="lEdit" type="button" hidden>✎ Letra</button><button class="mb" id="lCerrar" type="button" aria-label="Cerrar">✕</button></div></div>
-  <div id="lCuerpo"></div><button class="mb" id="lSigue" type="button" hidden>↧ Volver a la línea actual</button>
+  <div id="lCuerpo"></div>
+  <div id="sincBar" hidden><button class="mb" id="sAtras" type="button">⏪ Atrás</button><button class="mb sm" id="sMarca" type="button">⏱ Marcar línea <small>(Espacio)</small></button><button class="mb" id="sGuarda" type="button">💾 Guardar</button><button class="mb red" id="sCancela" type="button">Cancelar</button></div><button class="mb" id="lSigue" type="button" hidden>↧ Volver a la línea actual</button>
 </div>
 <dialog id="letDlg"><div class="dialog-inner"><h3>Letra de la canción</h3>
   <textarea id="eTxt" rows="12" placeholder="Pega la letra. Con tiempos [mm:ss.xx] se sincroniza sola; sin ellos, usa «Sincronizar»."></textarea>
   <label class="mb" style="display:inline-block;margin:6px 0">📄 Cargar .lrc / .txt<input id="eFile" type="file" accept=".lrc,.txt,text/plain" hidden></label>
   <p class="vacia" id="eMsg"></p>
+  <button class="mb" id="eSinc" type="button">⏱ Sincronizar con la canción</button>
   <div class="dialog-actions"><button class="btn-primary" id="eOk" type="button">Guardar</button><button class="btn-ghost" id="eNo" type="button">Cancelar</button></div></div></dialog>
 <div id="toast" role="status"></div>
 
@@ -287,7 +293,7 @@ function puedeEditarLetra(){ const o = actual && CA.find(c => c.path === actual.
 function pintaLetra(){
   $('lT').textContent = actual ? actual.titulo : '—'; $('lA').textContent = actual ? (actual.artista || '') : ''; $('lEdit').hidden = !puedeEditarLetra();
   const c = $('lCuerpo'); c.classList.toggle('sinc', LET.sinc); idxL = -1;
-  c.innerHTML = LET.lineas.length ? LET.lineas.map((l, i) => `<div class="ln" data-i="${i}">${esc(l.txt) || '♪'}</div>`).join('') : `<div class="nada">${actual ? 'Esta canción aún no tiene letra.' + (puedeEditarLetra() ? ' Pulsa «✎ Letra» para añadirla.' : '') : ''}</div>`;
+  c.innerHTML = LET.lineas.length ? LET.lineas.map((l, i) => `<div class="ln" data-i="${i}">${esc(l.txt) || '♪'}</div>`).join('') : `<div class="nada">${actual ? 'No hay letra disponible para esta canción.' + (puedeEditarLetra() ? ' Pulsa «✎ Letra» para añadirla.' : '') : ''}</div>`;
   $('lSigue').hidden = true; sigueL = true; actualizaLetra(true);
 }
 function actualizaLetra(fuerza){
@@ -302,8 +308,10 @@ const pausaSigue = () => { if (LET.sinc){ sigueL = false; $('lSigue').hidden = f
 $('lSigue').onclick = () => { sigueL = true; $('lSigue').hidden = true; actualizaLetra(true); };
 $('lCuerpo').addEventListener('click', e => { const l = e.target.closest('.ln'); if (!l || !LET.sinc) return; au.currentTime = Math.max(0, LET.lineas[+l.dataset.i].t - offL); sigueL = true; $('lSigue').hidden = true; actualizaLetra(true); if (au.paused) au.play().catch(() => {}); });
 au.addEventListener('timeupdate', () => actualizaLetra());
-$('bLet').onclick = () => { $('letra').hidden = false; cargaLetra(); pintaLetra(); };
-$('lCerrar').onclick = () => { $('letra').hidden = true; };
+au.addEventListener('loadstart', () => { if (!$('letra').hidden){ if (SY) cierraSync(false); cargaLetra(); } });
+const ajustaBh = () => $('letra').style.setProperty('--bh', $('bar').offsetHeight + 'px'); addEventListener('resize', ajustaBh);
+$('bLet').onclick = () => { ajustaBh(); $('letra').hidden = false; cargaLetra(); pintaLetra(); };
+$('lCerrar').onclick = () => { if (SY) cierraSync(false); $('letra').hidden = true; };
 $('lMenos').onclick = () => { offL -= .5; $('lOff').textContent = (offL > 0 ? '+' : '') + offL.toFixed(1) + 's'; actualizaLetra(true); };
 $('lMas').onclick = () => { offL += .5; $('lOff').textContent = (offL > 0 ? '+' : '') + offL.toFixed(1) + 's'; actualizaLetra(true); };
 const leeArchivo = (inp, dest) => inp.addEventListener('change', () => { const f = inp.files[0]; if (!f) return; if (f.size > 100000) return toast('Archivo demasiado grande.'); const r = new FileReader(); r.onload = () => { dest().value = String(r.result); }; r.readAsText(f); });
@@ -318,6 +326,37 @@ $('eNo').onclick = () => $('letDlg').close();
 $('eOk').onclick = async () => { const t = $('eTxt').value; if (t.length > 20000) return $('eMsg').textContent = 'Es demasiado larga (máx. 20.000 caracteres).'; $('eOk').disabled = true;
   const r = await guardaLetra(actual.path, t); $('eOk').disabled = false;
   if (r === 'ok'){ $('letDlg').close(); LET.path = null; cargaLetra(); toast(t.trim() ? 'Letra guardada.' : 'Letra quitada.'); } else $('eMsg').textContent = r === 'no_es_tuya' ? 'Solo quien subió la canción (o un admin) puede editar la letra.' : 'No se pudo guardar.'; };
+
+
+// ---------- Sincronizar tú mismo: pulsa ESPACIO cuando empiece cada línea ----------
+let SY = null; const LAG = 0.2; // compensa el tiempo de reacción al pulsar
+const mmss = t => { const m = Math.floor(t / 60), x = t - m * 60; return String(m).padStart(2, '0') + ':' + (x < 10 ? '0' : '') + x.toFixed(2); };
+function pintaSync(){
+  const c = $('lCuerpo'); c.classList.add('sy'); c.classList.remove('sinc');
+  c.innerHTML = SY.l.map((x, i) => `<div class="ln${x.t != null ? ' hecha' : ''}${i === SY.i ? ' cur' : ''}">${esc(x.txt)}${x.t != null ? `<i>${mmss(x.t)}</i>` : ''}</div>`).join('') || '<div class="nada">No hay texto para sincronizar.</div>';
+  const cur = c.children[SY.i]; if (cur) cur.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  $('sMarca').disabled = SY.i >= SY.l.length;
+}
+function empiezaSync(texto){
+  if (!actual) return; const base = parseLrc(texto).lineas.map(l => ({ txt: l.txt, t: null })).filter(l => l.txt);
+  if (!base.length) return toast('Primero pega la letra.');
+  SY = { l: base, i: 0 }; $('letDlg').close(); $('letra').hidden = false; ajustaBh();
+  $('sincBar').hidden = false; $('lSigue').hidden = true; $('lMenos').hidden = $('lMas').hidden = $('lOff').hidden = $('lEdit').hidden = true;
+  au.currentTime = 0; au.play().catch(() => {}); pintaSync(); toast('Pulsa ESPACIO (o «Marcar») justo cuando empiece cada línea.');
+}
+function marca(){ if (!SY || SY.i >= SY.l.length) return; const ant = SY.i ? SY.l[SY.i - 1].t : 0; SY.l[SY.i].t = Math.max(ant, au.currentTime - LAG); SY.i++; pintaSync(); if (SY.i >= SY.l.length) toast('¡Última línea! Pulsa Guardar.'); }
+function atrasSync(){ if (!SY || SY.i <= 0) return; SY.i--; SY.l[SY.i].t = null; au.currentTime = Math.max(0, (SY.i ? SY.l[SY.i - 1].t : 0) - 1); pintaSync(); }
+function cierraSync(recarga){ SY = null; $('sincBar').hidden = true; $('lCuerpo').classList.remove('sy'); $('lMenos').hidden = $('lMas').hidden = $('lOff').hidden = false; if (recarga !== false){ LET.path = null; cargaLetra(); } else pintaLetra(); }
+async function guardaSync(){
+  if (!SY) return; const hechas = SY.l.filter(x => x.t != null); if (!hechas.length) return toast('Aún no has marcado ninguna línea.');
+  const lrc = SY.l.map(x => (x.t != null ? '[' + mmss(x.t) + ']' : '') + x.txt).join('\n');
+  const r = await guardaLetra(actual.path, lrc);
+  if (r === 'ok'){ toast(hechas.length < SY.l.length ? 'Guardada (hay líneas sin marcar).' : 'Letra sincronizada y guardada.'); cierraSync(true); } else toast(r === 'no_es_tuya' ? 'Solo quien subió la canción (o un admin) puede guardarla.' : 'No se pudo guardar.');
+}
+$('sMarca').onclick = marca; $('sAtras').onclick = atrasSync; $('sGuarda').onclick = guardaSync; $('sCancela').onclick = () => cierraSync(true);
+$('eSinc').onclick = () => empiezaSync($('eTxt').value);
+addEventListener('keydown', e => { if (SY && e.code === 'Space' && !/INPUT|TEXTAREA/.test((e.target.tagName || ''))){ e.preventDefault(); if (document.activeElement) document.activeElement.blur(); if (!e.repeat) marca(); } });
+addEventListener('keyup', e => { if (SY && e.code === 'Space' && !/INPUT|TEXTAREA/.test((e.target.tagName || ''))) e.preventDefault(); });
 
 // Como Spotify Connect: un solo dispositivo suena a la vez por carnet. Canal privado derivado del carnet.
 const DEV = Math.random().toString(36).slice(2, 8); let canal = null, otro = null;
