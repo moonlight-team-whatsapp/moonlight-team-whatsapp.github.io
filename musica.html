@@ -41,7 +41,7 @@
   .sw input:checked + i{ background:rgba(217,195,131,.35); border-color:var(--gold) } .sw input:checked + i:after{ left:20px; background:var(--gold) } .sw input:focus-visible + i{ box-shadow:0 0 0 3px rgba(217,195,131,.25) }
   .sw span{ font-size:1rem } .sw small{ display:block; color:var(--ink-soft); font-size:.85rem }
   dialog, dialog *{ box-sizing:border-box } dialog{ width:min(94vw,480px); max-width:94vw; overflow-x:hidden } #subeDlg, #nuevaDlg, #letDlg, #exiDlg, #getDlg{ width:min(94vw,560px) } #sPl{ padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.06); color:#eef0fb; font:inherit; width:100% } #sPl option{ color:#111 }
-  .met{ border:1px solid rgba(190,170,255,.3); border-radius:14px; padding:12px 14px; margin:10px 0; background:rgba(255,255,255,.04) } .met b{ color:#f6e7b4 } .met p{ margin:6px 0 10px; color:#cfd1ee } .met a.mb{ text-decoration:none; display:inline-block }
+  .met{ border:1px solid rgba(190,170,255,.3); border-radius:14px; padding:12px 14px; margin:10px 0; background:rgba(255,255,255,.04) } .met b{ color:#f6e7b4 } .met p{ margin:6px 0 10px; color:#cfd1ee } .met a.mb{ text-decoration:none; display:inline-block } #getLinks{ display:flex; flex-wrap:wrap; gap:8px; align-items:center } #getLinks a.sec{ color:#a9a3f0; font-size:.95rem; text-decoration:underline; text-underline-offset:3px } #getLinks a.sec:hover{ color:#f6e7b4 } #getLinks small{ display:flex; gap:12px; flex-wrap:wrap }
   #subeDlg .dialog-inner, #nuevaDlg .dialog-inner{ width:min(94vw,540px) }
   .drop{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:22px 14px; text-align:center; border:2px dashed rgba(217,195,131,.45); border-radius:14px; background:rgba(217,195,131,.05); cursor:pointer; transition:all .15s }
   .drop:hover, .drop.over{ border-color:var(--gold); background:rgba(217,195,131,.14) } .drop .di{ font-size:2rem } .drop b{ color:var(--gold); font-weight:600 } .drop small{ color:var(--ink-soft) }
@@ -538,7 +538,7 @@ $('getBtn').onclick = () => {
   if (movil){ $('getTxt').textContent = 'La app de enlaces solo funciona en ordenador (en el móvil no se puede ejecutar). Desde el móvil usa el método 1 con un vídeo, o descarga la app desde un ordenador.'; $('getLinks').innerHTML = ''; }
   else { const mia = APPS.find(a => a[0] === so) || APPS[0];
     $('getTxt').textContent = 'Descarga la app, ábrela, pega el enlace y pulsa el botón: te deja el mp3 en Descargas › Moonlight MP3. Luego lo subes aquí con ＋ Subir. Solo con contenido que tengas derecho a descargar.' + (so === 'Mac' ? ' (Mac: clic derecho › Abrir la primera vez.)' : so === 'Windows' ? ' (Si Windows avisa, «Más información › Ejecutar de todos modos».)' : '');
-    $('getLinks').innerHTML = `<a class="mb" href="${REL + mia[1]}">⬇ App para ${mia[0]}</a> <small>` + APPS.filter(a => a !== mia).map(a => `<a href="${REL + a[1]}">${a[0]}</a>`).join(' · ') + '</small>'; }
+    $('getLinks').innerHTML = `<a class="mb" href="${REL + mia[1]}">⬇ App para ${mia[0]}</a><small>Otros: ` + APPS.filter(a => a !== mia).map(a => `<a class="sec" href="${REL + a[1]}">${a[0]}</a>`).join('') + '</small>'; }
   $('getDlg').showModal(); };
 $('getNo').onclick = () => $('getDlg').close();
 $('getVid').onclick = () => { if (!yo){ $('getDlg').close(); return toast('Para subir necesitas abrir la página con tu carnet.'); }
