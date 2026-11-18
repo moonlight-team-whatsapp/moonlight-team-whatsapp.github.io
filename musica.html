@@ -318,8 +318,9 @@ $('lCuerpo').addEventListener('click', e => { const l = e.target.closest('.ln');
 au.addEventListener('timeupdate', () => actualizaLetra());
 au.addEventListener('loadstart', () => { if (!$('letra').hidden){ if (SY) cierraSync(false); cargaLetra(); } });
 const ajustaBh = () => $('letra').style.setProperty('--bh', $('bar').offsetHeight + 'px'); addEventListener('resize', ajustaBh);
-$('bLet').onclick = () => { ajustaBh(); $('letra').hidden = false; cargaLetra(); pintaLetra(); };
-$('lCerrar').onclick = () => { if (SY) cierraSync(false); $('letra').hidden = true; };
+$('bLet').onclick = () => { ajustaBh(); $('letra').hidden = false; try{ sessionStorage.setItem('mc_letra_abierta','1') }catch{} cargaLetra(); pintaLetra(); };
+try{ if (sessionStorage.getItem('mc_letra_abierta') === '1') setTimeout(() => $('bLet').click(), 0) }catch{}
+$('lCerrar').onclick = () => { if (SY) cierraSync(false); $('letra').hidden = true; try{ sessionStorage.removeItem('mc_letra_abierta') }catch{} };
 $('lMenos').onclick = () => { offL -= .5; $('lOff').textContent = (offL > 0 ? '+' : '') + offL.toFixed(1) + 's'; actualizaLetra(true); };
 $('lMas').onclick = () => { offL += .5; $('lOff').textContent = (offL > 0 ? '+' : '') + offL.toFixed(1) + 's'; actualizaLetra(true); };
 const leeArchivo = (inp, dest) => inp.addEventListener('change', () => { const f = inp.files[0]; if (!f) return; if (f.size > 100000) return toast('Archivo demasiado grande.'); const r = new FileReader(); r.onload = () => { dest().value = String(r.result); }; r.readAsText(f); });
