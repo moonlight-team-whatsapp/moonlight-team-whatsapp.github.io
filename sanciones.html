@@ -116,6 +116,7 @@
 
 <script type="module">
   import { initializeApp } from "./js/supa-compat.js";
+  import { sb } from "./js/supabase-sesion.js";
   import {
     getFirestore, collection, doc, updateDoc, deleteDoc, arrayUnion, increment,
     onSnapshot, query, orderBy
@@ -303,6 +304,14 @@
       for (const b of buscadosCache.filter(b => b.pedidoPorId === m.id || nombresPide.has(normalize(b.pedidoPor)))){
         await deleteDoc(doc(db, 'buscados', b.id));
       }
+      // Borrado total: árbol, fichas (y cumpleaños), MoonCards, carnet y sus datos, votaciones, música y playlists
+      try {
+        const r = await sb.rpc('miembro_purgar', { p_id: m.id, p_personajes: ocupadosDelMiembro.map(o => o.nombre) });
+        if (r.error) throw r.error;
+        const p = r.data || {};
+        const quita = async (bucket, l) => { l = (l || []).filter(Boolean); if (l.length) { try { await sb.storage.from(bucket).remove(l); } catch (e) {} } };
+        await quita('mooncards', (p.mooncards || []).concat(p.votaciones || [])); await quita('musica', p.musica);
+      } catch (e) { statusLine.textContent = 'Expulsado, pero no se pudo borrar todo su contenido: ' + (e.message || e); }
       for (const o of ocupadosDelMiembro){
         await updateDoc(memberRef, {
           historialPersonajes: arrayUnion({ nombre: o.nombre, fecha: new Date().toISOString() })
