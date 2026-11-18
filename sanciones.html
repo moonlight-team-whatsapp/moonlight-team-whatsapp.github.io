@@ -452,8 +452,8 @@
 
       const meta = document.createElement('div');
       meta.className = 'li-meta';
-      const rolesTxt = r.roles.length ? r.roles.join(', ') : (r.baneado && r.pasados.length ? r.pasados.join(', ') : '');
-      const etiqueta = (!r.roles.length && r.baneado && r.pasados.length) ? 'Ocupaba' : 'Ocupa';
+      const rolesTxt = r.roles.length ? r.roles.join(', ') : (r.pasados.length ? r.pasados.join(', ') : '');
+      const etiqueta = (!r.roles.length && r.pasados.length) ? 'Ocupaba' : 'Ocupa';
       meta.innerHTML = (rolesTxt ? `${etiqueta}: <b>${escapeHtml(rolesTxt)}</b> — ` : '') + 'warns: ' + (r.warns.length ? `<button type="button" class="warn-toggle" title="Ver el motivo de cada sanción">${r.warnsTotal}/${WARN_LIMIT}</button>` : `${r.warnsTotal}/${WARN_LIMIT}`);
       left.appendChild(meta);
 
