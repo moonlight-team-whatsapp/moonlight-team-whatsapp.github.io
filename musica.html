@@ -190,7 +190,7 @@
 <dialog id="exiDlg"><div class="dialog-inner"><h3>Añadir canción ya subida</h3>
   <div class="fld"><input id="eBus" placeholder="Buscar por título o artista…" autocomplete="off"></div>
   <div id="eLista" style="max-height:50vh;overflow:auto"></div>
-  <div class="dialog-actions"><button class="btn-ghost" id="eNo" type="button">Cerrar</button></div></div></dialog>
+  <div class="dialog-actions"><button class="btn-ghost" id="exiNo" type="button">Cerrar</button></div></div></dialog>
 <script type="module">
 import { sb } from './js/supabase-sesion.js';
 import { tokenActual, miPerfil } from './js/carnet.js';
@@ -453,7 +453,7 @@ function pintaExi(){
   const lib = CA.filter(c => { if (vistos.has(c.path)) return false; vistos.add(c.path); return true; }).filter(c => !ya.has(c.path) && (!q || (c.titulo + ' ' + c.artista).toLowerCase().includes(q)));
   $('eLista').innerHTML = lib.map(c => `<div class="tr" data-o="${c.id}"><div class="t"><b>${esc(c.titulo)}</b><small>${esc(c.artista)} ${fmt(c.dur)}</small></div><button>＋</button></div>`).join('') || '<p class="vacia">No hay canciones nuevas para añadir.</p>';
 }
-$('eBus').addEventListener('input', pintaExi); $('eNo').onclick = () => $('exiDlg').close();
+$('eBus').addEventListener('input', pintaExi); $('exiNo').onclick = () => $('exiDlg').close();
 $('eLista').addEventListener('click', async e => { const r = e.target.closest('[data-o]'); if (!r) return;
   const x = await sb.rpc('musica_cancion_add_existente', { p_token: tokenActual(), p_playlist: subiendoA.id, p_origen: r.dataset.o, p_autor: nombre });
   if (x.data === 'ok'){ toast('Canción añadida.'); await carga(); const p = PL.find(z => z.id === subiendoA.id); if (p && !p.grupal && cancs(p.id).length >= 5) $('exiDlg').close(); else pintaExi(); }
