@@ -145,14 +145,14 @@
   <header class="top"><div><div class="title-wrap"><h1>Música</h1></div>
     <p class="subtitle">Crea las playlists que quieras con canciones ya subidas. Hasta 5 de ellas pueden llevar canciones nuevas tuyas (5 por playlist). Al acabar una, suena la siguiente tuya en bucle. Además hay una playlist grupal para todo el team.</p></div></header>
   <p class="admin-only-note" id="sinCarnet" hidden>Para añadir música necesitas abrir esta página con tu carnet. Escuchar, puede cualquiera.</p>
-  <p><button class="mb" id="nuevaBtn" type="button" hidden>＋ Nueva playlist</button> <button class="mb" id="mezclaBtn" type="button">🔀 Mezclar todo</button> <button class="mb" id="getBtn" type="button">🎧 Conseguir canciones</button> <button class="mb" id="instBtn" type="button" hidden>📲 Instalar app</button></p>
+  <p><button class="mb" id="nuevaBtn" type="button" hidden>＋ Nueva playlist</button> <button class="mb" id="getBtn" type="button">🎧 Conseguir canciones</button> <button class="mb" id="instBtn" type="button" hidden>📲 Instalar app</button></p>
   <div id="lista"></div>
   <p class="vacia" id="oculNote" hidden></p>
 </div>
 
 <div id="bar"><div id="bOtro" hidden></div>
   <div class="row"><div class="ti"><b id="bT">—</b><small id="bS"></small></div>
-    <div class="ctl"><button class="b" id="bPrev" type="button" aria-label="Anterior">⏮</button><button class="b p" id="bPlay" type="button" aria-label="Reproducir">▶</button><button class="b" id="bNext" type="button" aria-label="Siguiente">⏭</button><button class="b s" id="bRep" type="button" aria-label="Repetir"><span>🔁</span><sup id="bRepN"></sup></button></div>
+    <div class="ctl"><button class="b s" id="bShuf" type="button" aria-label="Mezclar todo" title="Mezclar todas las canciones públicas">🔀</button><button class="b" id="bPrev" type="button" aria-label="Anterior">⏮</button><button class="b p" id="bPlay" type="button" aria-label="Reproducir">▶</button><button class="b" id="bNext" type="button" aria-label="Siguiente">⏭</button><button class="b s" id="bRep" type="button" aria-label="Repetir"><span>🔁</span><sup id="bRepN"></sup></button></div>
     <div class="rt"><button id="bLet" type="button" aria-label="Letra">🎤 Letra</button><button id="bQ" type="button" aria-label="Cola">☰ Cola</button><span id="bVol"><button id="bMute" type="button" aria-label="Silenciar">🔊</button><input type="range" id="bVolR" min="0" max="100" value="100" aria-label="Volumen"></span></div></div>
   <div class="pr"><span id="bCur">0:00</span><div id="bTr"><div class="base"></div><div class="fill"></div><div class="nota">♪</div><div class="luna"></div><input type="range" id="bSeek" min="0" max="1000" value="0" aria-label="Posición"></div><span id="bDur">0:00</span></div></div>
 <div id="letra" hidden>
@@ -527,7 +527,7 @@ $('lista').addEventListener('click', async e => {
     if (c.origen !== false) await limpiaHuerfanos([c.path]); toast(c.origen !== false ? 'Canción quitada (y borrada si estaba en otras playlists).' : 'Canción quitada.'); carga(); }
   else if (a === 'off'){ b.disabled = true; try { const c = await caches.open('musica-v1'); let n = 0; for (const s of cancs(p.id)){ const u = url(s.path); if (!await c.match(u)){ const r = await fetch(u); if (r.ok) await c.put(u, r); } n++; b.textContent = '⬇ ' + n; } toast('Guardada para escuchar sin conexión.'); } catch (er) { toast('No se pudo guardar sin conexión.'); } b.disabled = false; b.textContent = '✓'; }
 });
-$('mezclaBtn').onclick = () => { const l = publicas(); if (!l.length) return toast('No hay canciones públicas.'); for (let i = l.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; }
+$('bShuf').onclick = () => { const l = publicas(); if (!l.length) return toast('No hay canciones públicas.'); for (let i = l.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; }
   if (rep === 0){ rep = 2; try { localStorage.setItem('mc_musica_rep', 2); } catch (e) {} pintaRep(); } cola = l; suena(0); toast('Todo mezclado.'); };
 $('nuevaBtn').onclick = () => { $('nNom').value = ''; $('nPriv').checked = false; $('nuevaDlg').showModal(); }; $('nNo').onclick = () => $('nuevaDlg').close();
 $('nOk').onclick = async () => { const n = $('nNom').value.trim(); if (!n) return $('nNom').focus(); const r = await sb.rpc('musica_playlist_crear', { p_token: tokenActual(), p_nombre: n, p_emoji: $('nEmo').value.trim(), p_autor: nombre, p_privada: $('nPriv').checked }); $('nuevaDlg').close(); r.data === 'ok' ? carga() : toast(r.data === 'limite' ? 'Ya tienes 50 playlists.' : MSG[r.data] || 'No se pudo crear.'); };
