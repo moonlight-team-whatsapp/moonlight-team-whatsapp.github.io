@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bienvenida · Moonlight Team</title>
+<meta name="description" content="Primeros pasos para entrar a Moonlight Team: qué te pediremos en el chat, la plantilla de la ficha y cómo funciona la web.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500;1,600&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .wrap{ max-width:760px; }
+  .top h1{ font-size:clamp(1.9rem,8vw,3rem); line-height:1.1; }
+  .paso{ position:relative; margin:16px 0; padding:18px 18px 16px 62px; border:1px solid var(--border); border-radius:16px; background:rgba(16,22,48,.72); }
+  .paso > .n{ position:absolute; left:16px; top:16px; width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font-family:'Cormorant',serif; font-weight:600; font-size:1.2rem; color:#2a1f55; background:radial-gradient(circle at 35% 28%,#fffbe6,#f6e7b4 55%,#d8bf72); box-shadow:0 0 14px rgba(246,231,180,.4); }
+  .paso h2{ margin:0 0 6px; font-family:'Cormorant',serif; font-style:italic; font-size:1.55rem; color:var(--gold); }
+  .paso p{ margin:6px 0; color:var(--ink); } .paso .suave{ color:var(--ink-soft); font-size:.95rem; }
+  .paso ul{ margin:8px 0 4px; padding-left:20px; } .paso li{ margin:5px 0; }
+  .plantilla{ width:100%; min-height:360px; margin:10px 0 8px; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--ink); font:inherit; line-height:1.5; resize:vertical; white-space:pre-wrap; }
+  .btn{ display:inline-block; font:inherit; font-weight:600; cursor:pointer; padding:9px 20px; border-radius:999px; color:#2a1f55; border:1px solid #fff4c8; background:radial-gradient(circle at 35% 28%,#fffbe6,#f6e7b4 55%,#d8bf72); box-shadow:0 0 16px rgba(255,236,170,.4); text-decoration:none; }
+  .btn.sec{ color:var(--gold); background:none; border-color:var(--gold-dim); box-shadow:none; }
+  .chk{ list-style:none; padding:0 !important; } .chk li{ display:flex; gap:10px; align-items:flex-start; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.03); cursor:pointer; }
+  .chk label{ font-size:1.02rem; color:var(--ink); line-height:1.4 } .chk input{ margin-top:3px; accent-color:#d9c383; width:18px; height:18px; flex:none; } .chk li.ok{ border-color:rgba(217,195,131,.55); background:rgba(217,195,131,.08); }
+  .res{ margin-top:10px; padding:10px 12px; border-radius:10px; border:1px dashed var(--gold-dim); color:var(--gold); } .res[hidden]{ display:none; }
+  .web{ display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:10px; margin-top:10px; }
+  .web a{ display:block; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.04); color:var(--ink); text-decoration:none; }
+  .web a:hover{ border-color:var(--gold-dim); } .web b{ display:block; color:var(--gold); margin-bottom:2px; } .web small{ color:var(--ink-soft); line-height:1.35; display:block; }
+  #toastL{ position:fixed; left:50%; bottom:28px; transform:translateX(-50%); padding:10px 20px; border-radius:999px; border:1px solid var(--gold-dim); background:#12183a; color:var(--gold); opacity:0; pointer-events:none; transition:opacity .25s; z-index:60; } #toastL.on{ opacity:1; }
+  @media(max-width:560px){ .paso{ padding:16px 14px 14px 14px; } .paso > .n{ position:static; margin-bottom:8px; } }
+</style>
+<script src="js/temporadas.js"></script>
+</head><body>
+<div class="stars" id="starsLayer" aria-hidden="true"></div>
+<div class="mist m1" aria-hidden="true"></div>
+<div class="mist m2" aria-hidden="true"></div>
+<div class="moon" aria-hidden="true"></div>
+<div class="wrap">
+  <a class="back-link" href="index.html">← Volver al índice</a>
+  <header class="top"><div><div class="title-wrap"><h1>Bienvenida</h1></div>
+    <p class="subtitle">Estás en el lobby. Para entrar al team hay que seguir cuatro pasos, en este orden. Lo que se pide con una imagen se hace en el chat; esta página te da la plantilla y te explica la web.</p></div></header>
+
+  <section class="paso"><span class="n">1</span><h2>La captura del enlace</h2>
+    <p>Lo primero que te pediremos en el chat es una <b>captura de pantalla de dónde sacaste el enlace del grupo</b> (la publicación, la página o el mensaje donde lo viste).</p>
+    <p class="suave">Envíala directamente en el chat del lobby. No hace falta subirla aquí.</p></section>
+
+  <section class="paso"><span class="n">2</span><h2>Tu ficha</h2>
+    <p>Después te pediremos tu ficha. Copia la plantilla, rellénala y pégala en el chat del lobby.</p>
+    <textarea class="plantilla" id="plantilla" spellcheck="false" aria-label="Plantilla de la ficha"></textarea>
+    <button class="btn" id="copia" type="button">📋 Copiar plantilla</button>
+    <p class="suave" style="margin-top:10px">Responde con tus datos reales donde dice «real». Tu edad real y tu fecha de nacimiento solo las ven los admins.</p></section>
+
+  <section class="paso"><span class="n">3</span><h2>Revisamos tu ficha</h2>
+    <p>Un admin comprobará que cumples los requisitos para entrar. Puedes repasarlos tú antes de enviarla:</p>
+    <ul class="chk" id="req"></ul>
+    <div class="res" id="res" hidden></div>
+    <p class="suave">La decisión la toma un admin en el chat. Si falta algo, te lo diremos para que lo corrijas.</p></section>
+
+  <section class="paso"><span class="n">4</span><h2>Cómo funciona la web</h2>
+    <p>Cuando te aceptemos te daremos tu <b>carnet</b>: un enlace personal que te identifica en la web (para tu ficha, votar, música…). <b>No lo compartas con nadie.</b> Esto es lo que encontrarás:</p>
+    <div class="web" id="web"></div></section>
+</div>
+<div id="toastL" role="status"></div>
+<script>
+// ====== Lo que se puede editar ======
+const PLANTILLA = [
+  'FICHA · Moonlight Team',
+  '',
+  'Personaje que quiero:',
+  'Nombre / apodo en el chat:',
+  'Edad real:',
+  'Fecha de nacimiento (DD/MM/AAAA):',
+  '',
+  'Sobre el personaje (una frase, historia, cómo es):',
+  'Procedencia:',
+  'Edad del personaje:',
+  'Cumpleaños del personaje (o «no tiene»):',
+  'Relaciones y notas (amigo de…, rival de…):',
+  '',
+  'Dónde vi el enlace del grupo:'
+].join('\n');
+const REQUISITOS = [
+  'Tengo entre 14 y 18 años (a los 19 se sale del team).',
+  'He enviado la captura de dónde saqué el enlace del grupo.',
+  'El personaje que quiero está libre en la Lista (o lo he reservado/pedido allí).',
+  'Mi ficha está completa: no falta ningún campo de la plantilla.',
+  'Me he leído las normas del grupo y las acepto.'
+];
+const WEB = [
+  ['lista.html', 'Lista', 'Qué personajes están ocupados, reservados o buscados, y quién los lleva.'],
+  ['ficha.html', 'Fichas', 'La ficha de cada personaje. Con tu carnet puedes editar la tuya.'],
+  ['mooncard.html', 'MoonCard', 'Crea la tarjeta de tu personaje con tu propio diseño.'],
+  ['galeria.html', 'Galería MoonCard', 'Todas las tarjetas del team; puedes usarlas como plantilla.'],
+  ['arbol.html', 'Árbol', 'Las familias y relaciones entre personajes.'],
+  ['cumples.html', 'Cumpleaños', 'Calendario con los cumpleaños de los personajes que lo han registrado.'],
+  ['musica.html', 'Música', 'Playlists del team y las tuyas, para escuchar donde quieras.'],
+  ['votaciones.html', 'Votaciones', 'Vota con tu carnet; nadie ve qué has votado.'],
+  ['adviento.html', 'Adviento', 'Una puerta cada día hasta Navidad.'],
+  ['anonimos.html', 'Anónimos', 'Envía un mensaje a los admins sin dar tu nombre.']
+];
+// =====================================
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+function aviso(t){ const e = $('toastL'); e.textContent = t; e.classList.add('on'); clearTimeout(aviso.t); aviso.t = setTimeout(() => e.classList.remove('on'), 2200); }
+$('plantilla').value = PLANTILLA;
+$('copia').onclick = async () => {
+  const t = $('plantilla').value;
+  try { await navigator.clipboard.writeText(t); aviso('Plantilla copiada.'); }
+  catch (e) { $('plantilla').select(); try { document.execCommand('copy'); aviso('Plantilla copiada.'); } catch (e2) { aviso('Selecciona el texto y cópialo.'); } }
+};
+let marcas = []; try { marcas = JSON.parse(localStorage.getItem('mc_lobby_req') || '[]'); } catch (e) {}
+function pintaReq(){
+  $('req').innerHTML = REQUISITOS.map((r, i) => `<li class="${marcas[i] ? 'ok' : ''}"><input type="checkbox" id="rq${i}" ${marcas[i] ? 'checked' : ''}><label for="rq${i}" style="cursor:pointer">${esc(r)}</label></li>`).join('');
+  const n = REQUISITOS.filter((_, i) => marcas[i]).length, res = $('res');
+  res.hidden = n < REQUISITOS.length; res.textContent = '✨ Todo listo: pega tu ficha en el chat del lobby y un admin la revisará.';
+}
+$('req').addEventListener('change', e => { const i = +e.target.id.slice(2); marcas[i] = e.target.checked; try { localStorage.setItem('mc_lobby_req', JSON.stringify(marcas)); } catch (er) {} pintaReq(); });
+pintaReq();
+$('web').innerHTML = WEB.map(([h, t, d]) => `<a href="${h}"><b>${esc(t)}</b><small>${esc(d)}</small></a>`).join('');
+</script>
+</body>
+</html>
