@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bienvenida · Moonlight Team</title>
-<meta name="description" content="Primeros pasos para entrar a Moonlight Team: qué te pediremos en el chat, la plantilla de la ficha y cómo funciona la web.">
+<meta name="description" content="Primeros pasos para entrar a Moonlight Team: la plantilla de la ficha, tu MoonCard y cómo funciona la web.">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,24 +12,26 @@
 <link rel="stylesheet" href="css/styles.css">
 <style>
   .wrap{ max-width:760px; }
-  .top h1{ font-size:clamp(1.9rem,8vw,3rem); line-height:1.1; }
-  .paso{ position:relative; margin:16px 0; padding:18px 18px 16px 62px; border:1px solid var(--border); border-radius:16px; background:rgba(16,22,48,.72); }
-  .paso > .n{ position:absolute; left:16px; top:16px; width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font-family:'Cormorant',serif; font-weight:600; font-size:1.2rem; color:#2a1f55; background:radial-gradient(circle at 35% 28%,#fffbe6,#f6e7b4 55%,#d8bf72); box-shadow:0 0 14px rgba(246,231,180,.4); }
-  .paso h2{ margin:0 0 6px; font-family:'Cormorant',serif; font-style:italic; font-size:1.55rem; color:var(--gold); }
-  .paso p{ margin:6px 0; color:var(--ink); } .paso .suave{ color:var(--ink-soft); font-size:.95rem; }
-  .paso ul{ margin:8px 0 4px; padding-left:20px; } .paso li{ margin:5px 0; }
-  .plantilla{ width:100%; min-height:520px; margin:10px 0 8px; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--ink); font:inherit; line-height:1.5; resize:vertical; white-space:pre-wrap; }
-  .btn{ display:inline-block; font:inherit; font-weight:600; cursor:pointer; padding:9px 20px; border-radius:999px; color:#2a1f55; border:1px solid #fff4c8; background:radial-gradient(circle at 35% 28%,#fffbe6,#f6e7b4 55%,#d8bf72); box-shadow:0 0 16px rgba(255,236,170,.4); text-decoration:none; }
-  .paso.destaca{ border-color:rgba(246,231,180,.6); box-shadow:0 0 26px rgba(246,231,180,.14); background:linear-gradient(135deg,rgba(40,34,80,.8),rgba(16,22,48,.8)); }
-  .btn.sec{ color:var(--gold); background:none; border-color:var(--gold-dim); box-shadow:none; }
-  .chk{ list-style:none; padding:0 !important; } .chk li{ display:flex; gap:10px; align-items:flex-start; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.03); cursor:pointer; }
-  .chk label{ font-size:1.02rem; color:var(--ink); line-height:1.4 } .chk input{ margin-top:3px; accent-color:#d9c383; width:18px; height:18px; flex:none; } .chk li.ok{ border-color:rgba(217,195,131,.55); background:rgba(217,195,131,.08); }
-  .res{ margin-top:10px; padding:10px 12px; border-radius:10px; border:1px dashed var(--gold-dim); color:var(--gold); } .res[hidden]{ display:none; }
-  .web{ display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:10px; margin-top:10px; }
-  .web a{ display:block; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.04); color:var(--ink); text-decoration:none; }
-  .web a:hover{ border-color:var(--gold-dim); } .web b{ display:block; color:var(--gold); margin-bottom:2px; } .web small{ color:var(--ink-soft); line-height:1.35; display:block; }
+  .hero{ text-align:center; margin:18px 0 26px; }
+  .hero .lun{ width:74px; height:74px; margin:0 auto 12px; border-radius:50%; background:radial-gradient(circle at 36% 30%,#fffdf0,#f6e7b4 55%,#cdb15f); box-shadow:0 0 34px rgba(246,231,180,.55),0 0 90px rgba(246,231,180,.18); }
+  .hero h1{ margin:0; font-family:'Cormorant',serif; font-style:italic; font-weight:600; font-size:clamp(2.2rem,9vw,3.4rem); line-height:1.05; color:#fff4c8; text-shadow:0 0 24px rgba(246,231,180,.3); }
+  .hero p{ max-width:520px; margin:10px auto 0; color:var(--ink-soft); font-size:1.08rem; line-height:1.5; }
+  .pasos{ display:grid; gap:16px; }
+  .paso{ position:relative; display:grid; grid-template-columns:auto 1fr; gap:4px 16px; padding:20px 20px 20px 18px; border:1px solid var(--border); border-radius:20px; background:linear-gradient(160deg,rgba(26,32,76,.78),rgba(14,19,44,.82)); box-shadow:0 10px 30px rgba(0,0,5,.28); }
+  .paso > .n{ grid-row:1 / span 3; width:44px; height:44px; border-radius:50%; display:grid; place-items:center; font-family:'Cormorant',serif; font-weight:600; font-size:1.5rem; color:#2a1f55; background:radial-gradient(circle at 35% 28%,#fffbe6,#f6e7b4 55%,#d8bf72); box-shadow:0 0 18px rgba(246,231,180,.45); }
+  .paso h2{ margin:2px 0 0; font-family:'Cormorant',serif; font-style:italic; font-size:1.7rem; color:var(--gold); }
+  .paso p{ margin:6px 0 0; color:var(--ink); line-height:1.5; }
+  .paso .acc{ margin-top:14px; }
+  .paso.destaca{ border-color:rgba(246,231,180,.55); box-shadow:0 0 30px rgba(246,231,180,.14),0 10px 30px rgba(0,0,5,.28); }
+  .btn{ display:inline-flex; align-items:center; gap:8px; font:inherit; font-weight:600; font-size:1.05rem; cursor:pointer; padding:12px 26px; border-radius:999px; color:#2a1f55; border:1px solid #fff4c8; background:radial-gradient(circle at 35% 28%,#fffbe6,#f6e7b4 55%,#d8bf72); box-shadow:0 0 20px rgba(255,236,170,.4); text-decoration:none; transition:transform .15s, box-shadow .15s; }
+  .btn:hover{ transform:translateY(-1px); box-shadow:0 0 30px rgba(255,236,170,.6); } .btn:active{ transform:none; }
+  .web{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; margin-top:14px; }
+  .web a{ display:grid; grid-template-columns:auto 1fr; gap:2px 12px; align-items:center; padding:12px 14px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,.04); color:var(--ink); text-decoration:none; transition:border-color .15s, background .15s; }
+  .web a:hover{ border-color:var(--gold-dim); background:rgba(217,195,131,.08); }
+  .web .e{ grid-row:1 / span 2; font-size:1.5rem; } .web b{ color:var(--gold); font-weight:600; } .web small{ color:var(--ink-soft); line-height:1.35; }
+  .aviso{ margin-top:12px; padding:10px 14px; border-radius:12px; border:1px dashed var(--gold-dim); color:var(--ink); background:rgba(217,195,131,.06); }
   #toastL{ position:fixed; left:50%; bottom:28px; transform:translateX(-50%); padding:10px 20px; border-radius:999px; border:1px solid var(--gold-dim); background:#12183a; color:var(--gold); opacity:0; pointer-events:none; transition:opacity .25s; z-index:60; } #toastL.on{ opacity:1; }
-  @media(max-width:560px){ .paso{ padding:16px 14px 14px 14px; } .paso > .n{ position:static; margin-bottom:8px; } }
+  @media(max-width:560px){ .paso{ grid-template-columns:1fr; padding:18px 16px; } .paso > .n{ grid-row:auto; margin-bottom:6px; } .btn{ width:100%; justify-content:center; } }
 </style>
 <script src="js/temporadas.js"></script>
 </head><body>
@@ -39,22 +41,26 @@
 <div class="moon" aria-hidden="true"></div>
 <div class="wrap">
   <a class="back-link" href="index.html">← Volver al índice</a>
-  <header class="top"><div><div class="title-wrap"><h1>Bienvenida</h1></div>
-    <p class="subtitle">Estás en el lobby. Aquí tienes la plantilla de la ficha y una guía de cómo funciona la web. Lo que se pide con una imagen se envía en el chat.</p></div></header>
+  <header class="hero"><div class="lun" aria-hidden="true"></div><h1>Bienvenida</h1>
+    <p>Estás en el lobby de Moonlight Team. Sigue estos pasos y te explicamos cómo funciona todo.</p></header>
 
-  <section class="paso"><span class="n">1</span><h2>Tu ficha</h2>
-    <p>Copia la plantilla, rellénala y pégala en el chat del lobby.</p>
-    <textarea class="plantilla" id="plantilla" spellcheck="false" aria-label="Plantilla de la ficha"></textarea>
-    <button class="btn" id="copia" type="button">📋 Copiar plantilla</button>
-    <p class="suave" style="margin-top:10px">Cópiala tal cual, rellena cada campo (el cumpleaños va en formato d/m/a) y pégala en el chat junto con la foto del personaje.</p></section>
+  <div class="pasos">
+    <section class="paso"><span class="n">1</span><h2>Tu ficha</h2>
+      <p>Copia la plantilla, rellénala y pégala en el chat del lobby junto con la foto de tu personaje.</p>
+      <div class="acc"><button class="btn" id="copia" type="button">📋 Copiar plantilla de la ficha</button></div></section>
 
-  <section class="paso destaca"><span class="n">2</span><h2>Crea tu MoonCard</h2>
-    <p><b>Es lo más importante después de la ficha:</b> crea la MoonCard de tu personaje, la tarjeta con la que se te reconoce en el team. Se hace aquí, en la web, en un par de minutos.</p>
-    <p style="margin-top:12px"><a class="btn" href="mooncard.html">🌙 Crear mi MoonCard</a></p></section>
+    <section class="paso destaca"><span class="n">2</span><h2>Crea tu MoonCard</h2>
+      <p><b>Es lo más importante después de la ficha:</b> la MoonCard es la tarjeta de tu personaje, con la que se te reconoce en el team. Se hace aquí, en la web, en un par de minutos.</p>
+      <div class="acc"><a class="btn" href="mooncard.html">🌙 Crear mi MoonCard</a></div></section>
 
-  <section class="paso"><span class="n">3</span><h2>Tu carnet y cómo funciona la web</h2>
-    <p>Cuando te acepten, <b>te mandaré por privado el enlace de tu carnet</b>: es personal y te identifica en la web (para editar tu ficha, votar, música…). <b>No lo compartas con nadie.</b> Esto es lo que encontrarás:</p>
-    <div class="web" id="web"></div></section>
+    <section class="paso"><span class="n">3</span><h2>Tu carnet</h2>
+      <p>Cuando te acepten, <b>te mandaré por privado el enlace de tu carnet</b>. Es personal y te identifica en la web (para editar tu ficha, votar, música…).</p>
+      <div class="aviso">🔒 No lo compartas con nadie.</div></section>
+
+    <section class="paso"><span class="n">4</span><h2>Qué hay en la web</h2>
+      <p>Esto es lo que vas a encontrar:</p>
+      <div class="web" id="web" style="grid-column:1 / -1"></div></section>
+  </div>
 </div>
 <div id="toastL" role="status"></div>
 <script>
@@ -112,28 +118,28 @@ Cᴜᴍᴘʟᴇᴀɴ̃ᴏs        (  ☁  )     ੭ৎ
 
 ⏝ ͝ㅤㅤᛝ 𝙁𝙤𝙩𝙤 𝙙𝙚𝙡 𝙥𝙚𝙧𝙨𝙤𝙣𝙖𝙟𝙚:`;
 const WEB = [
-  ['lista.html', 'Lista', 'Qué personajes están ocupados, reservados o buscados, y quién los lleva.'],
-  ['ficha.html', 'Fichas', 'La ficha de cada personaje. Con tu carnet puedes editar la tuya.'],
-  ['mooncard.html', 'MoonCard', 'Crea la tarjeta de tu personaje con tu propio diseño.'],
-  ['galeria.html', 'Galería MoonCard', 'Todas las tarjetas del team; puedes usarlas como plantilla.'],
-  ['arbol.html', 'Árbol', 'Las familias y relaciones entre personajes.'],
-  ['cumples.html', 'Cumpleaños', 'Calendario con los cumpleaños de los personajes que lo han registrado.'],
-  ['musica.html', 'Música', 'Playlists del team y las tuyas, para escuchar donde quieras.'],
-  ['votaciones.html', 'Votaciones', 'Vota con tu carnet; nadie ve qué has votado.'],
-  ['adviento.html', 'Adviento', 'Una puerta cada día hasta Navidad.'],
-  ['anonimos.html', 'Anónimos', 'Envía un mensaje a los admins sin dar tu nombre.']
+  ['lista.html', '📜', 'Lista', 'Personajes ocupados, reservados y buscados, y quién los lleva.'],
+  ['ficha.html', '🪪', 'Fichas', 'La ficha de cada personaje. Con tu carnet editas la tuya.'],
+  ['galeria.html', '🖼️', 'Galería MoonCard', 'Todas las tarjetas del team; úsalas como plantilla.'],
+  ['arbol.html', '🌳', 'Árbol', 'Las familias y relaciones entre personajes.'],
+  ['cumples.html', '🎂', 'Cumpleaños', 'Calendario con los cumpleaños registrados.'],
+  ['musica.html', '🎵', 'Música', 'Playlists del team y las tuyas, para escuchar donde quieras.'],
+  ['votaciones.html', '🗳️', 'Votaciones', 'Vota con tu carnet; nadie ve qué has votado.'],
+  ['adviento.html', '🎄', 'Adviento', 'Una puerta cada día hasta Navidad.'],
+  ['anonimos.html', '💌', 'Anónimos', 'Envía un mensaje a los admins sin dar tu nombre.']
 ];
 // =====================================
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 function aviso(t){ const e = $('toastL'); e.textContent = t; e.classList.add('on'); clearTimeout(aviso.t); aviso.t = setTimeout(() => e.classList.remove('on'), 2200); }
-$('plantilla').value = PLANTILLA;
 $('copia').onclick = async () => {
-  const t = $('plantilla').value;
-  try { await navigator.clipboard.writeText(t); aviso('Plantilla copiada.'); }
-  catch (e) { $('plantilla').select(); try { document.execCommand('copy'); aviso('Plantilla copiada.'); } catch (e2) { aviso('Selecciona el texto y cópialo.'); } }
+  try { await navigator.clipboard.writeText(PLANTILLA); aviso('Plantilla copiada ✨'); }
+  catch (e) {
+    const t = document.createElement('textarea'); t.value = PLANTILLA; t.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); aviso('Plantilla copiada ✨'); } catch (e2) { aviso('No se pudo copiar.'); } t.remove();
+  }
 };
-$('web').innerHTML = WEB.map(([h, t, d]) => `<a href="${h}"><b>${esc(t)}</b><small>${esc(d)}</small></a>`).join('');
+$('web').innerHTML = WEB.map(([h, e, t, d]) => `<a href="${h}"><span class="e">${e}</span><b>${esc(t)}</b><small>${esc(d)}</small></a>`).join('');
 </script>
 </body>
 </html>
