@@ -18,7 +18,7 @@
   .paso h2{ margin:0 0 6px; font-family:'Cormorant',serif; font-style:italic; font-size:1.55rem; color:var(--gold); }
   .paso p{ margin:6px 0; color:var(--ink); } .paso .suave{ color:var(--ink-soft); font-size:.95rem; }
   .paso ul{ margin:8px 0 4px; padding-left:20px; } .paso li{ margin:5px 0; }
-  .plantilla{ width:100%; min-height:360px; margin:10px 0 8px; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--ink); font:inherit; line-height:1.5; resize:vertical; white-space:pre-wrap; }
+  .plantilla{ width:100%; min-height:520px; margin:10px 0 8px; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--ink); font:inherit; line-height:1.5; resize:vertical; white-space:pre-wrap; }
   .btn{ display:inline-block; font:inherit; font-weight:600; cursor:pointer; padding:9px 20px; border-radius:999px; color:#2a1f55; border:1px solid #fff4c8; background:radial-gradient(circle at 35% 28%,#fffbe6,#f6e7b4 55%,#d8bf72); box-shadow:0 0 16px rgba(255,236,170,.4); text-decoration:none; }
   .btn.sec{ color:var(--gold); background:none; border-color:var(--gold-dim); box-shadow:none; }
   .chk{ list-style:none; padding:0 !important; } .chk li{ display:flex; gap:10px; align-items:flex-start; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.03); cursor:pointer; }
@@ -49,7 +49,7 @@
     <p>Después te pediremos tu ficha. Copia la plantilla, rellénala y pégala en el chat del lobby.</p>
     <textarea class="plantilla" id="plantilla" spellcheck="false" aria-label="Plantilla de la ficha"></textarea>
     <button class="btn" id="copia" type="button">📋 Copiar plantilla</button>
-    <p class="suave" style="margin-top:10px">Responde con tus datos reales donde dice «real». Tu edad real y tu fecha de nacimiento solo las ven los admins.</p></section>
+    <p class="suave" style="margin-top:10px">Cópiala tal cual, rellena cada campo (el cumpleaños va en formato d/m/a) y pégala en el chat junto con la foto del personaje.</p></section>
 
   <section class="paso"><span class="n">3</span><h2>Revisamos tu ficha</h2>
     <p>Un admin comprobará que cumples los requisitos para entrar. Puedes repasarlos tú antes de enviarla:</p>
@@ -64,27 +64,63 @@
 <div id="toastL" role="status"></div>
 <script>
 // ====== Lo que se puede editar ======
-const PLANTILLA = [
-  'FICHA · Moonlight Team',
-  '',
-  'Personaje que quiero:',
-  'Nombre / apodo en el chat:',
-  'Edad real:',
-  'Fecha de nacimiento (DD/MM/AAAA):',
-  '',
-  'Sobre el personaje (una frase, historia, cómo es):',
-  'Procedencia:',
-  'Edad del personaje:',
-  'Cumpleaños del personaje (o «no tiene»):',
-  'Relaciones y notas (amigo de…, rival de…):',
-  '',
-  'Dónde vi el enlace del grupo:'
-].join('\n');
+const PLANTILLA = String.raw`ㅤ𝓕𝗂𝖼𝗁𝖺 𝘥𝘦𝘭 𝘱𝘦𝘳𝘴𝘰𝘯𝘢𝘫𝘦:
+
+
+
+︶︶︶︶֪︶︶︶︶֪︶︶ ིྀ ︶︶֪︶︶︶︶֪︶︶︶
+
+   
+
+            ( 🪽)   ᶠ ᶦ ᶜ ʰ ᵃ
+
+
+
+♱ㅤ ㅤ☁ ㅤㅤ⌢ ㅤㅤ᛬   𝓝𝑜𝑚𝑏𝑟𝑒 
+
+
+୨ৎ ------  
+
+
+♱ㅤ ㅤ☁ ㅤㅤ⌢ ㅤ   ᛬   𝓔𝑑𝑎𝑑
+
+
+୨ৎ -----
+
+♱ㅤ ㅤ☁ ㅤㅤ⌢ ㅤ   ᛬ 𝑷𝑒𝑟𝑠𝑜𝑛𝑎𝑗𝑒 𝑏𝑢𝑠𝑐𝑎𝑑𝑜 (𝑀𝑜𝑡𝑖𝑣𝑜 𝑡𝑎𝑚𝑏𝑖𝑒́𝑛)
+
+
+୨ৎ -----
+
+
+         𓈒    ׂ  🪽੭       ᮫      ᵒᶠᶠ ʳᵒˡ   ׅ     ུ   𓂂      ꒱
+
+
+
+𝖭ᴏᴍʙʀᴇ    (  ☁  )     ੭ৎ
+
+
+── ۪ ♰ ۫
+
+
+𝖤ᴅᴀᴅ         (  ☁  )     ੭ৎ
+
+
+── ۪ ♱ ۫
+
+
+Cᴜᴍᴘʟᴇᴀɴ̃ᴏs        (  ☁  )     ੭ৎ
+
+
+── ۪ ♱ ۫  [d/m/a]
+
+
+⏝ ͝ㅤㅤᛝ 𝙁𝙤𝙩𝙤 𝙙𝙚𝙡 𝙥𝙚𝙧𝙨𝙤𝙣𝙖𝙟𝙚:`;
 const REQUISITOS = [
   'Tengo entre 14 y 18 años (a los 19 se sale del team).',
   'He enviado la captura de dónde saqué el enlace del grupo.',
   'El personaje que quiero está libre en la Lista (o lo he reservado/pedido allí).',
-  'Mi ficha está completa: no falta ningún campo de la plantilla.',
+  'Mi ficha está completa: nombre, edad, personaje buscado (con el motivo), off rol y foto del personaje.',
   'Me he leído las normas del grupo y las acepto.'
 ];
 const WEB = [
