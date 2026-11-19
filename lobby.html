@@ -39,25 +39,15 @@
 <div class="wrap">
   <a class="back-link" href="index.html">← Volver al índice</a>
   <header class="top"><div><div class="title-wrap"><h1>Bienvenida</h1></div>
-    <p class="subtitle">Estás en el lobby. Para entrar al team hay que seguir cuatro pasos, en este orden. Lo que se pide con una imagen se hace en el chat; esta página te da la plantilla y te explica la web.</p></div></header>
+    <p class="subtitle">Estás en el lobby. Aquí tienes la plantilla de la ficha y una guía de cómo funciona la web. Lo que se pide con una imagen se envía en el chat.</p></div></header>
 
-  <section class="paso"><span class="n">1</span><h2>La captura del enlace</h2>
-    <p>Lo primero que te pediremos en el chat es una <b>captura de pantalla de dónde sacaste el enlace del grupo</b> (la publicación, la página o el mensaje donde lo viste).</p>
-    <p class="suave">Envíala directamente en el chat del lobby. No hace falta subirla aquí.</p></section>
-
-  <section class="paso"><span class="n">2</span><h2>Tu ficha</h2>
-    <p>Después te pediremos tu ficha. Copia la plantilla, rellénala y pégala en el chat del lobby.</p>
+  <section class="paso"><span class="n">1</span><h2>Tu ficha</h2>
+    <p>Copia la plantilla, rellénala y pégala en el chat del lobby.</p>
     <textarea class="plantilla" id="plantilla" spellcheck="false" aria-label="Plantilla de la ficha"></textarea>
     <button class="btn" id="copia" type="button">📋 Copiar plantilla</button>
     <p class="suave" style="margin-top:10px">Cópiala tal cual, rellena cada campo (el cumpleaños va en formato d/m/a) y pégala en el chat junto con la foto del personaje.</p></section>
 
-  <section class="paso"><span class="n">3</span><h2>Revisamos tu ficha</h2>
-    <p>Un admin comprobará que cumples los requisitos para entrar. Puedes repasarlos tú antes de enviarla:</p>
-    <ul class="chk" id="req"></ul>
-    <div class="res" id="res" hidden></div>
-    <p class="suave">La decisión la toma un admin en el chat. Si falta algo, te lo diremos para que lo corrijas.</p></section>
-
-  <section class="paso"><span class="n">4</span><h2>Cómo funciona la web</h2>
+  <section class="paso"><span class="n">2</span><h2>Cómo funciona la web</h2>
     <p>Cuando te aceptemos te daremos tu <b>carnet</b>: un enlace personal que te identifica en la web (para tu ficha, votar, música…). <b>No lo compartas con nadie.</b> Esto es lo que encontrarás:</p>
     <div class="web" id="web"></div></section>
 </div>
@@ -116,13 +106,6 @@ Cᴜᴍᴘʟᴇᴀɴ̃ᴏs        (  ☁  )     ੭ৎ
 
 
 ⏝ ͝ㅤㅤᛝ 𝙁𝙤𝙩𝙤 𝙙𝙚𝙡 𝙥𝙚𝙧𝙨𝙤𝙣𝙖𝙟𝙚:`;
-const REQUISITOS = [
-  'Tengo entre 14 y 18 años (a los 19 se sale del team).',
-  'He enviado la captura de dónde saqué el enlace del grupo.',
-  'El personaje que quiero está libre en la Lista (o lo he reservado/pedido allí).',
-  'Mi ficha está completa: nombre, edad, personaje buscado (con el motivo), off rol y foto del personaje.',
-  'Me he leído las normas del grupo y las acepto.'
-];
 const WEB = [
   ['lista.html', 'Lista', 'Qué personajes están ocupados, reservados o buscados, y quién los lleva.'],
   ['ficha.html', 'Fichas', 'La ficha de cada personaje. Con tu carnet puedes editar la tuya.'],
@@ -145,13 +128,7 @@ $('copia').onclick = async () => {
   try { await navigator.clipboard.writeText(t); aviso('Plantilla copiada.'); }
   catch (e) { $('plantilla').select(); try { document.execCommand('copy'); aviso('Plantilla copiada.'); } catch (e2) { aviso('Selecciona el texto y cópialo.'); } }
 };
-let marcas = []; try { marcas = JSON.parse(localStorage.getItem('mc_lobby_req') || '[]'); } catch (e) {}
-function pintaReq(){
-  $('req').innerHTML = REQUISITOS.map((r, i) => `<li class="${marcas[i] ? 'ok' : ''}"><input type="checkbox" id="rq${i}" ${marcas[i] ? 'checked' : ''}><label for="rq${i}" style="cursor:pointer">${esc(r)}</label></li>`).join('');
-  const n = REQUISITOS.filter((_, i) => marcas[i]).length, res = $('res');
-  res.hidden = n < REQUISITOS.length; res.textContent = '✨ Todo listo: pega tu ficha en el chat del lobby y un admin la revisará.';
-}
-$('req').addEventListener('change', e => { const i = +e.target.id.slice(2); marcas[i] = e.target.checked; try { localStorage.setItem('mc_lobby_req', JSON.stringify(marcas)); } catch (er) {} pintaReq(); });
+ });
 pintaReq();
 $('web').innerHTML = WEB.map(([h, t, d]) => `<a href="${h}"><b>${esc(t)}</b><small>${esc(d)}</small></a>`).join('');
 </script>
