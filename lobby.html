@@ -128,8 +128,6 @@ $('copia').onclick = async () => {
   try { await navigator.clipboard.writeText(t); aviso('Plantilla copiada.'); }
   catch (e) { $('plantilla').select(); try { document.execCommand('copy'); aviso('Plantilla copiada.'); } catch (e2) { aviso('Selecciona el texto y cópialo.'); } }
 };
- });
-pintaReq();
 $('web').innerHTML = WEB.map(([h, t, d]) => `<a href="${h}"><b>${esc(t)}</b><small>${esc(d)}</small></a>`).join('');
 </script>
 </body>
