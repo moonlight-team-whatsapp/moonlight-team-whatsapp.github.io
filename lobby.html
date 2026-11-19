@@ -20,6 +20,7 @@
   .paso ul{ margin:8px 0 4px; padding-left:20px; } .paso li{ margin:5px 0; }
   .plantilla{ width:100%; min-height:520px; margin:10px 0 8px; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--ink); font:inherit; line-height:1.5; resize:vertical; white-space:pre-wrap; }
   .btn{ display:inline-block; font:inherit; font-weight:600; cursor:pointer; padding:9px 20px; border-radius:999px; color:#2a1f55; border:1px solid #fff4c8; background:radial-gradient(circle at 35% 28%,#fffbe6,#f6e7b4 55%,#d8bf72); box-shadow:0 0 16px rgba(255,236,170,.4); text-decoration:none; }
+  .paso.destaca{ border-color:rgba(246,231,180,.6); box-shadow:0 0 26px rgba(246,231,180,.14); background:linear-gradient(135deg,rgba(40,34,80,.8),rgba(16,22,48,.8)); }
   .btn.sec{ color:var(--gold); background:none; border-color:var(--gold-dim); box-shadow:none; }
   .chk{ list-style:none; padding:0 !important; } .chk li{ display:flex; gap:10px; align-items:flex-start; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.03); cursor:pointer; }
   .chk label{ font-size:1.02rem; color:var(--ink); line-height:1.4 } .chk input{ margin-top:3px; accent-color:#d9c383; width:18px; height:18px; flex:none; } .chk li.ok{ border-color:rgba(217,195,131,.55); background:rgba(217,195,131,.08); }
@@ -47,8 +48,12 @@
     <button class="btn" id="copia" type="button">📋 Copiar plantilla</button>
     <p class="suave" style="margin-top:10px">Cópiala tal cual, rellena cada campo (el cumpleaños va en formato d/m/a) y pégala en el chat junto con la foto del personaje.</p></section>
 
-  <section class="paso"><span class="n">2</span><h2>Cómo funciona la web</h2>
-    <p>Cuando te aceptemos te daremos tu <b>carnet</b>: un enlace personal que te identifica en la web (para tu ficha, votar, música…). <b>No lo compartas con nadie.</b> Esto es lo que encontrarás:</p>
+  <section class="paso destaca"><span class="n">2</span><h2>Crea tu MoonCard</h2>
+    <p><b>Es lo más importante después de la ficha:</b> crea la MoonCard de tu personaje, la tarjeta con la que se te reconoce en el team. Se hace aquí, en la web, en un par de minutos.</p>
+    <p style="margin-top:12px"><a class="btn" href="mooncard.html">🌙 Crear mi MoonCard</a></p></section>
+
+  <section class="paso"><span class="n">3</span><h2>Tu carnet y cómo funciona la web</h2>
+    <p>Cuando te acepten, <b>te mandaré por privado el enlace de tu carnet</b>: es personal y te identifica en la web (para editar tu ficha, votar, música…). <b>No lo compartas con nadie.</b> Esto es lo que encontrarás:</p>
     <div class="web" id="web"></div></section>
 </div>
 <div id="toastL" role="status"></div>
